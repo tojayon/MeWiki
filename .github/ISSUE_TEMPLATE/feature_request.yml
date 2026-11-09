@@ -1,0 +1,42 @@
+name: 功能建议
+description: 描述一个具体使用场景和希望改善的体验。
+title: "[Feature] "
+labels: []
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: 想完成什么任务
+      description: 请先描述使用场景，再描述按钮或实现想法。
+    validations:
+      required: true
+  - type: textarea
+    id: difficulty
+    attributes:
+      label: 当前遇到的困难
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 希望的行为
+      description: 可提供虚构示例、草图或操作流程。
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 目前的替代办法
+  - type: dropdown
+    id: area
+    attributes:
+      label: 相关区域
+      options:
+        - 页面与分类
+        - 符号与公式
+        - 内容引用与阅读
+        - 媒体与附件
+        - 资料库与备份
+        - 地图与数据图表
+        - 插件与外部程序
+        - 文档与其他

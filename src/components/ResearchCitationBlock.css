@@ -1,0 +1,34 @@
+.research-citation-block { min-width: 0; padding: 12px 14px; border: 1px solid #c8d7e9; border-radius: 4px; background: #fcfdff; color: #263a52; }
+.research-citation-heading { display: flex; align-items: flex-start; gap: 10px; }
+.research-citation-heading > svg { flex-shrink: 0; margin-top: 2px; color: #335f98; }
+.research-citation-summary { flex: 1; min-width: 0; }
+.research-citation-summary strong { display: block; font-size: 14px; line-height: 1.6; color: #1b4277; overflow-wrap: anywhere; }
+.research-citation-summary p { margin: 5px 0 0; font-size: 12px; line-height: 1.6; color: #5b6e85; overflow-wrap: anywhere; white-space: pre-wrap; }
+.research-citation-tools { display: flex; gap: 2px; flex-shrink: 0; }
+.research-citation-links { display: flex; flex-wrap: wrap; gap: 7px 16px; margin-top: 9px; font-size: 11px; }
+.research-citation-links a { display: inline-flex; align-items: center; gap: 5px; color: #285ca1; overflow-wrap: anywhere; min-width: 0; }
+.research-citation-links a svg { flex-shrink: 0; }
+.research-citation-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(80px, 140px); gap: 9px 12px; margin-top: 12px; }
+.research-citation-editor label, .research-citation-existing-pdf { display: grid; gap: 4px; min-width: 0; color: #526b88; font-size: 11px; }
+.research-citation-title-field, .research-citation-advanced-toggle { grid-column: 1 / -1; }
+.research-citation-editor input, .research-citation-editor textarea, .research-citation-existing-pdf select { width: 100%; box-sizing: border-box; min-width: 0; padding: 6px 8px; border: 1px solid #cbd6e4; border-radius: 4px; color: #25344a; background: #fff; font: inherit; font-size: 12px; line-height: 1.5; }
+.research-citation-editor textarea { resize: vertical; }
+.research-citation-doi-input { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.research-citation-doi-input input { flex: 1; }
+.research-citation-doi-input button { flex-shrink: 0; }
+.research-citation-advanced-toggle { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #627b9b; }
+.research-citation-notes { margin-top: 10px; font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.research-citation-notes > :first-child { margin-top: 0; }
+.research-citation-notes > :last-child { margin-bottom: 0; }
+.research-citation-pdf-toggle { display: flex; align-items: center; gap: 9px; margin-top: 9px; min-width: 0; }
+.research-citation-pdf-toggle button { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; border: 0; padding: 5px 0; background: transparent; color: #285ca1; font-size: 12px; cursor: pointer; text-align: left; }
+.research-citation-pdf-toggle button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.research-citation-pdf-toggle button svg { flex-shrink: 0; }
+.research-citation-pdf-toggle small { flex-shrink: 0; font-size: 11px; color: #6e8097; }
+.research-citation-pdf { min-width: 0; margin-top: 6px; }
+.research-citation-existing-pdf { margin-bottom: 9px; }
+.research-citation-pdf .research-media-block { margin: 0; }
+.research-citation-pdf .research-media-block > figcaption, .research-citation-pdf [aria-label="PDF 文档左对齐"], .research-citation-pdf [aria-label="PDF 文档居中"], .research-citation-pdf [aria-label="PDF 文档右对齐"], .research-citation-pdf .research-media-settings label:has(select) { display: none; }
+.research-citation-status { margin: 6px 0 0; color: #47718d; font-size: 11px; }
+.research-citation-error { margin: 7px 0 0; color: #b53328; font-size: 12px; overflow-wrap: anywhere; }
+@media (max-width: 480px) { .research-citation-block { padding: 10px; } .research-citation-editor { grid-template-columns: minmax(0, 1fr); } .research-citation-heading { gap: 7px; } }

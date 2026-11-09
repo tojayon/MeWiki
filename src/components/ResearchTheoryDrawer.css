@@ -1,0 +1,194 @@
+.research-note-content-frame {
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --theory-drawer-duration: 240ms;
+  --theory-edge-inset: clamp(38px, 4vw, 58px);
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.research-note-content-frame.has-theory-drawers {
+  --given-open-size: calc(100% * 3 / 11);
+  --conclusion-open-size: calc(100% * 3 / 11);
+  --given-size: 0%;
+  --conclusion-size: 0%;
+  grid-template-rows: minmax(0, var(--given-size)) minmax(0, 1fr) minmax(0, var(--conclusion-size));
+  /* Size drawers against the frame so only the derivation absorbs freed space. */
+  transition: grid-template-rows var(--theory-drawer-duration) var(--ease-drawer);
+}
+.research-note-content-frame[data-given-open="true"] { --given-size: var(--given-open-size); }
+.research-note-content-frame[data-conclusion-open="true"] { --conclusion-size: var(--conclusion-open-size); }
+.research-note-content-frame.has-theory-drawers[data-drawers-enabled="true"] { min-height: calc(2 * var(--theory-drawer-min-height)); }
+.research-note-page:has(> .research-note-content-frame[data-drawers-enabled="true"]) { overflow: auto; }
+.research-note-content-frame[data-drawers-resizing="true"] { transition: none; cursor: row-resize; user-select: none; }
+.research-note-content-frame[data-drawers-enabled="true"] .research-note-scroll { padding-inline: var(--theory-edge-inset); }
+.research-note-content-frame[data-drawers-enabled="true"] > .research-note-main::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  /* Keep the recessed rim fixed to the viewport while the derivation scrolls underneath. */
+  background:
+    radial-gradient(ellipse at top left, rgb(21 43 73 / .09), transparent 72%) top left / 48px 36px no-repeat,
+    radial-gradient(ellipse at top right, rgb(21 43 73 / .09), transparent 72%) top right / 48px 36px no-repeat,
+    radial-gradient(ellipse at bottom left, rgb(21 43 73 / .06), transparent 72%) bottom left / 48px 32px no-repeat,
+    radial-gradient(ellipse at bottom right, rgb(21 43 73 / .06), transparent 72%) bottom right / 48px 32px no-repeat;
+  box-shadow:
+    inset 0 1px 3px rgb(21 43 73 / .16),
+    inset 0 10px 18px -10px rgb(21 43 73 / .28),
+    inset 0 -8px 16px -10px rgb(21 43 73 / .20);
+  content: "";
+  pointer-events: none;
+}
+.research-theory-drawer {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  /* The frame contains the fixed edge tabs, even when this grid row is closed. */
+  overflow: visible;
+  visibility: visible;
+  transition: visibility 0s;
+}
+.research-theory-drawer[data-active="false"] { visibility: hidden; transition-delay: var(--theory-drawer-duration); }
+.research-theory-drawer-toggle {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  box-sizing: border-box;
+  width: 28px;
+  height: var(--theory-badge-height);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #153b6d;
+  padding: 8px 4px;
+  background: #153b6d;
+  color: #fff;
+  font: inherit;
+  font-family: "SimHei", "黑体", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  font-synthesis: weight;
+  line-height: 1;
+  letter-spacing: 3px;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  cursor: pointer;
+}
+.research-theory-drawer.is-given > .research-theory-drawer-toggle {
+  top: var(--theory-badge-inset);
+  left: 0;
+  border-left: 0;
+  border-radius: 0 4px 4px 0;
+}
+.research-theory-drawer.is-conclusion > .research-theory-drawer-toggle {
+  right: 0;
+  bottom: var(--theory-badge-inset);
+  border-right: 0;
+  border-radius: 4px 0 0 4px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .research-theory-drawer-toggle:hover { filter: brightness(.96); }
+}
+.research-theory-drawer-toggle:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
+.research-theory-drawer-content {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  background: #dfe9f6;
+  overflow: auto;
+  overscroll-behavior: contain;
+  container-type: inline-size;
+  opacity: 1;
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform var(--theory-drawer-duration) var(--ease-drawer), opacity 160ms var(--ease-drawer), visibility 0s;
+}
+.research-theory-drawer[data-open="false"] > .research-theory-drawer-content {
+  opacity: 0;
+  visibility: hidden;
+  transition-delay: 0s, 0s, var(--theory-drawer-duration);
+}
+.research-theory-drawer.is-given > .research-theory-drawer-content { border-bottom: 1px solid #ccd9e9; }
+.research-theory-drawer.is-conclusion > .research-theory-drawer-content { border-top: 1px solid #ccd9e9; }
+.research-theory-drawer-resize {
+  position: relative;
+  z-index: 3;
+  height: 10px;
+  min-height: 10px;
+  flex: 0 0 10px;
+  margin-block: -5px;
+  cursor: row-resize;
+  touch-action: none;
+  user-select: none;
+}
+.research-theory-drawer-resize[hidden] { display: none; }
+.research-theory-drawer.is-conclusion > .research-theory-drawer-resize { order: -1; }
+.research-theory-drawer-resize::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 3px;
+  border-radius: 4px;
+  background: #8ea5c1;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+.research-theory-drawer-resize:hover::after,
+.research-theory-drawer-resize:focus-visible::after,
+.research-note-content-frame[data-drawers-resizing="true"] .research-theory-drawer-resize::after { background: #1547c0; }
+.research-theory-drawer-resize:focus-visible { outline: 2px solid #1547c0; outline-offset: -2px; }
+.research-note-content-frame[data-derivation-hidden="true"] .is-given > .research-theory-drawer-resize { width: 50%; align-self: flex-start; }
+.research-note-content-frame[data-derivation-hidden="true"] .is-conclusion > .research-theory-drawer-resize { width: 50%; align-self: flex-end; }
+.research-theory-source-marker { min-width: 0; padding-block: 4px; }
+.research-theory-source-marker > button {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 7px;
+  border: 1px dashed #c5d4e5;
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: #f8fafd;
+  color: #405b7b;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: left;
+  cursor: pointer;
+}
+.research-theory-source-marker > button > svg { flex: 0 0 14px; margin-top: 2px; }
+.research-theory-source-marker > button > span { min-width: 0; overflow-wrap: anywhere; }
+.research-theory-source-marker strong { margin-right: 8px; color: #173b65; font-weight: 650; }
+.research-theory-source-marker > button:hover { border-color: #9bb5d3; background: #eff4fb; color: #1547c0; }
+.research-theory-source-marker > button:focus-visible { outline: 2px solid #1547c0; outline-offset: 1px; }
+@media (pointer: coarse) {
+  .research-theory-drawer-resize { height: 18px; min-height: 18px; flex-basis: 18px; margin-block: -9px; }
+}
+.research-theory-drawer.is-given[data-open="false"] > .research-theory-drawer-content { transform: translateX(-100%); }
+.research-theory-drawer.is-conclusion[data-open="false"] > .research-theory-drawer-content { transform: translateX(100%); }
+.research-theory-drawer-body {
+  padding: 12px var(--theory-edge-inset) 14px;
+}
+.research-theory-drawer .research-note-block { padding-block: 3px; }
+.research-theory-drawer .research-note-block.is-heading :is(h1, h2, h3, h4, h5, h6) { margin-block: 2px 4px; font-size: 15px; }
+.research-theory-placeholder {
+  min-height: 32px;
+  padding: 4px 6px;
+  border-bottom: 1px dashed #dbe4ef;
+  line-height: 23px;
+}
+.research-theory-empty { color: #4d627e; font-size: 12px; line-height: inherit; overflow-wrap: anywhere; }
+.research-theory-placeholder > .research-block-insert { padding-top: 4px; }
+:root .research-theory-placeholder .research-block-insert-trigger[data-ui="icon-action"][aria-label] { align-self: flex-start; opacity: 1; }
+:root .research-notebook-actions button.research-notebook-sections-toggle[aria-pressed="true"] { background: #e9edf2; }
+@media (prefers-reduced-motion: reduce) {
+  .research-note-content-frame.has-theory-drawers,
+  .research-theory-drawer,
+  .research-theory-drawer > .research-theory-drawer-content { transition: none; }
+  .research-theory-drawer[data-open] > .research-theory-drawer-content { transform: none; }
+}

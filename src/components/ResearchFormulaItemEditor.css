@@ -1,0 +1,521 @@
+.research-formula-inline-editor.research-formula-item-editor {
+  width: min(620px, calc(100vw - 24px));
+  gap: 4px;
+  padding: 6px;
+}
+
+.research-formula-symbol-column {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.research-formula-item-symbol-editor {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  border-top: 1px solid #e1e7ef;
+  padding-top: 4px;
+}
+
+.research-formula-symbol-browser {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  max-height: min(240px, 40dvh);
+  flex-direction: column;
+  gap: 4px;
+  color: #526780;
+  font-size: 11px;
+}
+
+.research-formula-symbol-search-row {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.research-formula-symbol-search {
+  display: flex;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 28px;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #c7d3e2;
+  border-radius: 4px;
+  padding: 0 5px;
+}
+
+.research-formula-symbol-search:focus-within {
+  border-color: #517fc5;
+  outline: 2px solid #dce8fa;
+}
+
+.research-formula-item-editor .research-formula-symbol-search > input {
+  min-width: 0;
+  min-height: 26px;
+  flex: 1;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.research-formula-item-editor .research-formula-symbol-search > input:focus {
+  outline: none;
+}
+
+.research-formula-symbol-search > input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.research-formula-symbol-search > svg {
+  flex-shrink: 0;
+}
+
+.research-formula-symbol-search > button {
+  display: grid;
+  width: 20px;
+  height: 24px;
+  flex: 0 0 20px;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #526780;
+  cursor: pointer;
+}
+
+.research-formula-symbol-browser .research-dictionary-list {
+  overscroll-behavior: contain;
+  padding: 0;
+}
+
+.research-formula-symbol-browser .research-symbol-entry {
+  min-height: 28px;
+  gap: 4px;
+  padding: 3px;
+}
+
+.research-formula-symbol-browser .research-symbol-entry:hover,
+.research-formula-symbol-browser .research-symbol-entry.is-highlighted,
+.research-formula-symbol-browser .research-symbol-entry[aria-current="true"] {
+  background: #edf3fc;
+  color: #1547c0;
+}
+
+.research-formula-symbol-empty {
+  margin: 0;
+  padding: 5px;
+  color: #61738a;
+  font-size: 11px;
+}
+
+.research-formula-symbol-preview-heading,
+.research-formula-symbol-preview-tools {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  color: #243a56;
+  font-size: 12px;
+}
+
+.research-formula-input-columns {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 216px);
+  gap: 6px;
+  align-items: start;
+}
+
+.is-operators-collapsed .research-formula-input-columns {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.research-formula-symbol-preview-heading > strong {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.research-formula-symbol-preview {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 110px;
+  align-items: center;
+  justify-content: flex-start;
+  background: #fff;
+  font-size: 36px;
+}
+
+.research-formula-symbol-preview > .formula {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow: auto;
+  padding: 28px 10px;
+  pointer-events: none;
+}
+
+.research-formula-symbol-preview-drag-area {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.research-formula-symbol-preview .katex-html > :is(.katex-base, .base) {
+  pointer-events: auto;
+}
+
+.research-formula-item-editor[data-dragging],
+.research-formula-item-editor[data-dragging] * {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.research-formula-symbol-preview .katex-display {
+  margin: 0;
+  text-align: left;
+}
+
+.research-formula-symbol-preview .katex-display > .katex {
+  text-align: left;
+}
+
+.research-formula-symbol-position-hit {
+  position: absolute;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  border: 1px dashed #9cb5d5;
+  border-radius: 4px;
+  padding: 0;
+  background: #f3f7fdcc;
+  color: #526780;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.research-formula-symbol-position-hit.has-value {
+  border: 0;
+  background: transparent;
+}
+
+.research-formula-symbol-position-hit:hover,
+.research-formula-symbol-position-hit:focus-visible {
+  border-color: #1547c0;
+  background: #e5efff;
+  color: #1547c0;
+  outline: 2px solid #dce8fa;
+}
+
+.research-formula-symbol-position-hit.has-value:hover,
+.research-formula-symbol-position-hit.has-value:focus-visible {
+  background: #dce8fa40;
+}
+
+.research-formula-symbol-insert-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-start;
+}
+
+.research-formula-symbol-insert-actions > button {
+  display: inline-flex;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 28px;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid #1547c0;
+  border-radius: 4px;
+  padding: 3px 6px;
+  background: #1547c0;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.research-formula-symbol-insert-actions > button:hover {
+  background: #123da7;
+}
+
+.research-formula-symbol-insert-actions > button:disabled {
+  border-color: #d7e1ee;
+  background: #edf1f6;
+  color: #78889b;
+  cursor: default;
+}
+
+.research-formula-symbol-insert-actions > .research-symbol-delete {
+  border-color: #c63b43;
+  background: #c63b43;
+}
+
+.research-formula-symbol-insert-actions > .research-symbol-delete:hover {
+  border-color: #ab2e36;
+  background: #ab2e36;
+}
+
+.research-formula-symbol-advanced {
+  margin-top: 0;
+  color: #526780;
+  font-size: 11px;
+}
+
+.research-formula-symbol-advanced .research-formula-source-preview {
+  padding-inline: 0;
+}
+
+.research-formula-operator-column {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  max-height: min(460px, calc(100dvh - 40px));
+  flex-direction: column;
+  gap: 4px;
+  border-left: 1px solid #e1e7ef;
+  padding-left: 6px;
+}
+
+.research-formula-operator-column[hidden] {
+  display: none;
+}
+
+.research-formula-operator-palette {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.research-formula-latex-input {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.research-formula-latex-actions {
+  display: flex;
+  min-width: 0;
+  gap: 3px;
+}
+
+.research-formula-item-editor .research-formula-latex-actions > input {
+  min-width: 0;
+  min-height: 26px;
+  flex: 1;
+  padding: 2px 4px;
+  font-size: 11px;
+}
+
+.research-formula-latex-actions > button {
+  display: grid;
+  width: 26px;
+  flex: 0 0 26px;
+  place-items: center;
+  border: 1px solid #9cb5d5;
+  border-radius: 4px;
+  padding: 0;
+  background: #edf3fc;
+  color: #1547c0;
+  cursor: pointer;
+}
+
+.research-formula-latex-actions > button:disabled {
+  border-color: #d7e1ee;
+  background: #f6f8fc;
+  color: #78889b;
+  cursor: default;
+}
+
+.research-formula-latex-preview {
+  max-height: 100px;
+  overflow: auto;
+  padding: 3px;
+  font-size: 15px;
+}
+
+.research-formula-latex-error {
+  margin: 0;
+  color: #ad3047;
+  font-size: 11px;
+}
+
+.research-formula-operator-group {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.research-formula-operator-group h4 {
+  flex: 0 0 14px;
+  margin: 3px 0 0;
+  color: #526780;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.15;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  white-space: nowrap;
+}
+
+.research-formula-operator-keys {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+
+.research-formula-operator-keys > button {
+  display: grid;
+  width: auto;
+  min-width: 24px;
+  min-height: 26px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #e1e7ef;
+  border-radius: 4px;
+  padding: 2px 4px;
+  background: #f6f8fc;
+  color: #243a56;
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.research-formula-operator-keys > button:hover,
+.research-formula-operator-keys > button.is-current {
+  border-color: #83a2d2;
+  background: #eaf1fc;
+  color: #1547c0;
+}
+
+.research-formula-item-editor button:focus-visible {
+  outline: 2px solid #517fc5;
+  outline-offset: 1px;
+}
+
+.research-formula-symbol-slot-popover {
+  position: fixed;
+  z-index: 4;
+  display: flex;
+  width: 154px;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid #9cb5d5;
+  border-radius: 4px;
+  padding: 5px;
+  background: #fff;
+  box-shadow: 0 8px 22px #18365b2e;
+}
+
+.research-formula-symbol-slot-popover label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #526780;
+  font-size: 11px;
+}
+
+.research-formula-symbol-slot-popover input {
+  box-sizing: border-box;
+  min-height: 27px;
+  border: 1px solid #c7d3e2;
+  border-radius: 4px;
+  padding: 3px 5px;
+  color: #263b57;
+  font: inherit;
+  font-size: 12px;
+}
+
+.research-formula-symbol-slot-popover input:focus {
+  border-color: #517fc5;
+  outline: 2px solid #dce8fa;
+}
+
+.research-formula-symbol-slot-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 3px;
+}
+
+.research-formula-symbol-slot-actions button {
+  display: grid;
+  width: 25px;
+  min-height: 24px;
+  place-items: center;
+  border: 1px solid #c7d3e2;
+  border-radius: 4px;
+  background: #fff;
+  color: #526780;
+  cursor: pointer;
+}
+
+.research-formula-symbol-slot-actions button:hover {
+  border-color: #517fc5;
+  color: #1547c0;
+}
+
+@media (min-width: 561px) {
+  .research-formula-inline-editor.research-formula-item-editor.is-operators-collapsed {
+    width: min(398px, calc(100vw - 24px));
+  }
+
+  /* Let the symbol column determine the row height; scroll the longer keyboard. */
+  .research-formula-input-columns:has(.research-formula-symbol-preview) > .research-formula-operator-column {
+    contain: size;
+    align-self: stretch;
+  }
+}
+
+@media (max-width: 560px) {
+  .research-formula-input-columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .research-formula-symbol-browser {
+    max-height: 180px;
+  }
+
+  .research-formula-operator-column {
+    max-height: 360px;
+    border-top: 1px solid #e1e7ef;
+    border-left: 0;
+    padding-top: 4px;
+    padding-left: 0;
+  }
+}
+
+.research-formula-operator-keys > button:active {
+  background: #dce8fa;
+}

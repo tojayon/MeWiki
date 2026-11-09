@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+
+# Preserve whitespace in archived third-party license originals.
+docs/licenses/THIRD_PARTY_LICENSES.txt -whitespace

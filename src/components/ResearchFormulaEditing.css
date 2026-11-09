@@ -1,0 +1,71 @@
+.research-formula-interactive-expression {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
+}
+.research-formula-interactive-expression [data-formula-index] {
+  touch-action: none;
+  cursor: text;
+}
+/* KaTeX's invisible row/column struts can cover a glyph in another lane. Only
+   actual formula items should receive pointer hits; blank space still bubbles
+   through the canvas to the caret surface. */
+.research-formula-math-canvas .katex-html { pointer-events: none; }
+.research-formula-math-canvas [data-formula-index] { pointer-events: auto; }
+.research-formula-interactive-expression .research-formula-selected,
+.research-formula-interactive-expression .research-formula-selected:hover {
+  border-radius: 4px;
+  background: #cde1ff;
+  box-shadow: 0 0 0 2px #cde1ff;
+}
+.research-formula-interactive-expression .research-formula-selected,
+.research-formula-interactive-expression .research-formula-selected * {
+  cursor: grab;
+}
+.research-formula-interactive-expression.is-selecting-formula * {
+  cursor: text;
+}
+.research-formula-interactive-expression .research-formula-drag-source {
+  border-radius: 4px;
+  background: #e1ebfa;
+  box-shadow: 0 0 0 2px #afc8eb;
+  opacity: .5;
+}
+.research-formula-interactive-expression.is-dragging-formula,
+.research-formula-interactive-expression.is-dragging-formula * {
+  cursor: grabbing;
+}
+.research-formula-caret.has-selection::after {
+  animation: none;
+  opacity: .5;
+}
+.research-formula-drop-caret {
+  position: absolute;
+  z-index: 3;
+  width: 3px;
+  min-height: 12px;
+  border-radius: 2px;
+  background: #1547c0;
+  pointer-events: none;
+  transform: translateX(-1px);
+}
+.research-formula-drop-caret::before,
+.research-formula-drop-caret::after {
+  position: absolute;
+  left: -3px;
+  width: 9px;
+  height: 2px;
+  background: inherit;
+  content: "";
+}
+.research-formula-drop-caret::before { top: -1px; }
+.research-formula-drop-caret::after { bottom: -1px; }
+.research-formula-drop-caret.is-unchanged { background: #748299; }
+.research-formula-selection-status,
+.research-formula-transfer-status {
+  display: block;
+  color: #365c91;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.research-formula-transfer-status { margin: 3px 0 0; }

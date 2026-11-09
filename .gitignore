@@ -1,0 +1,45 @@
+node_modules/
+dist/
+.mewiki/
+test-results/
+playwright-report/
+*.log
+*.local
+.DS_Store
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+
+# User libraries and originals belong outside the source checkout.
+research-library.webbench.json
+/assets/
+/history/
+/migration-backups/
+/libraries/
+/backups/
+
+# Local credentials and editor state
+.codex/
+.agents/
+.idea/
+.vscode/
+.npmrc
+.pypirc
+.netrc
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.db
+*.bak
+*.zip
+*.7z
+*.tar
+*.tgz
+
+# Internal browser verification screenshots
+/docs/evidence/

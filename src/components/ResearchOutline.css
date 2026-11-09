@@ -1,0 +1,40 @@
+.research-note-outline { display: flex; grid-column: 3; grid-row: 1 / -1; min-width: 0; min-height: 0; flex-direction: column; border-left: 1px solid #d3ddea; background: #f7f9fc; color: #26354b; box-sizing: border-box; }
+.research-note-outline > header, .research-note-outline > footer { display: flex; box-sizing: border-box; flex: 0 0 42px; min-width: 0; align-items: center; padding: 5px 12px; }
+.research-note-outline > header { border-bottom: 1px solid #d3ddea; background: #fbfcfe; font-size: 13px; }
+.research-note-outline > footer { border-top: 1px solid #d3ddea; color: #52627a; font-size: 12px; }
+.research-note-outline > nav { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 5px; }
+.research-note-outline ol { margin: 0; padding: 0; list-style: none; }
+.research-note-outline li { min-width: 0; }
+.research-note-outline li button { display: block; box-sizing: border-box; width: 100%; min-height: 34px; border: 0; border-radius: 4px; padding: 8px 7px 8px calc(7px + var(--outline-depth) * 12px); background: transparent; color: inherit; text-align: left; font: inherit; font-family: "SimHei", "黑体", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; cursor: pointer; }
+.research-note-outline li button:hover { background: #eaf0f8; }
+.research-note-outline li button[aria-current="location"] { background: #e6eefb; color: #123c9b; font-weight: 700; }
+.research-note-outline li button:focus-visible { outline: 2px solid #1547c0; outline-offset: -2px; }
+.research-outline-number { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.research-outline-tabs { display: flex; height: 100%; gap: 12px; }
+.research-outline-tabs > button { border: 0; border-bottom: 2px solid transparent; padding: 0 2px; background: transparent; color: #52627a; font: inherit; cursor: pointer; }
+.research-outline-tabs > button[aria-selected="true"] { border-bottom-color: #1547c0; color: #123c9b; font-weight: 700; }
+.research-outline-recipe-panel { display: flex; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; }
+.research-outline-recipe-panel[hidden], .research-symbol-backlinks-content[hidden] { display: none; }
+.research-note-backlinks li button { display: flex; flex-direction: column; gap: 5px; padding: 9px 7px; }
+.research-note-backlinks strong { display: flex; align-items: center; gap: 4px; color: #1547c0; }
+.research-note-backlinks strong > svg { flex: 0 0 auto; }
+.research-note-backlinks small { color: #52627a; font-size: 11px; }
+.research-note-backlinks li button > span { color: #455f7e; }
+.research-outline-empty { margin: 12px 7px; color: #455f7e; font-size: 12px; line-height: 1.7; }
+.research-outline-empty > span { display: block; margin-top: 6px; color: #65788f; }
+.research-symbol-backlinks-content { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 5px; }
+.research-symbol-backlinks-content h3 { margin: 10px 7px 4px; color: #26354b; font-size: 12px; line-height: 1.6; }
+.research-symbol-backlinks-content > nav + nav { margin-top: 12px; border-top: 1px solid #d3ddea; padding-top: 4px; }
+.research-symbol-backlink-result { display: block; max-width: 100%; overflow-x: auto; }
+.research-symbol-backlinks-name { margin: 0 7px 8px; color: #52627a; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.research-page-trailing-actions { display: flex; flex: 0 0 auto; align-items: center; align-self: stretch; margin-left: 3px; border-left: 1px solid #d3ddea; padding-left: 7px; }
+:root .research-page-trailing-actions button[data-ui="icon-action"][aria-label] { --action-ink: #172033; --action-accent: #172033; --action-hover: #e9edf2; }
+@container research-notebook (max-width: 999px) {
+  .research-notebook-layout.has-outline { --research-right-column: 0px; }
+  .research-note-outline { position: absolute; z-index: 6; grid-column: 1 / -1; top: 42px; right: 0; bottom: 42px; width: min(var(--research-outline-width, 300px), calc(100% - 44px)); border-block: 1px solid #d3ddea; box-shadow: -6px 0 18px #1735561a; }
+  .research-notebook-divider.is-right { display: none; }
+}
+@media (max-width: 720px) {
+  .research-page-trailing-actions { margin-left: 1px; padding-left: 4px; }
+  :root .research-outline-toggle[data-ui="icon-action"][aria-label] { --action-size: 24px; }
+}

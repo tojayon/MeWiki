@@ -1,0 +1,63 @@
+.research-metadata-popover { position: fixed; inset: auto; display: flex; box-sizing: border-box; width: min(470px, calc(100vw - 24px)); max-height: min(680px, calc(100dvh - 24px)); flex-direction: column; gap: 0; overflow: hidden; margin: 0; border: 1px solid #aebfd5; border-radius: 4px; padding: 0; background: #fff; color: #172033; box-shadow: 0 8px 28px #1735562b; font-size: 12px; line-height: 1.5; }
+.research-metadata-popover > header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; border-bottom: 1px dashed #d3ddea; padding: 4px 10px; }
+.research-metadata-popover > header > div { display: flex; align-items: center; gap: 6px; }
+.research-metadata-popover > header strong { color: #153b6d; font-size: 13px; }
+.research-metadata-popover > header small { color: #52627a; font-size: 10px; }
+:root .research-metadata-popover button[data-ui="icon-action"][aria-label] { --action-size: 24px; }
+.research-metadata-properties { min-height: 0; overflow: auto; padding: 0 12px; }
+.research-metadata-properties table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+.research-metadata-properties :is(th, td) { border-bottom: 1px dashed #e0e6ef; padding: 9px 0; vertical-align: top; text-align: left; overflow-wrap: anywhere; }
+.research-metadata-properties tr:last-child :is(th, td) { border: 0; }
+.research-metadata-properties th { box-sizing: border-box; width: 110px; padding-right: 10px; color: #354a64; font-weight: 600; }
+.research-metadata-properties th :is(span, small) { display: block; }
+.research-metadata-properties th small { margin-top: 1px; color: #65758b; font-size: 10px; font-weight: 400; }
+.research-metadata-properties td { color: #172033; white-space: pre-wrap; }
+.research-metadata-properties pre { max-width: 100%; margin: 0; border: 0; border-radius: 0; padding: 0; overflow-x: auto; background: transparent; color: #172033; font: 11px/1.6 Consolas, "Cascadia Code", monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.research-metadata-tag-values { display: flex; flex-wrap: wrap; gap: 3px 8px; color: #153b6d; }
+.research-metadata-relations { display: flex; min-width: 0; flex-direction: column; gap: 12px; border-top: 1px dashed #e0e6ef; padding: 10px 0; }
+.research-metadata-relations .research-library-links { flex-direction: column; align-items: flex-start; gap: 4px; }
+.research-metadata-relations .research-library-links > strong { color: #354a64; font-size: 12px; }
+.research-metadata-relations .research-library-links > strong small { margin-left: 6px; color: #65758b; font-size: 10px; font-weight: 400; }
+.research-metadata-basis-list { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.research-metadata-basis-item { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid #d3ddea; border-radius: 4px; padding: 3px 6px; color: #153b6d; }
+.research-metadata-basis-item > span { min-width: 0; overflow-wrap: anywhere; }
+.research-metadata-identity { display: flex; flex: 0 0 auto; align-items: baseline; gap: 9px; border-top: 1px dashed #d3ddea; padding: 8px 12px; color: #52627a; }
+.research-metadata-identity > span { flex: 0 0 auto; font-size: 10px; }
+.research-metadata-identity code { overflow-wrap: anywhere; font: 10px/1.5 Consolas, monospace; }
+.research-metadata-mode { display: flex; flex: 0 0 auto; gap: 14px; border-bottom: 1px solid #e0e6ef; padding: 0 12px; }
+.research-metadata-mode button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 2px 6px; background: transparent; color: #405570; font: inherit; font-weight: 600; cursor: pointer; }
+.research-metadata-mode button[aria-selected="true"] { border-bottom-color: #1547c0; color: #1547c0; }
+.research-metadata-mode button:focus-visible { outline: 2px solid #1547c0; outline-offset: -2px; }
+.research-metadata-edit-body { display: flex; min-height: 0; flex-direction: column; gap: 12px; overflow: auto; padding: 12px; }
+.research-metadata-field { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
+.research-metadata-field > span { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px; color: #354a64; font-weight: 600; }
+.research-metadata-field small { color: #65758b; font-size: 10px; font-weight: 400; }
+.research-metadata-popover :is(input, textarea, select) { box-sizing: border-box; width: 100%; min-width: 0; border: 1px solid #bdcadd; border-radius: 4px; padding: 5px 7px; background: #fff; color: #172033; font: inherit; font-size: 12px; line-height: 1.5; outline: none; }
+.research-metadata-popover :is(input, select) { height: 31px; }
+.research-metadata-popover textarea { resize: vertical; }
+.research-metadata-popover :is(input, textarea, select):focus { border-color: #1547c0; box-shadow: 0 0 0 1px #dce7fb; }
+.research-metadata-standard-grid { display: grid; min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.research-metadata-custom { display: flex; min-width: 0; flex-direction: column; gap: 10px; border-top: 1px dashed #d3ddea; padding-top: 8px; }
+.research-metadata-custom > header { display: flex; align-items: center; justify-content: space-between; }
+.research-metadata-custom > header > strong { color: #354a64; font-size: 12px; }
+.research-metadata-custom-row { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
+.research-metadata-custom-row + .research-metadata-custom-row { border-top: 1px dashed #e0e6ef; padding-top: 10px; }
+.research-metadata-property-tools { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) 100px 24px; align-items: center; gap: 5px; }
+.research-metadata-hint { margin: 0; color: #52627a; font-size: 11px; line-height: 1.6; }
+.research-metadata-yaml-label { display: flex; min-width: 0; flex-direction: column; gap: 8px; }
+.research-metadata-popover textarea.research-metadata-yaml { min-height: 330px; font: 12px/1.7 Consolas, "Cascadia Code", monospace; tab-size: 2; }
+.research-metadata-popover .is-yaml { font: 12px/1.6 Consolas, "Cascadia Code", monospace; }
+.research-metadata-error { max-height: 90px; flex: 0 0 auto; overflow: auto; margin: 0; padding: 6px 12px; color: #ae2038; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.research-metadata-edit-footer { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; border-top: 1px dashed #d3ddea; padding: 7px 10px; }
+.research-metadata-edit-footer > small { color: #52627a; font-size: 10px; }
+.research-metadata-edit-footer > div { display: flex; gap: 4px; margin-left: auto; }
+.research-metadata-edit-footer button { display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 4px; padding: 5px 7px; background: transparent; color: #405570; font: inherit; cursor: pointer; }
+.research-metadata-edit-footer button:last-child { color: #1547c0; font-weight: 600; }
+.research-metadata-edit-footer button:is(:hover, :focus-visible) { background: #edf2fc; color: #1547c0; }
+.research-notebook-import-error { flex: 0 0 auto; margin: 0; border-top: 1px dashed #d3ddea; padding: 7px; color: #ae2038; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
+@media (max-width: 720px) {
+  .research-metadata-edit-body { gap: 10px; padding: 10px; }
+  .research-metadata-properties th { width: 94px; }
+  .research-metadata-standard-grid { gap: 8px; }
+  .research-metadata-property-tools { grid-template-columns: minmax(0, 1fr) 90px 24px; }
+}

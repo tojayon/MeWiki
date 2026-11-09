@@ -1,0 +1,20 @@
+.research-bookmark-block { min-width: 0; margin: 4px 0; color: #25344a; }
+.research-bookmark-link { display: flex; align-items: flex-start; gap: 12px; padding: 15px; border: 1px solid #d9e2ef; border-radius: 4px; color: inherit; background: #fbfcff; text-decoration: none; }
+.research-bookmark-link:hover { border-color: #92b3e4; background: #f5f9ff; text-decoration: none; }
+.research-bookmark-link > span { min-width: 0; flex: 1; }
+.research-bookmark-link > svg { flex-shrink: 0; color: #577397; }
+.research-bookmark-link strong { display: block; font-size: 14px; color: #254d81; overflow-wrap: anywhere; }
+.research-bookmark-link p { margin: 7px 0; font-size: 12px; line-height: 1.65; color: #526780; white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.research-bookmark-link small { display: block; margin-top: 5px; font-size: 11px; color: #718199; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.research-bookmark-tools { display: flex; align-items: center; gap: 3px; padding: 3px 0; font-size: 11px; color: #6c819b; }
+.research-bookmark-input { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px; border: 1px dashed #c3cfdf; border-radius: 4px; background: #f9fbfe; color: #627b9c; }
+.research-bookmark-input input { flex: 1 1 150px; min-width: 0; }
+.research-bookmark-block input, .research-bookmark-block textarea { padding: 6px 8px; border: 1px solid #cbd6e4; border-radius: 4px; background: #fff; color: #25344a; font: inherit; font-size: 12px; min-width: 0; }
+.research-bookmark-block button:not([data-ui]) { border: 1px solid #cbd6e4; border-radius: 4px; padding: 6px 9px; background: white; color: #27528b; cursor: pointer; font-size: 12px; }
+.research-bookmark-settings { display: grid; gap: 9px; padding: 10px 0; }
+.research-bookmark-settings label { display: grid; gap: 4px; font-size: 11px; color: #627188; min-width: 0; }
+.research-bookmark-edit-url { display: flex; gap: 6px; }
+.research-bookmark-edit-url input { flex: 1; }
+.research-bookmark-settings textarea { resize: vertical; }
+.research-bookmark-error { color: #b53328; font-size: 12px; overflow-wrap: anywhere; }
+.research-bookmark-empty { padding: 14px; color: #718199; background: #f7f9fc; font-size: 12px; }

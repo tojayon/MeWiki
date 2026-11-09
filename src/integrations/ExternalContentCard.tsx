@@ -1,0 +1,29 @@
+import { useState } from 'react';
+import { ExternalLink, Plug } from 'lucide-react';
+import type { ExternalContentBlock } from './externalContent.ts';
+import { useIntegration } from './IntegrationContext.ts';
+import { availablePlugins } from '../plugins/registry.ts';
+import PluginContentView from '../plugins/PluginContentView.tsx';
+
+export default function ExternalContentCard({ block, readOnly = true, onNote }: { block: ExternalContentBlock; readOnly?: boolean; onNote?: (note: string) => void }) {
+  const integration = useIntegration(); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
+  const plugin = availablePlugins.find(item => item.id === block.provider && integration.plugins[item.id] === 'enabled');
+  let valid = false;
+  try { valid = !!plugin?.validate(block); } catch { /* Unknown versions remain readable with their complete payload retained. */ }
+  async function open() {
+    setError(''); setBusy(true);
+    try { await integration.openContent(block); } catch (cause) { setError(cause instanceof Error ? cause.message : '无法打开外部内容。'); } finally { setBusy(false); }
+  }
+  return <article className="mewiki-external-card" data-provider={block.provider}>
+    <header><Plug size={15} /><span>{plugin?.name ?? '外部内容'}</span>
+      {valid ? <button type="button" onClick={() => void open()} disabled={busy} title="在来源程序中定位此内容"><ExternalLink size={14} />{busy ? '正在定位…' : '打开来源'}</button>
+        : <button type="button" onClick={integration.showManager}>{plugin ? '查看插件版本' : '管理插件'}</button>}
+    </header>
+    <strong>{block.title}</strong>
+    {valid ? <PluginContentView content={block} /> : block.summary && <p>{block.summary}</p>}
+    {!valid && <small>{plugin ? '此插件尚不支持该内容版本，原始内容已保留。' : '启用对应插件后可打开来源。'}</small>}
+    {readOnly ? block.note && <p className="mewiki-external-note">{block.note}</p> : <textarea aria-label="外部内容备注" placeholder="记录观察…" rows={2} value={block.note ?? ''} onChange={event => onNote?.(event.target.value)} />}
+    <details><summary>来源信息</summary><code>{block.provider} · {block.contentType} · v{block.schemaVersion}</code><pre>{JSON.stringify(block.data, null, 2)}</pre></details>
+    {error && <p role="alert">{error}</p>}
+  </article>;
+}

@@ -1,0 +1,60 @@
+name: 问题反馈
+description: 报告可复现的显示、编辑或保存问题。
+title: "[Bug] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请使用虚构资料复现，并移除截图与日志中的个人内容、路径和令牌。
+        涉及文件访问、代码执行或资料泄露的问题，请按 SECURITY.md 私下报告。
+  - type: input
+    id: version
+    attributes:
+      label: MeWiki 版本或提交
+      placeholder: 例如 package.json 的版本或 Git 提交标识
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 系统与浏览器
+      placeholder: 例如 Windows 11，Microsoft Edge 版本号
+    validations:
+      required: true
+  - type: dropdown
+    id: storage
+    attributes:
+      label: 资料保存方式
+      options:
+        - 浏览器模式
+        - 本地资料库
+        - 与保存无关
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 最短复现步骤
+      placeholder: |
+        1. 打开……
+        2. 点击……
+        3. 出现……
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期结果与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 截图、报错或最小示例
+      description: 可选；不要提交真实资料库或含隐私的附件。
+  - type: textarea
+    id: checks
+    attributes:
+      label: 已尝试的排查
+      description: 例如是否重启最新构建、是否仅在特定浏览器或资料库中发生。

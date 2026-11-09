@@ -1,0 +1,42 @@
+.mewiki-plugin-manager { width: min(720px, calc(100vw - 24px)); }
+.mewiki-plugin-manager p { line-height: 1.7; color: #43546a; }
+.mewiki-plugin-row { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 12px; align-items: start; border-top: 1px solid #d4deeb; padding: 18px 0; }
+.mewiki-plugin-row h3 { margin: 0; font-size: 15px; }
+.mewiki-plugin-row p { margin: 8px 0; }
+.mewiki-plugin-state { display: block; margin-top: 10px; color: #1547c0; }
+.mewiki-plugin-actions { display: flex; flex-direction: column; gap: 8px; }
+.mewiki-plugin-actions button, .mewiki-integration-notice button { border: 1px solid #b9cbe1; border-radius: 4px; background: #f6f9fd; padding: 7px 10px; }
+.mewiki-integration-notice { position: fixed; z-index: 20; bottom: 36px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; width: max-content; max-width: calc(100vw - 32px); padding: 10px 14px; border: 1px solid #b8cce8; border-radius: 4px; background: #f0f6ff; font-size: 12px; }
+.mewiki-integration-notice button { flex-shrink: 0; }
+.mewiki-integration-error { position: fixed; bottom: 8px; left: 16px; z-index: 20; color: #9b3018; background: #fff; font-size: 12px; }
+.mewiki-external-card { border: 1px solid #a8bedb; border-radius: 4px; padding: 12px; background: #f8faff; display: grid; gap: 10px; }
+.mewiki-external-card header { display: flex; gap: 6px; align-items: center; font-size: 12px; color: #294a76; }
+.mewiki-external-card header button { margin-left: auto; display: flex; gap: 5px; align-items: center; border: 1px solid #bdcce0; background: #fff; border-radius: 4px; padding: 5px 8px; font-size: 12px; }
+.mewiki-external-card > strong { font-size: 15px; }
+.mewiki-external-card p { margin: 0; white-space: pre-wrap; }
+.mewiki-external-card textarea { width: 100%; resize: vertical; min-height: 50px; padding: 8px; font: inherit; border: 1px solid #c5d1df; border-radius: 4px; background: #fff; }
+.mewiki-external-card details { color: #526277; font-size: 12px; }
+.mewiki-external-card pre { max-height: 220px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.mewiki-external-card [role=alert] { color: #a13521; }
+.mewiki-replay-details { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 0; font-size: 12px; }
+.mewiki-replay-details div { display: grid; gap: 4px; }
+.mewiki-replay-details dt { color: #596b82; }
+.mewiki-replay-details dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.device-record-modal.mewiki-replay-picker { width: min(640px, calc(100vw - 24px)); color: #1b2d43; }
+.mewiki-replay-picker > .device-record-modal-header { grid-template-columns: minmax(0, 1fr) auto; }
+.mewiki-replay-picker form { display: grid; gap: 14px; min-width: 0; }
+.mewiki-replay-picker label { display: grid; gap: 7px; min-width: 0; font-size: 13px; }
+.mewiki-replay-picker input, .mewiki-replay-picker select { width: 100%; min-width: 0; box-sizing: border-box; padding: 9px; border: 1px solid #b9cbe1; border-radius: 4px; background: #fff; color: inherit; font: inherit; }
+.mewiki-replay-catalog-label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.mewiki-replay-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.mewiki-replay-picker p { margin: 0; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.mewiki-replay-range, .mewiki-replay-picker [role=status] { color: #526277; }
+.mewiki-replay-picker [role=alert] { color: #a13521; }
+.mewiki-replay-connection { border-top: 1px solid #d4deeb; padding-top: 12px; }
+.mewiki-replay-connection summary { cursor: pointer; color: #43546a; font-size: 13px; }
+.mewiki-replay-connection label, .mewiki-replay-connection button { margin-top: 12px; }
+.mewiki-replay-picker footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; padding-top: 6px; }
+.mewiki-replay-picker button:not([data-ui]) { padding: 8px 12px; border: 1px solid #b9cbe1; border-radius: 4px; background: #f6f9fd; color: #213d66; }
+.mewiki-replay-picker button[type=submit] { background: #1547c0; border-color: #1547c0; color: #fff; }
+.mewiki-replay-picker button:disabled { opacity: .5; cursor: default; }
+@media (max-width: 540px) { .mewiki-replay-fields { grid-template-columns: minmax(0, 1fr); } }

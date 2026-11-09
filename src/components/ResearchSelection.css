@@ -1,0 +1,116 @@
+.research-note-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  width: 100%;
+  min-height: 34px;
+  border: 0;
+  border-radius: 4px;
+  padding: 8px 7px;
+  background: transparent;
+  color: #26354b;
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.research-note-item > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #415a79;
+}
+.research-note-item > span {
+  overflow-wrap: anywhere;
+}
+.research-note-item:hover {
+  background: #eaf0f8;
+}
+.research-note-item[aria-current="page"] {
+  background: #e3edff;
+  color: #123c9b;
+  font-weight: 700;
+}
+.research-note-item[aria-current="page"] > svg {
+  color: #1547c0;
+}
+.research-symbol-entry {
+  display: grid;
+  grid-template-columns: minmax(50px, 76px) minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 5px 6px;
+  background: transparent;
+  color: #26354b;
+  text-align: left;
+  cursor: pointer;
+}
+.research-symbol-entry:hover {
+  border-color: #d2ddeb;
+  background: #eef3fa;
+}
+.research-symbol-entry[aria-current="true"] {
+  border-color: #91aee0;
+  background: #e5edfb;
+  color: #123c9b;
+}
+.research-symbol-entry-formula {
+  overflow: hidden;
+  color: #19375e;
+  text-align: center;
+}
+.research-symbol-entry-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.research-symbol-entry-copy strong {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 700;
+}
+.research-symbol-entry-copy small {
+  color: #586a82;
+  font-size: 11px;
+}
+.research-classified-list:has([data-symbol-id]) .research-note-tree { --research-tag-cell-width: clamp(28px, calc((100cqi - 168px) / var(--research-note-tree-depth)), 68px); min-width: calc(var(--research-note-tree-depth) * 28px + 144px); }
+.research-note-tree .research-symbol-entry { min-width: 0; min-height: 32px; grid-template-columns: minmax(28px, 40px) minmax(0, 1fr); gap: 5px; border: 0; border-radius: 0; padding: 4px; font: inherit; }
+.research-note-tree .research-symbol-entry:focus-visible { outline: 2px solid #1547c0; outline-offset: -2px; }
+.research-note-tree .research-symbol-entry-copy { gap: 1px; }
+.research-note-tree .research-symbol-entry-formula { min-width: 0; }
+.research-note-tree .research-symbol-entry-formula .katex { font-size: 1.05em; }
+.research-classified-list { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+@container research-tag-cell (max-height: 44px) {
+  .research-note-folder[data-leaf="false"][aria-expanded="true"] .research-note-folder-label { writing-mode: horizontal-tb; text-orientation: mixed; font-size: 12px; }
+}
+.research-classified-list .research-note-item-copy { flex-direction: column; gap: 1px; }
+.research-classified-list .research-note-item-copy small { font-size: 11px; color: #52627a; font-weight: 400; }
+.research-classified-list .research-note-tree :is(.research-note-item,.research-symbol-entry)[aria-selected="true"] { background: #e3edff; color: #123c9b; }
+.research-classified-list .research-note-tree :is(.research-note-item,.research-symbol-entry).is-highlighted { box-shadow: inset 0 0 0 1px #799ed7; background: #edf3ff; }
+.research-classified-list :is(.research-note-item,.research-symbol-entry):disabled { cursor: default; opacity: .55; }
+.research-choice-checkbox { display: inline-flex; flex: 0 0 14px; margin-top: 2px; color: #1547c0; }
+.research-choice-search { display: flex; min-width: 0; flex: 0 0 auto; align-items: center; gap: 6px; border: 1px solid #bdcadd; border-radius: 4px; padding: 0 7px; color: #405570; background: #fff; }
+.research-choice-search:focus-within { outline: 1px solid #1547c0; }
+.research-choice-search input { box-sizing: border-box; width: 100%; min-width: 0; height: 32px; border: 0; padding: 4px 0; outline: none; color: #172033; background: transparent; font: inherit; font-size: 12px; }
+.research-selection-field { display: block; min-width: 0; width: 100%; }
+.research-selection-trigger { display: flex; box-sizing: border-box; width: 100%; min-width: 0; min-height: 32px; align-items: center; justify-content: space-between; gap: 6px; border: 1px solid #bdcadd; border-radius: 4px; padding: 5px 7px; background: #fff; color: #172033; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.research-selection-trigger:disabled { opacity: .6; cursor: default; }
+.research-selection-trigger > svg { flex: 0 0 auto; }
+.research-selection-current { display: flex; min-width: 0; align-items: center; gap: 5px; }
+.research-selection-current .research-note-status-dot { display: none; }
+.research-selection-current :is(.research-note-item-copy,.research-symbol-entry-copy) { display: flex; min-width: 0; flex-direction: column; }
+.research-selection-current :is(.research-note-item-copy,.research-symbol-entry-copy) > :is(span,small) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.research-selection-current .research-symbol-entry-formula { width: auto; max-width: 60px; overflow: hidden; }
+.research-selection-popup { position: fixed; inset: auto; display: flex; box-sizing: border-box; width: min(390px, calc(100vw - 24px)); max-height: min(420px,calc(100dvh - 24px)); flex-direction: column; gap: 6px; margin: 0; border: 1px solid #aebfd5; border-radius: 4px; padding: 7px; background: #fff; color: #172033; box-shadow: 0 6px 24px #17355626; overflow: hidden; font-size: 12px; }
+.research-selection-popup > header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 6px; }
+.research-selection-popup > header > button { display: grid; width: 24px; height: 24px; place-items: center; border: 0; border-radius: 4px; padding: 0; background: transparent; color: #203652; cursor: pointer; }
+.research-selection-popup > .research-classified-list { flex: 1 1 auto; }
+.research-selection-popup { font-weight: 400; }
+.research-selection-popup .research-choice-search { flex-direction: row; align-items: center; gap: 6px; }
+.research-selection-popup .research-choice-search input, .research-selection-popup .research-choice-search input:focus { min-height: 0; height: 32px; border: 0; padding: 4px 0; outline: none; box-shadow: none; background: transparent; font-weight: 400; }
+.research-selection-popup .research-symbol-entry { display: grid; width: 100%; grid-template-columns: minmax(28px,40px) minmax(0,1fr); border: 0; border-radius: 0; padding: 4px; background: transparent; color: #172033; text-align: left; font: inherit; cursor: pointer; }
+.research-selection-popup .research-symbol-entry-formula .katex { font-size: 1.05em; }

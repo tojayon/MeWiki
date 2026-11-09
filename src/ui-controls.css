@@ -1,0 +1,174 @@
+/* Explicit opt-in: tabs, packet cards, scene labels and mode choices keep their semantics. */
+:root button[data-ui="icon-action"][aria-label] {
+  --action-size: 28px;
+  --action-ink: #172033;
+  --action-accent: #1547c0;
+  --action-hover: #e6edfa;
+  display: inline-flex;
+  box-sizing: border-box;
+  width: var(--action-size);
+  min-width: var(--action-size);
+  height: var(--action-size);
+  min-height: var(--action-size);
+  flex: 0 0 var(--action-size);
+  align-self: center;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 4px;
+  padding: 0;
+  background: transparent;
+  color: var(--action-ink);
+  box-shadow: none;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: middle;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+:root button[data-ui="icon-action"][aria-label] > svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+:root
+  button[data-ui="icon-action"][aria-label]:is(
+    .active,
+    [aria-pressed="true"],
+    [aria-expanded="true"],
+    [data-active="true"]
+  ) {
+  color: var(--action-accent);
+}
+:root button[data-ui="icon-action"][aria-label]:hover:not(:disabled) {
+  border: 0;
+  background: var(--action-hover);
+  color: var(--action-accent);
+  box-shadow: none;
+}
+:root button[data-ui="icon-action"][aria-label]:hover:not(:focus-visible) {
+  outline: 0;
+}
+:root button[data-ui="icon-action"][aria-label]:focus-visible {
+  outline: 2px solid var(--action-accent);
+  outline-offset: 1px;
+}
+:root button[data-ui="icon-action"][aria-label]:active:not(:disabled) {
+  background: var(--action-hover);
+  filter: brightness(0.94);
+}
+:root button[data-ui="icon-action"][aria-label]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+:root button[data-ui="icon-action"][aria-label][data-tone="danger"] {
+  --action-ink: #a32236;
+  --action-accent: #a32236;
+  --action-hover: #ffe8ed;
+}
+:root .research-note-block button[data-ui="icon-action"][aria-label],
+:root .research-formula-result-select button[data-ui="icon-action"][aria-label],
+:root .research-formula-dictionary-button[data-ui="icon-action"][aria-label] {
+  --action-size: 22px;
+}
+:root .research-note-block button[data-ui="icon-action"][aria-label] > svg,
+:root
+  .research-formula-result-select
+  button[data-ui="icon-action"][aria-label]
+  > svg {
+  width: 13px;
+  height: 13px;
+}
+:root
+  .research-note-block
+  :is(
+    .research-formula-copy-button,
+    .research-formula-edit-button,
+    .research-formula-settings-button
+  )[data-ui="icon-action"][aria-label] {
+  --action-ink: #000;
+  --action-accent: #000;
+}
+:root .research-block-insert-trigger[data-ui="icon-action"][aria-label] {
+  --action-size: 23px;
+}
+:root .research-notebook-actions button[data-ui="icon-action"][aria-label] {
+  --action-size: 28px;
+}
+:root .research-note-tag button[data-ui="icon-action"][aria-label] {
+  --action-size: 18px;
+  --action-ink: #fff;
+  --action-accent: #fff;
+  --action-hover: #ffffff26;
+}
+:root .research-note-tag button[data-ui="icon-action"][aria-label] > svg {
+  width: 12px;
+  height: 12px;
+}
+:root .node-preview-controls button[data-ui="icon-action"][aria-label] {
+  --action-size: 22px;
+  --action-ink: #e1f8ff;
+  --action-accent: #54e6ff;
+  --action-hover: #1c5266;
+}
+:root .node-preview-controls button[data-ui="icon-action"][aria-label] > svg {
+  width: 12px;
+  height: 12px;
+}
+.research-notebook-file-actions {
+  flex-direction: row;
+  align-items: center;
+}
+.research-dictionary-sidebar > .research-dictionary-add[data-ui="icon-action"] {
+  align-self: flex-start;
+  margin: 7px;
+}
+.research-notebook-actions {
+  align-items: center;
+}
+:root .device-filter-trigger[data-ui="icon-action"][aria-label] {
+  position: relative;
+}
+:root .device-filter-trigger[data-ui="icon-action"][aria-label] > b {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  font-size: 10px;
+  pointer-events: none;
+}
+/* Keep the single-row player usable without enlarging its mobile controls. */
+@media (max-width: 760px) {
+  :root .player-toolbar button[data-ui="icon-action"][aria-label] {
+    --action-size: 20px;
+    height: 28px;
+    min-height: 28px;
+  }
+  :root .player-toolbar button[data-ui="icon-action"][aria-label] > svg {
+    width: 14px;
+    height: 14px;
+  }
+  .timeline-panel .player-toolbar {
+    gap: 2px;
+  }
+  .timeline-panel .player-utilities > .timeline-marker-settings {
+    width: 20px;
+    min-width: 20px;
+    flex-basis: 20px;
+  }
+}
+@media (max-width: 380px) {
+  :root .player-toolbar button[data-ui="icon-action"][aria-label] {
+    --action-size: 18px;
+  }
+  .timeline-panel .player-utilities > .timeline-marker-settings {
+    width: 18px;
+    min-width: 18px;
+    flex-basis: 18px;
+  }
+}

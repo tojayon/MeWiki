@@ -1,0 +1,24 @@
+.research-dictionary-sidebar .research-dictionary-toolbar { flex: 0 0 auto; flex-direction: column; align-items: stretch; gap: 5px; padding: 7px; }
+.research-dictionary-search-row, .research-dictionary-tag-filter { display: flex; min-width: 0; align-items: center; gap: 5px; }
+.research-dictionary-sidebar .research-dictionary-search { min-height: 30px; padding-inline: 6px; }
+.research-dictionary-tag-filter > select { width: 100%; min-width: 0; height: 30px; flex: 1; border: 1px solid #bdcadd; border-radius: 4px; padding: 0 5px; background: #fff; color: #263b57; font: inherit; font-size: 12px; text-overflow: ellipsis; }
+.research-dictionary-tag-filter > select:focus-visible { outline: 2px solid #1547c0; outline-offset: -1px; }
+.research-dictionary-tag-filter > button:disabled { opacity: .45; cursor: default; }
+.research-symbol-position-field { --symbol-position-color: #1547c0; min-width: 0; margin: 0; border: 1px solid var(--symbol-position-color); border-radius: 4px; padding: 10px; }
+.research-symbol-position-field[data-symbol-position="x2"] { --symbol-position-color: #9c4a07; }
+.research-symbol-position-field[data-symbol-position="x3"] { --symbol-position-color: #ad3047; }
+.research-symbol-position-field > legend { padding-inline: 4px; color: var(--symbol-position-color); font-size: 12px; font-weight: 700; }
+.research-symbol-position-field > label { display: flex; min-width: 0; flex-direction: column; gap: 5px; color: #263d5b; font-size: 12px; font-weight: 700; }
+.research-symbol-position-field > label + label { margin-top: 10px; }
+.research-symbol-position-field textarea { min-height: 84px; font-weight: 400; }
+.research-symbol-pane { container: research-symbol-pane / inline-size; }
+.research-symbol-pane > .research-symbol-header { display: grid; grid-template-columns: minmax(36px, 1fr) minmax(0, 1.3fr) minmax(min-content, 1fr); }
+.research-symbol-header .research-symbol-title { margin: 0; overflow: hidden; white-space: nowrap; }
+.research-symbol-header > .research-note-header-actions > .research-page-tools { flex: 1 0 auto; width: max-content; min-width: max-content; }
+@container research-symbol-pane (max-width: 639px) {
+  .research-symbol-pane > .research-symbol-header { grid-template-columns: auto minmax(32px, 1fr) minmax(0, max-content); }
+  .research-symbol-header .research-page-tags { display: none; }
+  .research-symbol-header .research-symbol-title { font-size: 15px; text-align: left; }
+  .research-symbol-header > .research-note-header-actions { overflow: visible; }
+  .research-symbol-header > .research-note-header-actions > .research-page-tools { flex: 1 1 auto; width: max-content; min-width: 0; }
+}
