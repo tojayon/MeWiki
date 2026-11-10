@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import ExternalContentCard from '../integrations/ExternalContentCard.tsx';
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import ResearchRichBlock from "./ResearchRichBlock.tsx";
@@ -43,6 +45,7 @@ function tabsLabelTextColor(appearance: ResearchTabsAppearance): string {
 }
 
 function TabsColorField({ label, value, onChange }: { label: string; value: string; onChange: (color: string) => void }) {
+  useLocale();
   return <label className="research-tabs-color-field"><span>{label}</span><span>
     <input type="color" aria-label={label} value={value} onChange={event => onChange(event.target.value)} />
     <input key={value} type="text" aria-label={`${label} HEX`} defaultValue={value} maxLength={7} spellCheck={false}
@@ -67,6 +70,7 @@ function ExampleSettings({ block, tab, index, count, canRemove, trigger, onPatch
   onRemove: () => void;
   onClose: (restoreFocus?: boolean) => void;
 }) {
+  useLocale();
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement>(trigger);
   const appearance = normalizeTabsAppearance(block.appearance);
@@ -80,40 +84,41 @@ function ExampleSettings({ block, tab, index, count, canRemove, trigger, onPatch
   };
   useFormulaPopover({ ref, triggerRef, getAnchor: () => trigger.getBoundingClientRect(), onCancel: close });
   useEffect(() => { ref.current?.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true }); }, []);
-  return <div ref={ref} popover="manual" className="research-example-settings" role="dialog" aria-label="标签页设置">
-    <header><strong>标签页设置</strong><button type="button" data-ui="icon-action" aria-label="关闭标签页设置" title="关闭" onClick={() => close(true)}><X size={14} /></button></header>
-    <label>显示名称<input aria-label="显示名称" defaultValue={researchTabsTitle(block) === "标签页" ? "" : researchTabsTitle(block)} placeholder="例如：举例、方案比较、分步推导"
+  return <div ref={ref} popover="manual" className="research-example-settings" role="dialog" aria-label={t("标签页设置")}>
+    <header><strong>{t("标签页设置")}</strong><button type="button" data-ui="icon-action" aria-label={t("关闭标签页设置")} title={t("关闭")} onClick={() => close(true)}><X size={14} /></button></header>
+    <label>{t("显示名称")}<input aria-label={t("显示名称")} defaultValue={researchTabsTitle(block) === "标签页" ? "" : researchTabsTitle(block)} placeholder={t("例如：举例、方案比较、分步推导")}
       onBlur={event => {
         const title = event.currentTarget.value.trim() || "标签页";
         if (title !== researchTabsTitle(block)) onPatch({ title });
       }}
       onKeyDown={event => { if (event.key === "Enter" && !event.nativeEvent.isComposing) close(true); }} /></label>
-    <label>名称位置<select aria-label="名称位置" value={block.labelPosition ?? "center"} onChange={event => {
+    <label>{t("名称位置")}<select aria-label={t("名称位置")} value={block.labelPosition ?? "center"} onChange={event => {
       const labelPosition = event.currentTarget.value as ResearchTabsLabelPosition;
       if (labelPosition !== (block.labelPosition ?? "center")) onPatch({ labelPosition });
     }}>
-      <option value="left">靠左</option><option value="center">居中</option><option value="right">靠右</option>
+      <option value="left">{t("靠左")}</option><option value="center">{t("居中")}</option><option value="right">{t("靠右")}</option>
     </select></label>
-    <fieldset className="research-tabs-appearance"><legend>面板配色</legend>
-      <div className="research-tabs-presets" role="group" aria-label="配色预设">
-        {researchTabsPresets.map(preset => <button type="button" key={preset.name} aria-label={`${preset.name}配色`}
+    <fieldset className="research-tabs-appearance"><legend>{t("面板配色")}</legend>
+      <div className="research-tabs-presets" role="group" aria-label={t("配色预设")}>
+        {researchTabsPresets.map(preset => <button type="button" key={preset.name} aria-label={t`${t(preset.name)}配色`}
           aria-pressed={Object.keys(defaultTabsAppearance).every(key => appearance[key as keyof ResearchTabsAppearance] === preset.appearance[key as keyof ResearchTabsAppearance])}
-          onClick={() => patchAppearance({ ...preset.appearance })}><i aria-hidden="true" style={{ backgroundColor: preset.appearance.borderColor }} />{preset.name}</button>)}
+          onClick={() => patchAppearance({ ...preset.appearance })}><i aria-hidden="true" style={{ backgroundColor: preset.appearance.borderColor }} />{t(preset.name)}</button>)}
       </div>
-      <div className="research-tabs-colors">{colorFields.map(([key, label]) => <TabsColorField key={key} label={label} value={appearance[key]} onChange={color => changeColor(key, color)} />)}</div>
-      <button type="button" className="research-tabs-reset" onClick={() => patchAppearance({ ...defaultTabsAppearance })}><RotateCcw size={12} />恢复默认配色</button>
+      <div className="research-tabs-colors">{colorFields.map(([key, label]) => <TabsColorField key={key} label={t(label)} value={appearance[key]} onChange={color => changeColor(key, color)} />)}</div>
+      <button type="button" className="research-tabs-reset" onClick={() => patchAppearance({ ...defaultTabsAppearance })}><RotateCcw size={12} />{t("恢复默认配色")}</button>
     </fieldset>
-    <label>当前标签名称<input key={tab.id} aria-label="当前标签名称" defaultValue={/^标签 \d+$/.test(tab.title) ? "" : tab.title} placeholder={`标签 ${index + 1}`}
+    <label>{t("当前标签名称")}<input key={tab.id} aria-label={t("当前标签名称")} defaultValue={/^标签 \d+$/.test(tab.title) ? "" : tab.title} placeholder={t`标签 ${index + 1}`}
       onBlur={event => {
         if (!event.currentTarget.value && /^标签 \d+$/.test(tab.title)) return;
-        onRename(event.currentTarget.value.trim() || `标签 ${index + 1}`);
+        const title = event.currentTarget.value.trim() || `标签 ${index + 1}`;
+        if (title !== tab.title) onRename(title);
       }}
       onKeyDown={event => { if (event.key === "Enter" && !event.nativeEvent.isComposing) close(true); }} /></label>
     <div className="research-example-order">
-      <button type="button" aria-label="向左移动标签" disabled={index === 0} onClick={() => onMove(-1)}><ArrowLeft size={14} />左移</button>
-      <button type="button" aria-label="向右移动标签" disabled={index === count - 1} onClick={() => onMove(1)}><ArrowRight size={14} />右移</button>
+      <button type="button" aria-label={t("向左移动标签")} disabled={index === 0} onClick={() => onMove(-1)}><ArrowLeft size={14} />{t("左移")}</button>
+      <button type="button" aria-label={t("向右移动标签")} disabled={index === count - 1} onClick={() => onMove(1)}><ArrowRight size={14} />{t("右移")}</button>
     </div>
-    <button type="button" className="research-example-delete" aria-label="删除当前标签" disabled={count < 2 || !canRemove} title={count < 2 ? "至少保留一个标签" : !canRemove ? "此标签中有公式结果仍被引用，请先解除来源关联" : "删除当前标签及其内容"} onClick={onRemove}><Trash2 size={14} />删除当前标签</button>
+    <button type="button" className="research-example-delete" aria-label={t("删除当前标签")} disabled={count < 2 || !canRemove} title={count < 2 ? t("至少保留一个标签") : !canRemove ? t("此标签中有公式结果仍被引用，请先解除来源关联") : t("删除当前标签及其内容")} onClick={onRemove}><Trash2 size={14} />{t("删除当前标签")}</button>
   </div>;
 }
 
@@ -141,11 +146,12 @@ export default function ResearchExamples({ block, readOnly, onPatch, renderBlock
   dropTabId?: string;
   symbols?: ResearchSymbolEntry[];
 }) {
+  useLocale();
   const id = useId();
   const confirmDelete = useDeleteConfirmation();
   const latest = useRef({ block, onPatch, canRemoveTab });
   useLayoutEffect(() => { latest.current = { block, onPatch, canRemoveTab }; }, [block, onPatch, canRemoveTab]);
-  const title = researchTabsTitle(block);
+  const title = block.title?.trim() ? researchTabsTitle(block) : t(researchTabsTitle(block));
   const appearance = normalizeTabsAppearance(block.appearance);
   const contentInk = tabsTextColor(appearance.backgroundColor);
   const headerInk = tabsTextColor(appearance.headerBackground);
@@ -221,7 +227,7 @@ export default function ResearchExamples({ block, readOnly, onPatch, renderBlock
   };
   const remove = () => {
     if (block.tabs.length < 2 || canRemoveTab?.(active) === false) return;
-    confirmDelete({ title: "删除标签页", description: `确定删除标签“${active.title}”及其中的全部内容吗？` }, () => {
+    confirmDelete({ title: t("删除标签页"), description: t`确定删除标签“${active.title}”及其中的全部内容吗？` }, () => {
       const current = latest.current;
       const removed = current.block.tabs.find(tab => tab.id === active.id);
       if (!removed || current.block.tabs.length < 2 || current.canRemoveTab?.(removed) === false) return;
@@ -233,10 +239,10 @@ export default function ResearchExamples({ block, readOnly, onPatch, renderBlock
     });
   };
 
-  return <div ref={ref} className="research-examples" style={style} role="group" aria-label="标签页">
+  return <div ref={ref} className="research-examples" style={style} role="group" aria-label={t("标签页")}>
     <strong className="research-examples-label" data-label-position={block.labelPosition ?? "center"} title={title}><span>{title}</span></strong>
     <header className="research-examples-header">
-      <div ref={stripRef} className="research-examples-tabs" role="tablist" aria-label="标签切换" onKeyDown={handleKeys}>
+      <div ref={stripRef} className="research-examples-tabs" role="tablist" aria-label={t("标签切换")} onKeyDown={handleKeys}>
         {block.tabs.map((tab, tabIndex) => <button key={tab.id} id={`${id}-tab-${tabIndex}`} type="button" role="tab" data-example-id={tab.id}
           aria-selected={tab.id === active.id} aria-controls={`${id}-panel`} tabIndex={tab.id === active.id ? 0 : -1}
           data-research-example-tab data-research-example-block-id={block.id} data-research-example-tab-id={tab.id}
@@ -244,8 +250,8 @@ export default function ResearchExamples({ block, readOnly, onPatch, renderBlock
           title={tab.title} onClick={() => select(tab.id)}><span>{tab.title}</span></button>)}
       </div>
       {!readOnly && <div className="research-examples-actions">
-        <button type="button" data-ui="icon-action" aria-label="添加标签" title="添加标签" onClick={add}><Plus size={14} /></button>
-        <button type="button" data-ui="icon-action" aria-label="标签页设置" title="显示名称、名称位置、配色与当前标签设置" aria-expanded={!!trigger}
+        <button type="button" data-ui="icon-action" aria-label={t("添加标签")} title={t("添加标签")} onClick={add}><Plus size={14} /></button>
+        <button type="button" data-ui="icon-action" aria-label={t("标签页设置")} title={t("显示名称、名称位置、配色与当前标签设置")} aria-expanded={!!trigger}
           onClick={event => setTrigger(trigger ? null : event.currentTarget)}><Settings2 size={14} /></button>
       </div>}
     </header>
@@ -254,7 +260,7 @@ export default function ResearchExamples({ block, readOnly, onPatch, renderBlock
       data-research-drop-active={dropTabId === active.id || undefined}>
       {renderBlocks ? renderBlocks(active.blocks, { exampleBlockId: block.id, tabId: active.id })
         : active.blocks.length ? <div className="research-example-read-blocks">{active.blocks.map(child => <section key={child.id} className={`research-example-read-block is-${child.type}`}>{readBlock(child, symbols)}</section>)}</div>
-        : <p className="research-example-empty">此标签尚未填写。</p>}
+        : <p className="research-example-empty">{t("此标签尚未填写。")}</p>}
     </div>
     {!readOnly && trigger && <ExampleSettings block={block} tab={active} index={index} count={block.tabs.length} canRemove={canRemoveTab?.(active) !== false} trigger={trigger}
       onPatch={patch => onPatch?.(patch)}

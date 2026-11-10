@@ -1,3 +1,6 @@
+import LanguageSettings from "./LanguageSettings.tsx";
+import { useLocale } from "../i18n/react.ts";
+import {t, localizeError, getLocale as interfaceLocale } from "../i18n/locale.ts";
 import ResearchRichBlock from "./ResearchRichBlock.tsx";
 import ResearchNoteEmbed from './ResearchNoteEmbed.tsx';
 import ResearchNoteEmbedPicker from './ResearchNoteEmbedPicker.tsx';
@@ -17,6 +20,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  Languages,
   ArrowDown,
   ArrowUp,
   BookmarkPlus,
@@ -217,6 +221,7 @@ function ResearchNoteTitle({
   readOnly: boolean;
   onChange: (title: string) => void;
 }) {
+  useLocale();
   const ref = useRef<HTMLInputElement>(null);
   const previousReadOnly = useRef(readOnly);
   const source = readOnly ? title : researchTitleInputValue(title);
@@ -233,7 +238,7 @@ function ResearchNoteTitle({
     <input
       ref={ref}
       className="research-note-title"
-      aria-label="笔记标题"
+      aria-label={t("笔记标题")}
       title={title || placeholder}
       placeholder={placeholder}
       defaultValue={source}
@@ -256,20 +261,20 @@ function EvidenceBlock({
   onRemove: () => void;
   onComplete: () => void;
 }) {
+  useLocale();
   return (
     <article className="research-evidence-block">
       <div className="research-evidence-heading">
         <span>
-          <BookmarkPlus size={14} /> 回放证据
-        </span>
+          <BookmarkPlus size={14} />  {t("回放证据")}</span>
         {!readOnly && (
           <button
             data-tone="danger"
             data-ui="icon-action"
             className="research-remove-block"
-            aria-label="移除回放证据"
+            aria-label={t("移除回放证据")}
             onClick={onRemove}
-            title="移除回放证据"
+            title={t("移除回放证据")}
           >
             <Trash2 size={14} />
           </button>
@@ -290,8 +295,8 @@ function EvidenceBlock({
         )
       ) : (
         <input
-          aria-label="回放观察备注"
-          placeholder="补充这条证据对应的观察…"
+          aria-label={t("回放观察备注")}
+          placeholder={t("补充这条证据对应的观察…")}
           value={block.note ?? ""}
           onChange={(event) => onNote(event.target.value)}
           onKeyDown={(event) => {
@@ -328,6 +333,8 @@ export default function ResearchNotebook({
   standalonePage?: boolean;
   onOpenHelp?: () => void;
 }) {
+  useLocale();
+  const [languageOpen, setLanguageOpen] = useState(false);
   const state = useMemo(() => ensureTheoryMaps(inputState), [inputState]);
   const integration = useIntegration();
   const workspace = useLibraryWorkspace();
@@ -488,10 +495,10 @@ export default function ResearchNotebook({
       !state.theoryMaps?.noteViewOpen);
   const outlineVisible = outlineAvailable && !outlineCollapsed;
   const rightPanelLabel = recipeActive
-    ? "变量配方"
+    ? t("变量配方")
     : symbolBacklinksAvailable
-      ? "反向链接"
-      : "文章大纲";
+      ? t("反向链接")
+      : t("文章大纲");
   const outline = useMemo(
     () => buildResearchOutline(note.blocks),
     [note.blocks],
@@ -841,10 +848,8 @@ export default function ResearchNotebook({
     />
   ) : (
     <p className="research-outline-empty">
-      尚未选择变量。
-      <span>
-        点击公式中的变量，再选择“逐层查看变量配方”，即可从这里查看输入与来源。
-      </span>
+      {t("尚未选择变量。")}<span>
+        {t("点击公式中的变量，再选择“逐层查看变量配方”，即可从这里查看输入与来源。")}</span>
     </p>
   );
   const noteReferenced = state.notes.some(
@@ -1114,18 +1119,18 @@ export default function ResearchNotebook({
     if (containsReferencedFormula([block])) return;
     const summary =
       block.type === "examples"
-        ? `标签页组及其中的 ${block.tabs.length} 个标签和全部内容`
+        ? t`标签页组及其中的 ${block.tabs.length} 个标签和全部内容`
         : block.type === "evidence"
-          ? `回放证据“${block.runTitle}”`
+          ? t`回放证据“${block.runTitle}”`
           : block.type === "list"
-            ? `列表“${block.items.join("、").slice(0, 80) || "空白内容"}”`
+            ? t`列表“${block.items.join("、").slice(0, 80) || t("空白内容")}”`
             : "text" in block
-              ? `内容块“${block.text.trim().slice(0, 80) || "空白内容"}”`
-              : "此公式或内容块";
+              ? t`内容块“${block.text.trim().slice(0, 80) || t("空白内容")}”`
+              : t("此公式或内容块");
     confirmDelete(
       {
-        title: "删除内容块",
-        description: `确定删除${summary}吗？`,
+        title: t("删除内容块"),
+        description: t`确定删除${summary}吗？`,
         focusOnCancel,
       },
       () =>
@@ -1258,7 +1263,7 @@ export default function ResearchNotebook({
     const input = event.currentTarget;
     const file = input.files?.[0];
     if (!file) return;
-    const title = file.name.replace(/\.md$/i, "") || "导入研究笔记";
+    const title = file.name.replace(/\.md$/i, "") || t("导入研究笔记");
     try {
       const source = await file.text();
       const parsed = parseResearchMarkdown(source, title);
@@ -1332,7 +1337,7 @@ export default function ResearchNotebook({
       )}
       {block.type === "heading" && (
         <ResearchTextBlock
-          label="笔记层级标题"
+          label={t("笔记层级标题")}
           onComplete={() =>
             blockInsertionMenus.current.get(block.id)?.insertBelow()
           }
@@ -1348,7 +1353,7 @@ export default function ResearchNotebook({
       {block.type === "paragraph" && (
         <ResearchTextBlock
           value={block.text}
-          label="笔记段落"
+          label={t("笔记段落")}
           onComplete={() =>
             blockInsertionMenus.current.get(block.id)?.insertBelow()
           }
@@ -1428,7 +1433,7 @@ export default function ResearchNotebook({
                   <ResearchBlockInsert
                     atEnd
                     canInsertEvidence={!!citation}
-                    insertionLabel="在标签页中插入"
+                    insertionLabel={t("在标签页中插入")}
                     onInsert={(type, _position, provider) =>
                       addBlock(
                         type,
@@ -1454,13 +1459,12 @@ export default function ResearchNotebook({
                         )
                       }
                     >
-                      点击编写此标签，或将内容块拖到这里…
-                    </button>
+                      {t("点击编写此标签，或将内容块拖到这里…")}</button>
                   )}
                 </div>
               )}
               {readOnly && !blocks.length && (
-                <p className="research-example-empty">此标签尚未填写。</p>
+                <p className="research-example-empty">{t("此标签尚未填写。")}</p>
               )}
             </div>
           )}
@@ -1475,7 +1479,7 @@ export default function ResearchNotebook({
             blockInsertionMenus.current.get(block.id)?.insertBelow()
           }
           headings={headingsByBlock.get(block.id)}
-          label={`笔记${{ quote: "引用", code: "代码块", orderedList: "有序列表", taskList: "待办列表", table: "表格", image: "图片", divider: "分隔线", markdown: "Markdown 内容" }[block.kind]}`}
+          label={t`笔记${{ quote: t("引用"), code: t("代码块"), orderedList: t("有序列表"), taskList: t("待办列表"), table: t("表格"), image: t("图片"), divider: t("分隔线"), markdown: t("Markdown 内容") }[block.kind]}`}
           onChange={(text, focusOnCancel) =>
             commitText(block.id, text, focusOnCancel)
           }
@@ -1484,7 +1488,7 @@ export default function ResearchNotebook({
       {block.type === "list" && (
         <ResearchTextBlock
           value={block.items.join("\n")}
-          label="笔记列表"
+          label={t("笔记列表")}
           onComplete={() =>
             blockInsertionMenus.current.get(block.id)?.insertBelow()
           }
@@ -1537,12 +1541,12 @@ export default function ResearchNotebook({
           data-tone="danger"
           data-ui="icon-action"
           className="research-remove-block"
-          aria-label="删除笔记内容块"
+          aria-label={t("删除笔记内容块")}
           disabled={containsReferencedFormula([block])}
           title={
             containsReferencedFormula([block])
-              ? "内容中有公式结果仍被引用，请先解除来源关联"
-              : "删除此内容块"
+              ? t("内容中有公式结果仍被引用，请先解除来源关联")
+              : t("删除此内容块")
           }
           onClick={() => deleteBlock(block)}
         >
@@ -1566,7 +1570,7 @@ export default function ResearchNotebook({
             <ResearchBlockInsert
               atEnd
               canInsertEvidence={!!citation}
-              insertionLabel={`在${theoryAreaLabels[area]}中插入`}
+              insertionLabel={t`在${t(theoryAreaLabels[area])}中插入`}
               onInsert={(type, _position, provider) =>
                 addBlock(type, undefined, "above", area, undefined, provider)
               }
@@ -1574,9 +1578,8 @@ export default function ResearchNotebook({
           )}
           {!areas[area].length && (
             <span className="research-theory-empty">
-              尚未设置{theoryAreaLabels[area]}
-              。编辑时可通过正文的内容块菜单指定，或在此添加内容。
-            </span>
+              {t("尚未设置")}{t(theoryAreaLabels[area])}
+              {t("。编辑时可通过正文的内容块菜单指定，或在此添加内容。")}</span>
           )}
         </div>
       )}
@@ -1588,7 +1591,7 @@ export default function ResearchNotebook({
     setReadOnly((current) => !current);
   };
   const noteActions = (
-    <div className="research-page-tools" role="toolbar" aria-label="笔记功能">
+    <div className="research-page-tools" role="toolbar" aria-label={t("笔记功能")}>
       <div className="research-page-tool-actions research-note-toolbar">
         {!emptyLibrary && (
           <>
@@ -1597,8 +1600,8 @@ export default function ResearchNotebook({
                 <button
                   type="button"
                   data-ui="icon-action"
-                  aria-label="平分并铺满条件与结论"
-                  title="平分并铺满条件与结论"
+                  aria-label={t("平分并铺满条件与结论")}
+                  title={t("平分并铺满条件与结论")}
                   onClick={() => {
                     setDrawersExiting(false);
                     fillEqually();
@@ -1610,8 +1613,8 @@ export default function ResearchNotebook({
                   <button
                     type="button"
                     data-ui="icon-action"
-                    aria-label="显示推导过程"
-                    title="显示推导过程"
+                    aria-label={t("显示推导过程")}
+                    title={t("显示推导过程")}
                     onClick={revealDerivation}
                   >
                     <UnfoldVertical size={15} />
@@ -1621,8 +1624,8 @@ export default function ResearchNotebook({
                   type="button"
                   data-ui="icon-action"
                   className="research-notebook-sections-toggle"
-                  aria-label={drawersActive ? "返回完整正文" : "展开条件与结论"}
-                  title={drawersActive ? "返回完整正文" : "展开条件与结论抽屉"}
+                  aria-label={drawersActive ? t("返回完整正文") : t("展开条件与结论")}
+                  title={drawersActive ? t("返回完整正文") : t("展开条件与结论抽屉")}
                   aria-pressed={drawersActive}
                   onClick={toggleDrawers}
                 >
@@ -1634,8 +1637,8 @@ export default function ResearchNotebook({
               type="button"
               data-ui="icon-action"
               className="research-notebook-mode-toggle"
-              aria-label={readOnly ? "切换为编辑模式" : "切换为只读模式"}
-              title={readOnly ? "切换为编辑模式" : "切换为只读模式"}
+              aria-label={readOnly ? t("切换为编辑模式") : t("切换为只读模式")}
+              title={readOnly ? t("切换为编辑模式") : t("切换为只读模式")}
               onClick={toggleReadOnly}
             >
               {readOnly ? <Pencil size={15} /> : <Eye size={15} />}
@@ -1645,8 +1648,8 @@ export default function ResearchNotebook({
                 <button
                   type="button"
                   data-ui="icon-action"
-                  aria-label="批量选择内容块"
-                  title="批量选择内容块；也可 Shift 连选、Ctrl/Cmd 多选"
+                  aria-label={t("批量选择内容块")}
+                  title={t("批量选择内容块；也可 Shift 连选、Ctrl/Cmd 多选")}
                   aria-pressed={blockDrag.selecting}
                   onClick={blockDrag.toggleSelection}
                 >
@@ -1655,15 +1658,13 @@ export default function ResearchNotebook({
                 {(blockDrag.selecting || blockDrag.selectedIds.length > 0) && (
                   <span className="research-block-selection-tools">
                     <span role="status">
-                      已选 {blockDrag.selectedIds.length} 项
-                    </span>
+                      {t("已选")} {blockDrag.selectedIds.length}  {t("项")}</span>
                     <button
                       type="button"
-                      aria-label="取消内容块选择"
+                      aria-label={t("取消内容块选择")}
                       onClick={blockDrag.clearSelection}
                     >
-                      取消
-                    </button>
+                      {t("取消")}</button>
                   </span>
                 )}
               </>
@@ -1681,8 +1682,8 @@ export default function ResearchNotebook({
         type="button"
         data-ui="icon-action"
         className="research-notebook-sidebar-toggle"
-        aria-label={sidebarCollapsed ? "展开笔记左侧面板" : "收起笔记左侧面板"}
-        title={sidebarCollapsed ? "展开左侧面板" : "收起左侧面板"}
+        aria-label={sidebarCollapsed ? t("展开笔记左侧面板") : t("收起笔记左侧面板")}
+        title={sidebarCollapsed ? t("展开左侧面板") : t("收起左侧面板")}
         aria-expanded={!sidebarCollapsed}
         aria-controls="research-notebook-sidebar research-dictionary-sidebar research-theory-sidebar"
         onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
@@ -1698,44 +1699,45 @@ export default function ResearchNotebook({
 
   const compactActions: ResearchNoteMenuAction[] = compactHeader
     ? [
+        { id: "action-0", label: t("界面语言"), icon: <Languages size={15} />, onSelect: () => setLanguageOpen(true) },
         {
-          label: "切换资料库",
+          id: "action-1", label: t("切换资料库"),
           icon: <BookOpen size={15} />,
           onSelect: workspace.showManager,
         },
         {
-          label: "插件管理",
+          id: "action-2", label: t("插件管理"),
           icon: <Plug size={15} />,
           onSelect: integration.showManager,
         },
         {
-          label: "管理笔记标签",
+          id: "action-3", label: t("管理笔记标签"),
           icon: <Tags size={15} />,
           onSelect: (trigger) =>
             setMenuPanel({ noteId: note.id, panel: "tags", trigger }),
         },
         {
-          label: "笔记元数据",
+          id: "action-4", label: t("笔记元数据"),
           icon: <Info size={15} />,
           onSelect: (trigger) =>
             setMenuPanel({ noteId: note.id, panel: "metadata", trigger }),
         },
         {
-          label: readOnly ? "切换为编辑模式" : "切换为只读模式",
+          id: "action-5", label: readOnly ? t("切换为编辑模式") : t("切换为只读模式"),
           icon: readOnly ? <Pencil size={15} /> : <Eye size={15} />,
           onSelect: toggleReadOnly,
         },
         ...(!readOnly
           ? [
               {
-                label: "批量选择内容块",
+                id: "action-6", label: t("批量选择内容块"),
                 icon: <ListChecks size={15} />,
                 onSelect: blockDrag.toggleSelection,
               },
               ...(blockDrag.selecting || blockDrag.selectedIds.length
                 ? [
                     {
-                      label: "取消内容块选择",
+                      id: "action-7", label: t("取消内容块选择"),
                       icon: <X size={15} />,
                       onSelect: blockDrag.clearSelection,
                     },
@@ -1746,7 +1748,7 @@ export default function ResearchNotebook({
         ...(isFoundation
           ? [
               {
-                label: "平分并铺满条件与结论",
+                id: "action-8", label: t("平分并铺满条件与结论"),
                 icon: <Rows2 size={15} />,
                 onSelect: () => {
                   setDrawersExiting(false);
@@ -1756,14 +1758,14 @@ export default function ResearchNotebook({
               ...(middleCollapsed
                 ? [
                     {
-                      label: "显示推导过程",
+                      id: "action-9", label: t("显示推导过程"),
                       icon: <UnfoldVertical size={15} />,
                       onSelect: revealDerivation,
                     },
                   ]
                 : []),
               {
-                label: drawersActive ? "返回完整正文" : "展开条件与结论",
+                id: "action-10", label: drawersActive ? t("返回完整正文") : t("展开条件与结论"),
                 icon: <Rows3 size={15} />,
                 onSelect: toggleDrawers,
               },
@@ -1772,19 +1774,19 @@ export default function ResearchNotebook({
         ...(!standalonePage
           ? [
               {
-                label: fullPage ? "退出全页面显示" : "全页面显示科研笔记",
+                id: "action-11", label: fullPage ? t("退出全页面显示") : t("全页面显示科研笔记"),
                 icon: <Maximize2 size={15} />,
                 onSelect: () => setFullPage((current) => !current),
               },
               {
-                label: "在新页面打开科研笔记",
+                id: "action-12", label: t("在新页面打开科研笔记"),
                 icon: <ExternalLink size={15} />,
                 onSelect: openInNewPage,
               },
             ]
           : []),
         {
-          label: standalonePage ? "使用手册" : "关闭笔记",
+          id: "action-13", label: standalonePage ? t("使用手册") : t("关闭笔记"),
           icon: standalonePage ? <BookOpen size={15} /> : <X size={15} />,
           onSelect: () =>
             standalonePage
@@ -1803,12 +1805,13 @@ export default function ResearchNotebook({
     ) ?? menuPanel!.trigger;
   const windowActions = (
     <div className="research-notebook-actions">
+      {!compactHeader && <button type="button" data-ui="icon-action" aria-label={t("界面语言")} title={t("选择界面语言")} onClick={() => setLanguageOpen(true)}><Languages size={15} /></button>}
       {!compactHeader && (
         <button
           type="button"
           data-ui="icon-action"
-          aria-label="切换资料库"
-          title={`切换资料库 · ${workspace.profile.name}`}
+          aria-label={t("切换资料库")}
+          title={t`切换资料库 · ${workspace.profile.name}`}
           onClick={workspace.showManager}
         >
           <BookOpen size={15} />
@@ -1818,8 +1821,8 @@ export default function ResearchNotebook({
         <button
           type="button"
           data-ui="icon-action"
-          aria-label="插件管理"
-          title="插件管理"
+          aria-label={t("插件管理")}
+          title={t("插件管理")}
           onClick={integration.showManager}
         >
           <Plug size={15} />
@@ -1834,8 +1837,8 @@ export default function ResearchNotebook({
           deleteDisabled={state.notes.length <= 1 || noteReferenced}
           deleteTitle={
             noteReferenced
-              ? "其他笔记仍引用这里的理论或公式，请先解除来源关联"
-              : "删除笔记"
+              ? t("其他笔记仍引用这里的理论或公式，请先解除来源关联")
+              : t("删除笔记")
           }
           onToggleMap={() => {
             const map = getResearchTheoryMap(state);
@@ -1860,8 +1863,8 @@ export default function ResearchNotebook({
               <button
                 data-ui="icon-action"
                 className="research-notebook-action"
-                aria-label={fullPage ? "退出全页面显示" : "全页面显示科研笔记"}
-                title={fullPage ? "退出全页面显示" : "全页面显示"}
+                aria-label={fullPage ? t("退出全页面显示") : t("全页面显示科研笔记")}
+                title={fullPage ? t("退出全页面显示") : t("全页面显示")}
                 aria-pressed={fullPage}
                 onClick={() => setFullPage((current) => !current)}
               >
@@ -1870,8 +1873,8 @@ export default function ResearchNotebook({
               <button
                 data-ui="icon-action"
                 className="research-notebook-action"
-                aria-label="在新页面打开科研笔记"
-                title="在新页面打开"
+                aria-label={t("在新页面打开科研笔记")}
+                title={t("在新页面打开")}
                 onClick={openInNewPage}
               >
                 <ExternalLink size={15} />
@@ -1881,8 +1884,8 @@ export default function ResearchNotebook({
           <button
             data-ui="icon-action"
             className="research-notebook-close"
-            aria-label={standalonePage ? "使用手册" : "关闭笔记"}
-            title={standalonePage ? "使用手册" : "关闭"}
+            aria-label={standalonePage ? t("使用手册") : t("关闭笔记")}
+            title={standalonePage ? t("使用手册") : t("关闭")}
             onClick={() =>
               standalonePage
                 ? onOpenHelp?.()
@@ -1905,8 +1908,8 @@ export default function ResearchNotebook({
             type="button"
             data-ui="icon-action"
             className="research-outline-toggle"
-            aria-label={`${outlineCollapsed ? "展开" : "收起"}${rightPanelLabel}`}
-            title={`${outlineCollapsed ? "展开" : "收起"}${rightPanelLabel}`}
+            aria-label={outlineCollapsed ? t`展开${rightPanelLabel}` : t`收起${rightPanelLabel}`}
+            title={outlineCollapsed ? t`展开${rightPanelLabel}` : t`收起${rightPanelLabel}`}
             aria-expanded={!outlineCollapsed}
             aria-controls="research-note-outline"
             onClick={() => setOutlineCollapsed((current) => !current)}
@@ -1954,7 +1957,7 @@ export default function ResearchNotebook({
             hidden
             type="file"
             accept=".md,text/markdown,text/plain"
-            aria-label="导入 Markdown 文件"
+            aria-label={t("导入 Markdown 文件")}
             onChange={(event) => void importNote(event)}
           />
           {menuPanel?.noteId === note.id && (
@@ -1976,8 +1979,7 @@ export default function ResearchNotebook({
           )}
           {library.status === "loading" ? (
             <div className="research-library-loading" role="status">
-              正在读取本地资料库…
-            </div>
+              {t("正在读取本地资料库…")}</div>
           ) : (
             <>
               <div
@@ -1986,43 +1988,47 @@ export default function ResearchNotebook({
                 <nav
                   className="research-notebook-mode-tabs"
                   role="tablist"
-                  aria-label="科研笔记视图"
+                  aria-label={t("科研笔记视图")}
                 >
                   <button
                     type="button"
                     role="tab"
                     aria-selected={state.view === "dictionary"}
+                    title={t("符号词典")}
                     onClick={() => onChange({ ...state, view: "dictionary" })}
                   >
-                    <span>符号词典</span>
+                    <span>{t("符号词典")}</span>
                   </button>
                   <button
                     type="button"
                     role="tab"
                     aria-selected={state.view === "foundations"}
+                    title={t("基础理论")}
                     onClick={() =>
                       onChange(selectNoteLibrary(state, "foundation"))
                     }
                   >
-                    <span>基础理论</span>
+                    <span>{t("基础理论")}</span>
                   </button>
                   <button
                     type="button"
                     role="tab"
                     aria-selected={state.view === "notes"}
+                    title={t("研究记录")}
                     onClick={() =>
                       onChange(selectNoteLibrary(state, "research"))
                     }
                   >
-                    <span>研究记录</span>
+                    <span>{t("研究记录")}</span>
                   </button>
                   <button
                     type="button"
                     role="tab"
                     aria-selected={state.view === "maps"}
+                    title={t("理论地图")}
                     onClick={() => onChange({ ...state, view: "maps" })}
                   >
-                    <span>理论地图</span>
+                    <span>{t("理论地图")}</span>
                   </button>
                 </nav>
                 <ResearchSidebarResize />
@@ -2050,7 +2056,7 @@ export default function ResearchNotebook({
                   <aside
                     id="research-notebook-sidebar"
                     className="research-notebook-sidebar"
-                    aria-label="研究笔记列表"
+                    aria-label={t("研究笔记列表")}
                   >
                     <ResearchNoteListTools
                       key={`tools:${currentNoteLibrary(state)}`}
@@ -2068,7 +2074,7 @@ export default function ResearchNotebook({
                         className="research-notebook-import-error"
                         role="alert"
                       >
-                        {importError}
+                        {localizeError(importError)}
                       </p>
                     )}
                   </aside>
@@ -2076,7 +2082,7 @@ export default function ResearchNotebook({
                   {emptyLibrary ? (
                     <section
                       className="research-notebook-editor"
-                      aria-label="研究笔记编辑器"
+                      aria-label={t("研究笔记编辑器")}
                     >
                       <div className="research-notebook-toolbar">
                         {pageControls}
@@ -2088,24 +2094,23 @@ export default function ResearchNotebook({
                         <BookOpen size={24} />
                         <h2>
                           {currentNoteLibrary(state) === "foundation"
-                            ? "基础理论库暂无笔记"
-                            : "研究记录库暂无笔记"}
+                            ? t("基础理论库暂无笔记")
+                            : t("研究记录库暂无笔记")}
                         </h2>
                         <p>
                           {currentNoteLibrary(state) === "foundation"
-                            ? "收录公共理论的标准结论、成立条件和文献出处。"
-                            : "记录场景应用、公式推导与实验观察。"}
+                            ? t("收录公共理论的标准结论、成立条件和文献出处。")
+                            : t("记录场景应用、公式推导与实验观察。")}
                         </p>
                         <button type="button" onClick={createNote}>
-                          新建笔记
-                        </button>
+                          {t("新建笔记")}</button>
                       </div>
                     </section>
                   ) : (
                     <div
                       ref={readingRail}
                       className={`research-reading-rail${extraPanes.length ? " has-splits" : ""}`}
-                      aria-label="笔记分屏阅读"
+                      aria-label={t("笔记分屏阅读")}
                     >
                       {primaryPane ? (
                         <ResearchNoteLinkContext.Provider
@@ -2120,7 +2125,7 @@ export default function ResearchNotebook({
                         >
                           <section
                             className={`research-notebook-editor${readOnly ? " is-readonly" : ""}`}
-                            aria-label="研究笔记编辑器"
+                            aria-label={t("研究笔记编辑器")}
                             data-reading-pane-id="primary"
                             data-reading-note-id={note.id}
                             data-reading-active={
@@ -2137,7 +2142,7 @@ export default function ResearchNotebook({
                               ref={setNoteHeader}
                               className={`research-notebook-toolbar research-note-header${compactHeader ? " is-compact" : ""}${state.theoryMaps?.noteViewOpen ? " is-map-view" : ""}`}
                               role="toolbar"
-                              aria-label="笔记管理"
+                              aria-label={t("笔记管理")}
                             >
                               <div className="research-note-header-leading">
                                 {pageControls}
@@ -2177,8 +2182,8 @@ export default function ResearchNotebook({
                                 title={note.title}
                                 placeholder={
                                   currentNoteLibrary(state) === "foundation"
-                                    ? "未命名基础理论"
-                                    : "未命名笔记"
+                                    ? t("未命名基础理论")
+                                    : t("未命名笔记")
                                 }
                                 readOnly={readOnly}
                                 onChange={(title) => setNote({ title })}
@@ -2363,12 +2368,12 @@ export default function ResearchNotebook({
                                                 const first = item.blocks[0];
                                                 const label =
                                                   item.section === "given"
-                                                    ? "条件"
-                                                    : "结论";
+                                                    ? t("条件")
+                                                    : t("结论");
                                                 const location =
                                                   item.section === "given"
-                                                    ? "上方"
-                                                    : "下方";
+                                                    ? t("上方")
+                                                    : t("下方");
                                                 const Direction =
                                                   item.section === "given"
                                                     ? ArrowUp
@@ -2383,7 +2388,7 @@ export default function ResearchNotebook({
                                                   >
                                                     <button
                                                       type="button"
-                                                      aria-label={`查看${location}“${label}”面板中的${item.blocks.length}项内容`}
+                                                      aria-label={t`查看${location}“${label}”面板中的${item.blocks.length}项内容`}
                                                       onClick={() =>
                                                         openContent({
                                                           noteId: note.id,
@@ -2403,9 +2408,8 @@ export default function ResearchNotebook({
                                                           </strong>
                                                         )}
                                                         {item.blocks.length}{" "}
-                                                        项内容已在{location}“
-                                                        {label}”面板显示
-                                                      </span>
+                                                        {t("项内容已在")}{location}“
+                                                        {label}{t("”面板显示")}</span>
                                                     </button>
                                                   </div>
                                                 );
@@ -2441,16 +2445,14 @@ export default function ResearchNotebook({
                                             />
                                             {note.blocks.length === 0 && (
                                               <p>
-                                                点击左侧 ＋，开始添加研究内容。
-                                              </p>
+                                                {t("点击左侧 ＋，开始添加研究内容。")}</p>
                                             )}
                                           </div>
                                         )}
                                         {readOnly &&
                                           note.blocks.length === 0 && (
                                             <p className="research-empty-note">
-                                              这篇笔记暂无内容。
-                                            </p>
+                                              {t("这篇笔记暂无内容。")}</p>
                                           )}
                                       </div>
                                     </div>
@@ -2482,7 +2484,7 @@ export default function ResearchNotebook({
                             <footer
                               className="research-note-footer"
                               role="contentinfo"
-                              aria-label="笔记信息"
+                              aria-label={t("笔记信息")}
                             >
                               <ResearchNoteReviewStatus
                                 state={state}
@@ -2490,10 +2492,9 @@ export default function ResearchNotebook({
                                 onChange={onChange}
                               />
                               <span className="research-note-updated">
-                                最近编辑：
-                                <time dateTime={note.updatedAt}>
+                                {t("最近编辑：")}<time dateTime={note.updatedAt}>
                                   {new Date(note.updatedAt).toLocaleString(
-                                    "zh-CN",
+                                    interfaceLocale(),
                                     {
                                       hour12: false,
                                     },
@@ -2501,7 +2502,7 @@ export default function ResearchNotebook({
                                 </time>
                               </span>
                               <span className="research-note-mode-status">
-                                {readOnly ? "只读查看" : "编辑模式"}
+                                {readOnly ? t("只读查看") : t("编辑模式")}
                               </span>
                             </footer>
                           </section>
@@ -2509,15 +2510,14 @@ export default function ResearchNotebook({
                       ) : (
                         <div className="research-reading-empty">
                           <BookOpen size={26} />
-                          <p>当前阅读笔记已关闭。</p>
+                          <p>{t("当前阅读笔记已关闭。")}</p>
                           <button
                             type="button"
                             onClick={() =>
                               setReading(createReadingPanes(note.id))
                             }
                           >
-                            重新打开当前笔记
-                          </button>
+                            {t("重新打开当前笔记")}</button>
                           {pageControls}
                           {windowActions}
                         </div>
@@ -2609,13 +2609,13 @@ export default function ResearchNotebook({
                 <div
                   className="research-sidebar-footer"
                   role="toolbar"
-                  aria-label="页面设置"
+                  aria-label={t("页面设置")}
                 >
                   <button
                     type="button"
                     className="mewiki-library-switcher"
-                    aria-label={`当前资料库：${workspace.profile.name}，切换资料库`}
-                    title={`当前资料库：${workspace.profile.name}`}
+                    aria-label={t`当前资料库：${workspace.profile.name}，切换资料库`}
+                    title={t`当前资料库：${workspace.profile.name}`}
                     onClick={workspace.showManager}
                   >
                     <BookOpen size={15} />
@@ -2624,22 +2624,21 @@ export default function ResearchNotebook({
                   <button
                     type="button"
                     className="research-notebook-settings"
-                    aria-label="研究笔记设置"
+                    aria-label={t("研究笔记设置")}
                     title={
-                      library.error || library.cacheError || "研究笔记设置"
+                      library.error || library.cacheError || t("研究笔记设置")
                     }
                     data-testid="research-library-save-status"
                     data-save-status={library.status}
                     onClick={() => setStorageOpen(true)}
                   >
                     <Settings2 size={16} />
-                    <span>设置</span>
+                    <span>{t("设置")}</span>
                     {(library.status === "error" ||
                       library.status === "conflict" ||
                       library.cacheError) && (
                       <span className="research-settings-warning" role="status">
-                        保存异常
-                      </span>
+                        {t("保存异常")}</span>
                     )}
                   </button>
                 </div>
@@ -2647,6 +2646,7 @@ export default function ResearchNotebook({
             </>
           )}
         </div>
+        {languageOpen && <LanguageSettings onClose={() => setLanguageOpen(false)} />}
         {storageOpen && (
           <ResearchLibraryStorage
             library={library}
@@ -2702,13 +2702,12 @@ export default function ResearchNotebook({
                 }
               }}
             >
-              <h2 id="research-delete-confirm-title">删除笔记</h2>
+              <h2 id="research-delete-confirm-title">{t("删除笔记")}</h2>
               <p className="research-delete-confirm-copy">
-                确定删除笔记{" "}
-                <strong>《{pendingDeleteNote.title || "未命名笔记"}》</strong>{" "}
-                及其中的全部内容吗？
-              </p>
-              <p className="research-delete-confirm-hint">此操作无法撤销。</p>
+                {t("确定删除笔记")}{" "}
+                <strong>《{pendingDeleteNote.title || t("未命名笔记")}》</strong>{" "}
+                {t("及其中的全部内容吗？")}</p>
+              <p className="research-delete-confirm-hint">{t("此操作无法撤销。")}</p>
               <div className="research-delete-confirm-actions">
                 <button
                   ref={cancelDeleteRef}
@@ -2716,8 +2715,7 @@ export default function ResearchNotebook({
                   autoFocus
                   onClick={() => setPendingDeleteNoteId(null)}
                 >
-                  取消
-                </button>
+                  {t("取消")}</button>
                 <button
                   className="research-small-button research-confirm-delete"
                   onClick={() => {
@@ -2725,8 +2723,7 @@ export default function ResearchNotebook({
                     setPendingDeleteNoteId(null);
                   }}
                 >
-                  确认删除
-                </button>
+                  {t("确认删除")}</button>
               </div>
             </section>
           </div>

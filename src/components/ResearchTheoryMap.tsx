@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t, localizeError } from "../i18n/locale.ts";
 import ExternalContentCard from '../integrations/ExternalContentCard.tsx';
 import ResearchSelectionField from './ResearchSelectionField.tsx';
 import { researchNoteChoice } from './researchChoices.ts';
@@ -113,9 +115,10 @@ const colors = {
   adaptation: "#bc2342",
 };
 const relationLabel = (kind: TheoryRelation["kind"]) =>
-  theoryRelationKinds.find((item) => item.value === kind)!.label;
+  t(theoryRelationKinds.find((item) => item.value === kind)!.label);
 
 function TheoryNode({ data, selected }: NodeProps<FlowNode>) {
+  useLocale();
   const { content: node } = data;
   const formulaRef = useRef<HTMLDivElement>(null);
   const [preview, setPreview] = useState({ width: 284, truncated: false });
@@ -153,7 +156,7 @@ function TheoryNode({ data, selected }: NodeProps<FlowNode>) {
         role="button"
         tabIndex={0}
         className="theory-node-main"
-        aria-label={"查看节点 " + node.title}
+        aria-label={t("查看节点 ") + node.title}
         onClick={data.onSelect}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -164,12 +167,12 @@ function TheoryNode({ data, selected }: NodeProps<FlowNode>) {
       >
         <div className="theory-node-kicker">
           <span>
-            {theoryRoles.find((role) => role.value === node.role)!.label}
+            {t(theoryRoles.find((role) => role.value === node.role)!.label)}
           </span>
           <span
             className="research-note-status-dot"
             data-status={node.note && getNoteReviewStatus(node.note)}
-            title="笔记核对状态"
+            title={t("笔记核对状态")}
           />
         </div>
         <strong>{node.title}</strong>
@@ -183,7 +186,7 @@ function TheoryNode({ data, selected }: NodeProps<FlowNode>) {
             </div>
             {preview.truncated && (
               <span className="theory-node-formula-hint">
-                点击查看完整公式 <ArrowUpRight size={11} aria-hidden="true" />
+                {t("点击查看完整公式")} <ArrowUpRight size={11} aria-hidden="true" />
               </span>
             )}
           </>
@@ -191,23 +194,22 @@ function TheoryNode({ data, selected }: NodeProps<FlowNode>) {
           <p>{node.block.text.replace(/^[-*]\s*/gm, "").slice(0, 105)}</p>
         ) : noteNode ? (
           <p>
-            {count} 个公式 ·{" "}
+            {count}  {t("个公式 ·")}{" "}
             {flattenResearchBlocks(node.note?.blocks ?? []).filter((block) => block.type === "callout")
               .length}{" "}
-            处条件
-          </p>
+            {t("处条件")}</p>
         ) : (
-          <p>点击查看内容与关联</p>
+          <p>{t("点击查看内容与关联")}</p>
         )}
-        <small>{node.ref.blockId ? node.noteTitle : "笔记"}</small>
+        <small>{node.ref.blockId ? node.noteTitle : t("笔记")}</small>
       </div>
       {noteNode && !node.missing && (
         <button
           type="button"
           data-ui="icon-action"
           className="theory-expand-note nodrag"
-          aria-label={"展开笔记 " + node.title}
-          title="展开关键公式与条件"
+          aria-label={t("展开笔记 ") + node.title}
+          title={t("展开关键公式与条件")}
           onClick={data.onExpand}
         >
           <ChevronRight size={15} />
@@ -228,6 +230,7 @@ function TheoryEdge({
   markerEnd,
   style,
 }: EdgeProps<FlowEdge>) {
+  useLocale();
   if (!data) return null;
   const bend = (data.index - (data.count - 1) / 2) * 44;
   const span = Math.max(75, Math.abs(targetX - sourceX) * 0.42);
@@ -253,7 +256,7 @@ function TheoryEdge({
             color: colors[data.content.kind],
             opacity,
           }}
-          aria-label={"查看关系 " + relationLabel(data.content.kind)}
+          aria-label={t("查看关系 ") + relationLabel(data.content.kind)}
           title={data.content.description || relationLabel(data.content.kind)}
           onClick={data.onSelect}
         >
@@ -314,6 +317,7 @@ function TheoryRelationEditor({
   onSave: (relation: TheoryRelation) => void;
   onClose: () => void;
 }) {
+  useLocale();
   const [value, setValue] = useState(draft);
   const [error, setError] = useState("");
   const fullCatalogue = researchTheoryCatalogue(state);
@@ -328,10 +332,10 @@ function TheoryRelationEditor({
     <label>
       {label}
       <ResearchSelectionField
-        label={label} value={theoryReferenceKey(value[key])} emptyLabel="来源内容已移除，请重新选择"
+        storageKey={`mewiki:selection-folds:关系${key === "source" ? "起点" : "终点"}`} label={label} value={theoryReferenceKey(value[key])} emptyLabel={t("来源内容已移除，请重新选择")}
         choices={catalogue.flatMap(node => {
           const note = state.notes.find(note => note.id === node.ref.noteId);
-          return note ? [researchNoteChoice(note, { id: node.id, label: `${note.title} · ${node.ref.blockId ? node.title : '整篇笔记'}` })] : [];
+          return note ? [researchNoteChoice(note, { id: node.id, label: `${note.title} · ${node.ref.blockId ? node.title : t('整篇笔记')}` })] : [];
         })}
         onChange={(id) => {
           const ref = catalogue.find(
@@ -360,25 +364,24 @@ function TheoryRelationEditor({
           {getResearchTheoryMap(state).relations.some(
             (relation) => relation.id === draft.id,
           )
-            ? "编辑理论关系"
-            : "新增理论关系"}
+            ? t("编辑理论关系")
+            : t("新增理论关系")}
         </strong>
         <button
           type="button"
           data-ui="icon-action"
-          aria-label="取消关系编辑"
-          title="取消"
+          aria-label={t("取消关系编辑")}
+          title={t("取消")}
           onClick={onClose}
         >
           <X size={15} />
         </button>
       </header>
-      {select("source", "关系起点")}
-      {select("target", "关系终点")}
+      {select("source", t("关系起点"))}
+      {select("target", t("关系终点"))}
       <label>
-        关系类型
-        <select
-          aria-label="关系类型"
+        {t("关系类型")}<select
+          aria-label={t("关系类型")}
           value={value.kind}
           onChange={(event) =>
             setValue({
@@ -389,34 +392,33 @@ function TheoryRelationEditor({
         >
           {theoryRelationKinds.map((kind) => (
             <option key={kind.value} value={kind.value}>
-              {kind.label}
+              {t(kind.label)}
             </option>
           ))}
         </select>
       </label>
       <label>
-        关系说明
-        <textarea
-          aria-label="关系说明"
+        {t("关系说明")}<textarea
+          aria-label={t("关系说明")}
           value={value.description}
           rows={5}
-          placeholder="说明引用了什么结果、引入了哪些条件或改变了什么实现方式。"
+          placeholder={t("说明引用了什么结果、引入了哪些条件或改变了什么实现方式。")}
           onChange={(event) =>
             setValue({ ...value, description: event.target.value })
           }
         />
       </label>
-      <p>起点提供理论或条件，终点是使用它的模型。关系不会自动改写公式。</p>
+      <p>{t("起点提供理论或条件，终点是使用它的模型。关系不会自动改写公式。")}</p>
       {error && (
         <p className="theory-error" role="alert">
-          {error}
+          {localizeError(error)}
         </p>
       )}
       <button
         type="submit"
         data-ui="icon-action"
-        aria-label="保存理论关系"
-        title="保存理论关系"
+        aria-label={t("保存理论关系")}
+        title={t("保存理论关系")}
       >
         <Check size={17} />
       </button>
@@ -443,6 +445,7 @@ function TheoryNodeDetail({
   onSelectNode: (id: string) => void;
   onClose: () => void;
 }) {
+  useLocale();
   const [inspect, setInspect] = useState<{
     index: number;
     target: HTMLElement;
@@ -468,8 +471,8 @@ function TheoryNodeDetail({
         <strong>{node.title}</strong>
         <button
           data-ui="icon-action"
-          aria-label="关闭地图详情"
-          title="关闭详情"
+          aria-label={t("关闭地图详情")}
+          title={t("关闭详情")}
           onClick={onClose}
         >
           <X size={15} />
@@ -481,8 +484,8 @@ function TheoryNodeDetail({
           <button
             data-ui="icon-action"
             disabled={node.missing}
-            aria-label="定位到笔记正文"
-            title="定位到笔记正文"
+            aria-label={t("定位到笔记正文")}
+            title={t("定位到笔记正文")}
             onClick={() => onOpenContent(node.ref)}
           >
             <ArrowUpRight size={16} />
@@ -490,8 +493,7 @@ function TheoryNodeDetail({
         </div>
         {node.missing ? (
           <p className="theory-error">
-            来源内容已移除。关系仍然保留，可在关系详情中重新选择起点或终点。
-          </p>
+            {t("来源内容已移除。关系仍然保留，可在关系详情中重新选择起点或终点。")}</p>
         ) : block?.type === "formula" ? (
           <div className="theory-detail-formula">
             {block.parts ? (
@@ -506,7 +508,7 @@ function TheoryNodeDetail({
             )}
             {block.conditions && (
               <div className="theory-detail-conditions">
-                <strong>公式适用条件</strong>
+                <strong>{t("公式适用条件")}</strong>
                 <ResearchMathText text={block.conditions} />
               </div>
             )}
@@ -528,7 +530,7 @@ function TheoryNodeDetail({
             {block.runTitle} · t = {block.time} s
           </p>
         ) : block?.type === "media" ? (
-          <ResearchMathText text={[block.caption, block.alt, block.source?.type === "url" ? block.source.url : ""].filter(Boolean).join(" ") || "图片"} />
+          <ResearchMathText text={[block.caption, block.alt, block.source?.type === "url" ? block.source.url : ""].filter(Boolean).join(" ") || t("图片")} />
         ) : block?.type === "bookmark" ? (
           <ResearchMarkdown text={[block.title, block.description, block.url].filter(Boolean).join("\n\n")} />
         ) : block && isResearchRichBlock(block) ? (
@@ -540,7 +542,7 @@ function TheoryNodeDetail({
             <ResearchMathText
               text={
                 flattenResearchBlocks(node.note?.blocks ?? []).find((block) => block.type === "paragraph")
-                  ?.text ?? "展开这篇笔记，查看其中的公式与条件。"
+                  ?.text ?? t("展开这篇笔记，查看其中的公式与条件。")
               }
             />
             <button
@@ -550,16 +552,15 @@ function TheoryNodeDetail({
             >
               <ChevronDown size={14} />
               {map.expandedNoteIds.includes(node.ref.noteId)
-                ? "收起笔记内容"
-                : "展开公式与条件"}
+                ? t("收起笔记内容")
+                : t("展开公式与条件")}
             </button>
           </>
         )}
         {!readOnly && !node.missing && (
           <label className="theory-role-select">
-            节点角色
-            <select
-              aria-label="节点角色"
+            {t("节点角色")}<select
+              aria-label={t("节点角色")}
               value={node.role}
               onChange={(event) =>
                 onRole(event.target.value as TheoryGraphNode["role"])
@@ -567,7 +568,7 @@ function TheoryNodeDetail({
             >
               {theoryRoles.map((role) => (
                 <option key={role.value} value={role.value}>
-                  {role.label}
+                  {t(role.label)}
                 </option>
               ))}
             </select>
@@ -581,15 +582,14 @@ function TheoryNodeDetail({
           >
             <ListTree size={14} />
             {map.expandedNoteIds.includes(node.ref.noteId)
-              ? "收起所属笔记"
-              : "展开所属笔记"}
+              ? t("收起所属笔记")
+              : t("展开所属笔记")}
           </button>
         )}
-        <h3>关联路径</h3>
+        <h3>{t("关联路径")}</h3>
         {relations.length === 0 && (
           <p className="theory-hint">
-            尚未关联其他内容。编辑模式下可新增理论关系。
-          </p>
+            {t("尚未关联其他内容。编辑模式下可新增理论关系。")}</p>
         )}
         {relations.map((edge) => {
           const upstream = edge.target === node.id;
@@ -602,8 +602,8 @@ function TheoryNodeDetail({
                 className="theory-relation-kind"
                 style={{ color: colors[edge.kind] }}
               >
-                {upstream ? "依据" : "用于"} · {relationLabel(edge.kind)}
-                {edge.origin === "formula" ? " · 公式引用" : ""}
+                {upstream ? t("依据") : t("用于")} · {relationLabel(edge.kind)}
+                {edge.origin === "formula" ? t(" · 公式引用") : ""}
               </span>
               {other && (
                 <button
@@ -619,7 +619,7 @@ function TheoryNodeDetail({
                   <ResearchMathText text={edge.description} />
                 </p>
               )}
-              {edge.error && <p className="theory-error">{edge.error}</p>}
+              {edge.error && <p className="theory-error">{localizeError(edge.error)}</p>}
             </div>
           );
         })}
@@ -659,6 +659,7 @@ function TheoryMapCanvas({
   onOpenContent: (ref: TheoryReference) => void;
   toolbarContainer?: HTMLElement | null;
 }) {
+  useLocale();
   const stateRef = useRef(state);
   const confirmDelete = useDeleteConfirmation();
   useLayoutEffect(() => {
@@ -937,40 +938,38 @@ function TheoryMapCanvas({
       <div
         className="theory-map-toolbar"
         role="toolbar"
-        aria-label="理论地图工具"
+        aria-label={t("理论地图工具")}
       >
         {state.view !== "maps" && (
           <>
             <span className="theory-local-title">
               <GitBranch size={15} />
-              本篇推导图
-            </span>
+              {t("本篇推导图")}</span>
             <select
-              aria-label="局部关系层数"
+              aria-label={t("局部关系层数")}
               value={map.depth}
               onChange={(event) => patch({ depth: Number(event.target.value) })}
             >
-              <option value="1">仅本篇及引用来源</option>
-              <option value="2">展开下游 · 2 层</option>
-              <option value="3">展开下游 · 3 层</option>
+              <option value="1">{t("仅本篇及引用来源")}</option>
+              <option value="2">{t("展开下游 · 2 层")}</option>
+              <option value="3">{t("展开下游 · 3 层")}</option>
             </select>
           </>
         )}
         <label className="theory-all-blocks">
           <input
             type="checkbox"
-            aria-label="展示全部公式与条件"
+            aria-label={t("展示全部公式与条件")}
             checked={map.showAllBlocks}
             onChange={(event) => patch({ showAllBlocks: event.target.checked })}
           />
-          全部公式
-        </label>
+          {t("全部公式")}</label>
         <div className="theory-map-actions">
           <button
             type="button"
             data-ui="icon-action"
-            aria-label="收起所有笔记"
-            title="收起所有笔记"
+            aria-label={t("收起所有笔记")}
+            title={t("收起所有笔记")}
             onClick={() =>
               patch({ expandedNoteIds: [], selectedNodeId: undefined })
             }
@@ -980,8 +979,8 @@ function TheoryMapCanvas({
           <button
             type="button"
             data-ui="icon-action"
-            aria-label="自动整理理论地图"
-            title="自动整理布局"
+            aria-label={t("自动整理理论地图")}
+            title={t("自动整理布局")}
             onClick={() => {
               saveLayout({ positions: {} });
               requestAnimationFrame(() => {
@@ -996,8 +995,8 @@ function TheoryMapCanvas({
               <button
                 type="button"
                 data-ui="icon-action"
-                aria-label="新增理论关系"
-                title="新增理论关系"
+                aria-label={t("新增理论关系")}
+                title={t("新增理论关系")}
                 onClick={addRelation}
               >
                 <Link2 size={15} />
@@ -1008,12 +1007,12 @@ function TheoryMapCanvas({
             <button
               type="button"
               data-ui="icon-action"
-              aria-label="另存为地图"
-              title="另存为独立地图文档"
+              aria-label={t("另存为地图")}
+              title={t("另存为独立地图文档")}
               onClick={() =>
                 setSaveAsTitle(
                   (state.notes.find((note) => note.id === state.activeNoteId)
-                    ?.title ?? "本篇") + "推导图",
+                    ?.title ?? t("本篇")) + t("推导图"),
                 )
               }
             >
@@ -1023,8 +1022,8 @@ function TheoryMapCanvas({
           <button
             type="button"
             data-ui="icon-action"
-            aria-label="理论地图图例"
-            title="角色与关系图例"
+            aria-label={t("理论地图图例")}
+            title={t("角色与关系图例")}
             aria-expanded={showLegend}
             onClick={() => setShowLegend(!showLegend)}
           >
@@ -1076,28 +1075,28 @@ function TheoryMapCanvas({
               }
             }}
             proOptions={{ hideAttribution: true }}
-            aria-label="理论关系画布"
+            aria-label={t("理论关系画布")}
           />
           {graph.nodes.length === 0 && (
             <p className="theory-map-empty">
               {map.scope === "topic"
-                ? "此主题暂无笔记，可在编辑模式下添加成员。"
-                : "暂无可显示的模型。"}
+                ? t("此主题暂无笔记，可在编辑模式下添加成员。")
+                : t("暂无可显示的模型。")}
             </p>
           )}
-          <div className="theory-map-zoom" role="group" aria-label="地图缩放">
+          <div className="theory-map-zoom" role="group" aria-label={t("地图缩放")}>
             <button
               data-ui="icon-action"
-              aria-label="缩小理论地图"
-              title="缩小"
+              aria-label={t("缩小理论地图")}
+              title={t("缩小")}
               onClick={() => void flow.zoomOut()}
             >
               <ZoomOut size={16} />
             </button>
             <button
               data-ui="icon-action"
-              aria-label="适应理论地图画布"
-              title="适应画布"
+              aria-label={t("适应理论地图画布")}
+              title={t("适应画布")}
               onClick={() =>
                 void flow.fitView({ padding: 0.16, minZoom: 0.1, maxZoom: 1 })
               }
@@ -1106,8 +1105,8 @@ function TheoryMapCanvas({
             </button>
             <button
               data-ui="icon-action"
-              aria-label="放大理论地图"
-              title="放大"
+              aria-label={t("放大理论地图")}
+              title={t("放大")}
               onClick={() => void flow.zoomIn()}
             >
               <ZoomIn size={16} />
@@ -1115,15 +1114,15 @@ function TheoryMapCanvas({
           </div>
           {showLegend && (
             <div className="theory-map-legend">
-              <strong>内容角色</strong>
+              <strong>{t("内容角色")}</strong>
               <div>
                 {theoryRoles.map((role) => (
                   <span key={role.value} className={`role-${role.value}`}>
-                    {role.label}
+                    {t(role.label)}
                   </span>
                 ))}
               </div>
-              <strong>关联含义</strong>
+              <strong>{t("关联含义")}</strong>
               {theoryRelationKinds.map((kind) => (
                 <p key={kind.value}>
                   <i
@@ -1133,15 +1132,15 @@ function TheoryMapCanvas({
                         kind.value === "assumption" ? "dashed" : "solid",
                     }}
                   />
-                  {kind.label}
+                  {t(kind.label)}
                 </p>
               ))}
-              <small>公式引用自动生成；条件与适配由用户关联。</small>
+              <small>{t("公式引用自动生成；条件与适配由用户关联。")}</small>
             </div>
           )}
         </div>
         {detailsOpen && (
-          <aside className="theory-map-detail" aria-label="理论地图详情">
+          <aside className="theory-map-detail" aria-label={t("理论地图详情")}>
             {editor ? (
               <TheoryRelationEditor
                 key={editor.id}
@@ -1160,8 +1159,8 @@ function TheoryMapCanvas({
                   <strong>{relationLabel(selectedEdge.kind)}</strong>
                   <button
                     data-ui="icon-action"
-                    aria-label="关闭地图详情"
-                    title="关闭"
+                    aria-label={t("关闭地图详情")}
+                    title={t("关闭")}
                     onClick={() => setEdgeId(null)}
                   >
                     <X size={15} />
@@ -1170,10 +1169,10 @@ function TheoryMapCanvas({
                 <div className="theory-detail-body">
                   <p className="theory-hint">
                     {selectedEdge.origin === "formula"
-                      ? "从正文公式的推导来源自动生成；请在原公式中修改引用。"
+                      ? t("从正文公式的推导来源自动生成；请在原公式中修改引用。")
                       : selectedEdge.origin === "note"
-                        ? "来自笔记的模型依据；请在本篇推导图中修改。"
-                        : "仅属于当前地图的讲解连线"}
+                        ? t("来自笔记的模型依据；请在本篇推导图中修改。")
+                        : t("仅属于当前地图的讲解连线")}
                   </p>
                   {selectedEdge.origin === "formula" && (
                     <>
@@ -1188,8 +1187,7 @@ function TheoryMapCanvas({
                           )
                         }
                       >
-                        打开引用方笔记
-                        <ArrowUpRight size={13} />
+                        {t("打开引用方笔记")}<ArrowUpRight size={13} />
                       </button>
                     </>
                   )}
@@ -1218,7 +1216,7 @@ function TheoryMapCanvas({
                       </button>
                       <p>
                         <ResearchMathText
-                          text={relation.description || "尚未填写关系说明。"}
+                          text={relation.description || t("尚未填写关系说明。")}
                         />
                       </p>
                       {!readOnly &&
@@ -1227,8 +1225,8 @@ function TheoryMapCanvas({
                           <div className="theory-form-actions">
                             <button
                               data-ui="icon-action"
-                              aria-label="编辑理论关系"
-                              title="编辑关系"
+                              aria-label={t("编辑理论关系")}
+                              title={t("编辑关系")}
                               onClick={() => setEditor(relation)}
                             >
                               <Pencil size={15} />
@@ -1236,9 +1234,9 @@ function TheoryMapCanvas({
                             <button
                               data-ui="icon-action"
                               data-tone="danger"
-                              aria-label="删除理论关系"
-                              title="移除关系，保留正文"
-                              onClick={() => confirmDelete({ title: "删除理论关系", description: `确定删除“${resolveTheoryReference(state, relation.source).title}”与“${resolveTheoryReference(state, relation.target).title}”之间的理论关系吗？正文会保留。` }, () => {
+                              aria-label={t("删除理论关系")}
+                              title={t("移除关系，保留正文")}
+                              onClick={() => confirmDelete({ title: t("删除理论关系"), description: t`确定删除“${resolveTheoryReference(state, relation.source).title}”与“${resolveTheoryReference(state, relation.target).title}”之间的理论关系吗？正文会保留。` }, () => {
                                 publish(
                                   removeTheoryRelation(
                                     stateRef.current,
@@ -1256,7 +1254,7 @@ function TheoryMapCanvas({
                     </div>
                   ))}
                   {selectedEdge.error && (
-                    <p className="theory-error">{selectedEdge.error}</p>
+                    <p className="theory-error">{localizeError(selectedEdge.error)}</p>
                   )}
                 </div>
               </>
@@ -1290,7 +1288,7 @@ function TheoryMapCanvas({
       </div>
       {saveAsTitle !== null && (
         <TheoryMapDialog
-          title="另存为地图"
+          title={t("另存为地图")}
           onClose={() => setSaveAsTitle(null)}
         >
           <form
@@ -1302,21 +1300,20 @@ function TheoryMapCanvas({
             }}
           >
             <label>
-              新地图名称
-              <input
-                aria-label="新地图名称"
+              {t("新地图名称")}<input
+                aria-label={t("新地图名称")}
                 required
                 value={saveAsTitle}
                 onChange={(event) => setSaveAsTitle(event.target.value)}
               />
             </label>
-            <p>保留引用与当前布局，创建独立的地图文档。</p>
+            <p>{t("保留引用与当前布局，创建独立的地图文档。")}</p>
             <div className="theory-document-form-actions">
               <button
                 type="submit"
                 data-ui="icon-action"
-                aria-label="创建地图文档"
-                title="创建地图文档"
+                aria-label={t("创建地图文档")}
+                title={t("创建地图文档")}
               >
                 <Check size={18} />
               </button>
@@ -1326,9 +1323,8 @@ function TheoryMapCanvas({
       )}
       <div className="theory-map-status">
         <span>
-          {graph.nodes.length} 个节点 · {graph.edges.length} 条关联
-        </span>
-        <span role="status">{message}</span>
+          {graph.nodes.length}  {t("个节点 ·")} {graph.edges.length}  {t("条关联")}</span>
+        <span role="status">{localizeError(message)}</span>
       </div>
     </div>
   );
@@ -1337,6 +1333,7 @@ function TheoryMapCanvas({
 export default function ResearchTheoryMap(
   props: Parameters<typeof TheoryMapCanvas>[0],
 ) {
+  useLocale();
   const key = theoryLayoutKey(
     getResearchTheoryMap(props.state),
     props.state.activeNoteId,

@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useEffect, useId, useImperativeHandle, useRef, useState, type KeyboardEvent, type Ref } from "react";
 import { ArrowDown, ArrowUp, AudioLines, BookOpen, BookmarkPlus, ChartNoAxesCombined, CheckSquare2, Code2, File, FileText, Film, Globe, Heading2, Image, List, ListChecks, ListOrdered, MessageSquare, Minus, MoreVertical, PanelsTopLeft, PencilRuler, Plus, Quote, RefreshCw, Search, Sigma, Square, Table2, Type, X } from "lucide-react";
 import type { ResearchContentType } from "../domain/researchNotebook.ts";
@@ -12,7 +14,7 @@ export type BlockInsertPosition = "above" | "below";
 export interface ResearchBlockInsertHandle { insertBelow: () => void }
 type PickerMode = "actions" | "insert" | "change";
 
-const insertionGroups = [
+const insertionGroups = () => ([
   { name: "文本", items: [
     { type: "paragraph", label: "段落", description: "正文与行内数学公式", icon: Type },
     { type: "heading", label: "标题", description: "用 # 至 ###### 设置一至六级标题", icon: Heading2 },
@@ -52,7 +54,7 @@ const insertionGroups = [
   { name: "研究证据", items: [
     { type: "evidence", label: "插入回放位置", description: "记录当前实验、时间与数据包", icon: BookmarkPlus },
   ] },
-] satisfies { name: string; items: { type: BlockType; label: string; description: string; icon: typeof Type }[] }[];
+] satisfies { name: string; items: { type: BlockType; label: string; description: string; icon: typeof Type }[] }[]).map(group => ({ ...group, id: group.name, name: t(group.name), items: group.items.map(item => ({ ...item, label: t(item.label), description: t(item.description) })) }));
 
 function InsertPopover({ trigger, mode, position, currentType, canInsertEvidence, canChangeType, onModeChange, onInsert, onChangeType, onClose, contentArea, chapter, onAreaChange }: {
   trigger: HTMLButtonElement;
@@ -69,14 +71,15 @@ function InsertPopover({ trigger, mode, position, currentType, canInsertEvidence
   chapter?: boolean;
   onAreaChange?: (area: TheoryContentArea) => void;
 }) {
+  useLocale();
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement>(trigger);
   const [query, setQuery] = useState("");
   const id = useId();
   const matches = query.trim().toLocaleLowerCase();
   const integration = useIntegration();
-  const allGroups: { name: string; items: { type: BlockType; label: string; description: string; icon: typeof Type; provider?: string }[] }[] = [...insertionGroups,
-    ...(mode !== 'change' && integration.insertions.length ? [{ name: '外部程序', items: integration.insertions.map(item => ({ type: 'external' as const, ...item, icon: BookmarkPlus })) }] : [])];
+  const allGroups: { id: string; name: string; items: { type: BlockType; label: string; description: string; icon: typeof Type; provider?: string }[] }[] = [...insertionGroups(),
+    ...(mode !== 'change' && integration.insertions.length ? [{ id: 'external', name: t('外部程序'), items: integration.insertions.map(item => ({ type: 'external' as const, ...item, icon: BookmarkPlus })) }] : [])];
   const groups = allGroups.map((group) => ({ ...group, items: group.items.filter((item) => (mode !== 'change' || item.type !== 'noteEmbed') && (item.type !== "evidence" || canInsertEvidence) && (group.name + item.label).toLocaleLowerCase().includes(matches)) })).filter((group) => group.items.length);
   useFormulaPopover({ ref, triggerRef, getAnchor: () => trigger.getBoundingClientRect(), onCancel: onClose, side: "right" });
   useEffect(() => {
@@ -101,39 +104,39 @@ function InsertPopover({ trigger, mode, position, currentType, canInsertEvidence
     else onInsert(type, position, provider);
     onClose();
   };
-  const dialogLabel = mode === "actions" ? "内容块操作" : mode === "change" ? "更改内容类型" : "插入笔记内容";
+  const dialogLabel = mode === "actions" ? t("内容块操作") : mode === "change" ? t("更改内容类型") : t("插入笔记内容");
 
   return <div ref={ref} className="research-block-insert-popover" data-mode={mode} popover="manual" role="dialog" aria-label={dialogLabel} onKeyDown={handleKeys}>
-    {mode !== "actions" && <header><strong>{mode === "change" ? "更改内容类型" : "插入内容"}</strong><button data-ui="icon-action" aria-label="关闭内容操作" onClick={() => onClose(true)} title="关闭内容操作"><X size={14} /></button></header>}
+    {mode !== "actions" && <header><strong>{mode === "change" ? t("更改内容类型") : t("插入内容")}</strong><button data-ui="icon-action" aria-label={t("关闭内容操作")} onClick={() => onClose(true)} title={t("关闭内容操作")}><X size={14} /></button></header>}
     {mode === "actions" ? <div className="research-block-insert-actions">
-      <button type="button" data-menu-action="above" onClick={() => onModeChange("insert", "above")}><ArrowUp size={15} /><span>上方插入</span></button>
-      <button type="button" data-menu-action="below" onClick={() => onModeChange("insert", "below")}><ArrowDown size={15} /><span>下方插入</span></button>
-      <button type="button" data-menu-action="change" disabled={!canChangeType} title={!canChangeType ? "该公式仍存在来源关联，解除关联后才能更改类型" : undefined} onClick={() => onModeChange("change")}><RefreshCw size={15} /><span>更改类型</span></button>
+      <button type="button" data-menu-action="above" onClick={() => onModeChange("insert", "above")}><ArrowUp size={15} /><span>{t("上方插入")}</span></button>
+      <button type="button" data-menu-action="below" onClick={() => onModeChange("insert", "below")}><ArrowDown size={15} /><span>{t("下方插入")}</span></button>
+      <button type="button" data-menu-action="change" disabled={!canChangeType} title={!canChangeType ? t("该公式仍存在来源关联，解除关联后才能更改类型") : undefined} onClick={() => onModeChange("change")}><RefreshCw size={15} /><span>{t("更改类型")}</span></button>
       {onAreaChange && <div className="research-block-section-options">
-        <strong>{chapter ? "分区 · 本节及下级内容" : "内容分区"}</strong>
+        <strong>{chapter ? t("分区 · 本节及下级内容") : t("内容分区")}</strong>
         {(["given", "conclusion", "derivation"] as const).map((area) => <button type="button" key={area} data-menu-action={`section-${area}`} aria-pressed={(contentArea ?? "derivation") === area}
           onClick={() => { onAreaChange(area); onClose(); }}>
-          <span>{area === "derivation" ? "放回推导过程" : `设为${theoryAreaLabels[area]}`}</span>
+          <span>{area === "derivation" ? t("放回推导过程") : t`设为${t(theoryAreaLabels[area])}`}</span>
         </button>)}
       </div>}
     </div> : <>
-      <label className="research-block-insert-search"><Search size={14} /><input aria-label={mode === "change" ? "搜索内容类型" : "搜索插入内容"} placeholder="搜索内容类型…" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+      <label className="research-block-insert-search"><Search size={14} /><input aria-label={mode === "change" ? t("搜索内容类型") : t("搜索插入内容")} placeholder={t("搜索内容类型…")} value={query} onChange={(event) => setQuery(event.target.value)} /></label>
       <div className="research-block-insert-options">
-        {groups.map((group, index) => <div role="group" aria-labelledby={`${id}-${index}`} key={group.name}>
+        {groups.map((group, index) => <div role="group" aria-labelledby={`${id}-${index}`} key={group.id}>
           <strong id={`${id}-${index}`} className="research-block-insert-category">{group.name}</strong>
           {group.items.map((item) => {
             const unavailable = item.type === "evidence" && !canInsertEvidence;
             const unchanged = mode === "change" && item.type === currentType;
             const disabled = unavailable || unchanged;
-            const title = unchanged ? "当前内容已经是此类型" : unavailable ? "载入回放后可插入当前回放位置" : item.description;
+            const title = unchanged ? t("当前内容已经是此类型") : unavailable ? t("载入回放后可插入当前回放位置") : item.description;
             return <button key={item.provider ?? item.type} type="button" data-insert-type={item.type} data-provider={item.provider} aria-label={item.label} disabled={disabled}
               title={title} onClick={() => chooseType(item.type, item.provider)}>
               <span className="research-block-insert-icon"><item.icon size={17} /></span>
-              <span><strong>{item.label}</strong><small>{unchanged ? "当前类型" : unavailable ? "载入回放后可使用" : item.description}</small></span>
+              <span><strong>{item.label}</strong><small>{unchanged ? t("当前类型") : unavailable ? t("载入回放后可使用") : item.description}</small></span>
             </button>;
           })}
         </div>)}
-        {!groups.length && <p className="research-block-insert-empty">没有匹配的内容类型</p>}
+        {!groups.length && <p className="research-block-insert-empty">{t("没有匹配的内容类型")}</p>}
       </div>
     </>}
   </div>;
@@ -152,6 +155,7 @@ export default function ResearchBlockInsert({ ref, atEnd = false, currentType, c
   insertionLabel?: string;
   dragHandle?: ResearchBlockDragHandle;
 }) {
+  useLocale();
   const [trigger, setTrigger] = useState<HTMLButtonElement | null>(null);
   const [mode, setMode] = useState<PickerMode>(atEnd ? "insert" : "actions");
   const [position, setPosition] = useState<BlockInsertPosition>();
@@ -162,8 +166,8 @@ export default function ResearchBlockInsert({ ref, atEnd = false, currentType, c
   const close = (restoreFocus = false) => { if (restoreFocus) trigger?.focus(); setTrigger(null); setMode(atEnd ? "insert" : "actions"); setPosition(undefined); };
   const chooseMode = (nextMode: PickerMode, nextPosition?: BlockInsertPosition) => { setPosition(nextPosition); setMode(nextMode); };
   return <div className="research-block-insert" data-open={!!trigger} data-at-end={atEnd}>
-    <button ref={buttonRef} data-ui="icon-action" type="button" className="research-block-insert-trigger" aria-label={atEnd ? insertionLabel ?? "在笔记末尾插入" : "内容块操作"}
-      title={atEnd ? insertionLabel ?? "在笔记末尾添加内容" : dragHandle?.selecting ? "点击选择或取消；按住选中的把手批量拖动；Shift 连选" : dragHandle ? "点击打开菜单；按住拖动；Shift 连选、Ctrl/Cmd 多选；Alt+↑/↓ 排序" : "内容块操作"}
+    <button ref={buttonRef} data-ui="icon-action" type="button" className="research-block-insert-trigger" aria-label={atEnd ? insertionLabel ?? t("在笔记末尾插入") : t("内容块操作")}
+      title={atEnd ? insertionLabel ?? t("在笔记末尾添加内容") : dragHandle?.selecting ? t("点击选择或取消；按住选中的把手批量拖动；Shift 连选") : dragHandle ? t("点击打开菜单；按住拖动；Shift 连选、Ctrl/Cmd 多选；Alt+↑/↓ 排序") : t("内容块操作")}
       aria-haspopup={dragHandle?.selecting ? undefined : "dialog"} aria-expanded={dragHandle?.selecting ? undefined : !!trigger}
       aria-pressed={dragHandle?.selecting || dragHandle?.selected ? dragHandle.selected : undefined}
       data-research-drag-handle={dragHandle ? true : undefined}

@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import {
   useCallback,
   useLayoutEffect,
@@ -18,6 +20,7 @@ export function DeleteConfirmationProvider({
 }: {
   children: ReactNode;
 }) {
+  useLocale();
   const [pending, setPending] = useState<DeleteRequest | null>(null);
   const current = useRef<DeleteRequest | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -124,8 +127,8 @@ export function DeleteConfirmationProvider({
             <button
               type="button"
               data-ui="icon-action"
-              aria-label="关闭删除确认"
-              title="取消"
+              aria-label={t("关闭删除确认")}
+              title={t("取消")}
               onClick={() => finish(false)}
             >
               <X size={16} />
@@ -139,15 +142,13 @@ export function DeleteConfirmationProvider({
               autoFocus
               onClick={() => finish(false)}
             >
-              取消
-            </button>
+              {t("取消")}</button>
             <button
               type="button"
               className="delete-confirmation-submit"
               onClick={() => finish(true)}
             >
-              确认删除
-            </button>
+              {t("确认删除")}</button>
           </footer>
         </dialog>
       )}

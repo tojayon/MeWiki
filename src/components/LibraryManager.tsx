@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t, localizeError } from "../i18n/locale.ts";
 import { useState } from "react";
 import { Check, FolderOpen, Plus } from "lucide-react";
 import DeviceInspectorModal from "./DeviceInspectorModal.tsx";
@@ -9,6 +11,7 @@ import { useDeleteConfirmation } from "./useDeleteConfirmation.ts";
 
 const client = new ResearchLibraryClient();
 export default function LibraryManager({ onClose }: { onClose: () => void }) {
+  useLocale();
   const workspace = useLibraryWorkspace();
   const confirm = useDeleteConfirmation();
   const [adding, setAdding] = useState<"create" | "open" | null>(null);
@@ -36,7 +39,7 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
   return (
     <DeviceInspectorModal
       open
-      title="切换资料库"
+      title={t("切换资料库")}
       testId="mewiki-library-manager"
       className="mewiki-library-manager"
       onClose={() => {
@@ -44,15 +47,13 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
       }}
     >
       <p>
-        每个资料库独立保存笔记、符号、附件和历史版本。切换前自动保存当前修改。
-      </p>
+        {t("每个资料库独立保存笔记、符号、附件和历史版本。切换前自动保存当前修改。")}</p>
       {!workspace.catalog.libraries.some(
         (item) => item.id === workspace.profile.id,
       ) && (
         <div>
           <p role="alert">
-            当前资料库已在其他窗口从列表移除。请先导出当前修改，再选择其他资料库。原目录及附件仍保留。
-          </p>
+            {t("当前资料库已在其他窗口从列表移除。请先导出当前修改，再选择其他资料库。原目录及附件仍保留。")}</p>
           <button
             type="button"
             disabled={busy}
@@ -65,11 +66,10 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
               })
             }
           >
-            导出当前修改
-          </button>
+            {t("导出当前修改")}</button>
         </div>
       )}
-      <div className="mewiki-library-list" role="list" aria-label="资料库列表">
+      <div className="mewiki-library-list" role="list" aria-label={t("资料库列表")}>
         {workspace.catalog.libraries.map((profile) => (
           <section
             key={profile.id}
@@ -91,8 +91,7 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
                   }}
                 >
                   <label>
-                    资料库新名称
-                    <input
+                    {t("资料库新名称")}<input
                       autoFocus
                       value={rename}
                       onChange={(event) => setRename(event.target.value)}
@@ -100,14 +99,13 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
                     />
                   </label>
                   <div className="mewiki-library-actions">
-                    <button disabled={busy || !rename.trim()}>保存名称</button>
+                    <button disabled={busy || !rename.trim()}>{t("保存名称")}</button>
                     <button
                       type="button"
                       disabled={busy}
                       onClick={() => setRenaming(null)}
                     >
-                      取消改名
-                    </button>
+                      {t("取消改名")}</button>
                   </div>
                 </form>
               ) : (
@@ -115,12 +113,12 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
               )}
               <small>
                 {profile.directory ??
-                  "仅保存在此浏览器，可在设置中迁移到本地目录"}
+                  t("仅保存在此浏览器，可在设置中迁移到本地目录")}
               </small>
               <span className="mewiki-library-badges">
-                {workspace.profile.id === profile.id && <span>当前资料库</span>}
+                {workspace.profile.id === profile.id && <span>{t("当前资料库")}</span>}
                 {workspace.catalog.contextDefaults[WEBBENCH_WORKSPACE] ===
-                  profile.id && <span>WebBench 默认</span>}
+                  profile.id && <span>{t("WebBench 默认")}</span>}
               </span>
               <div className="mewiki-library-actions">
                 <button
@@ -131,8 +129,7 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
                     setRename(profile.name);
                   }}
                 >
-                  改名
-                </button>
+                  {t("改名")}</button>
                 <button
                   type="button"
                   disabled={
@@ -161,8 +158,7 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
                     })
                   }
                 >
-                  设为 WebBench 默认
-                </button>
+                  {t("设为 WebBench 默认")}</button>
                 {profile.id !== "default" &&
                   profile.id !== workspace.profile.id && (
                     <button
@@ -171,8 +167,8 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
                       onClick={() =>
                         confirm(
                           {
-                            title: "从列表移除资料库",
-                            description: `从列表移除“${profile.name}”？目录中的笔记和附件会保留，以后可以重新添加。`,
+                            title: t("从列表移除资料库"),
+                            description: t`从列表移除“${profile.name}”？目录中的笔记和附件会保留，以后可以重新添加。`,
                           },
                           () =>
                             void run(async () => {
@@ -183,8 +179,7 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
                         )
                       }
                     >
-                      从列表移除
-                    </button>
+                      {t("从列表移除")}</button>
                   )}
               </div>
             </div>
@@ -192,7 +187,7 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
               type="button"
               className="mewiki-library-open"
               disabled={busy || workspace.profile.id === profile.id}
-              aria-label={`切换到${profile.name}`}
+              aria-label={t`切换到${profile.name}`}
               onClick={() =>
                 void run(async () => {
                   await workspace.switchLibrary(profile.id);
@@ -203,7 +198,7 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
               {workspace.profile.id === profile.id ? (
                 <Check size={16} />
               ) : (
-                "打开"
+                t("打开")
               )}
             </button>
           </section>
@@ -221,8 +216,7 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
             }}
           >
             <Plus size={15} />
-            新建资料库
-          </button>
+            {t("新建资料库")}</button>
           <button
             type="button"
             disabled={busy}
@@ -233,8 +227,7 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
             }}
           >
             <FolderOpen size={15} />
-            添加已有资料库
-          </button>
+            {t("添加已有资料库")}</button>
         </div>
       ) : (
         <form
@@ -263,53 +256,50 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
             });
           }}
         >
-          <h3>{adding === "create" ? "新建独立资料库" : "添加已有资料库"}</h3>
+          <h3>{adding === "create" ? t("新建独立资料库") : t("添加已有资料库")}</h3>
           <label>
-            资料库名称
-            <input
+            {t("资料库名称")}<input
               required
               maxLength={100}
               value={name}
-              placeholder="例如 Cislunar 或个人 Wiki"
+              placeholder={t("例如 Cislunar 或个人 Wiki")}
               onChange={(event) => setName(event.target.value)}
               disabled={busy}
             />
           </label>
           <label>
-            资料库文件夹
-            <input
+            {t("资料库文件夹")}<input
               required
               value={directory}
-              placeholder="例如 D:\WikiLibraries\Personal"
+              placeholder={t("例如 D:\\WikiLibraries\\Personal")}
               onChange={(event) => setDirectory(event.target.value)}
               disabled={busy}
             />
           </label>
           <p>
             {adding === "create"
-              ? "新库包含使用手册和通用示例。当前资料库的研究内容不会复制到新库。"
-              : "读取目录中已有的资料库，保留原有笔记、附件和历史。"}
+              ? t("新库包含使用手册和通用示例。当前资料库的研究内容不会复制到新库。")
+              : t("读取目录中已有的资料库，保留原有笔记、附件和历史。")}
           </p>
           <div className="mewiki-library-actions">
             <button
               type="submit"
               disabled={busy || !name.trim() || !directory.trim()}
             >
-              {adding === "create" ? "创建并打开" : "添加并打开"}
+              {adding === "create" ? t("创建并打开") : t("添加并打开")}
             </button>
             <button
               type="button"
               disabled={busy}
               onClick={() => setAdding(null)}
             >
-              取消
-            </button>
+              {t("取消")}</button>
           </div>
         </form>
       )}
-      {busy && <p role="status">正在保存并打开资料库…</p>}
-      {error && <p role="alert">{error}</p>}
-      {notice && <p role="status">{notice}</p>}
+      {busy && <p role="status">{t("正在保存并打开资料库…")}</p>}
+      {error && <p role="alert">{localizeError(error)}</p>}
+      {notice && <p role="status">{localizeError(notice)}</p>}
     </DeviceInspectorModal>
   );
 }

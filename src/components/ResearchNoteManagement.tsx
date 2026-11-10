@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t, formatDate } from "../i18n/locale.ts";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useDeleteConfirmation } from "./useDeleteConfirmation.ts";
 import {
@@ -48,6 +50,7 @@ function NoteFilterPopover({
   trigger: HTMLButtonElement;
   onClose: (focus?: boolean) => void;
 }) {
+  useLocale();
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement>(trigger);
   useFormulaPopover({
@@ -62,23 +65,22 @@ function NoteFilterPopover({
       popover="manual"
       className="research-note-management-popover"
       role="dialog"
-      aria-label="筛选研究笔记"
+      aria-label={t("筛选研究笔记")}
     >
       <header>
-        <strong>筛选研究笔记</strong>
+        <strong>{t("筛选研究笔记")}</strong>
         <button
           data-ui="icon-action"
-          aria-label="关闭笔记筛选"
+          aria-label={t("关闭笔记筛选")}
           onClick={() => onClose(true)}
-          title="关闭笔记筛选"
+          title={t("关闭笔记筛选")}
         >
           <X size={14} />
         </button>
       </header>
       <label>
-        核对状态
-        <select
-          aria-label="筛选核对状态"
+        {t("核对状态")}<select
+          aria-label={t("筛选核对状态")}
           value={filters.status}
           onChange={(event) =>
             onChange({
@@ -87,24 +89,23 @@ function NoteFilterPopover({
             })
           }
         >
-          <option value="all">全部状态</option>
+          <option value="all">{t("全部状态")}</option>
           {noteReviewStates.map((status) => (
             <option key={status.value} value={status.value}>
-              {status.label}
+              {t(status.label)}
             </option>
           ))}
         </select>
       </label>
       <label>
-        层级标签
-        <select
-          aria-label="筛选层级标签"
+        {t("层级标签")}<select
+          aria-label={t("筛选层级标签")}
           value={filters.tag}
           onChange={(event) =>
             onChange({ ...filters, tag: event.target.value })
           }
         >
-          <option value="">全部标签</option>
+          <option value="">{t("全部标签")}</option>
           {filters.tag &&
             !getResearchTagTree(libraryNotes(state)).some(
               (tag) => tag.path === filters.tag,
@@ -117,13 +118,13 @@ function NoteFilterPopover({
           ))}
         </select>
       </label>
-      <p>选择父标签时，同时包含其下所有子标签。</p>
+      <p>{t("选择父标签时，同时包含其下所有子标签。")}</p>
       <button
         data-ui="icon-action"
         className="research-small-button"
         onClick={() => onChange({ ...defaultResearchNoteFilters })}
-        aria-label="清除筛选"
-        title="清除筛选"
+        aria-label={t("清除筛选")}
+        title={t("清除筛选")}
       >
         <FilterX size={15} />
       </button>
@@ -140,6 +141,7 @@ export function ResearchNoteListTools({
   onChange: (state: ResearchNotebookState) => void;
   onCreateNote: () => void;
 }) {
+  useLocale();
   const [trigger, setTrigger] = useState<HTMLButtonElement | null>(null);
   const filters = libraryFilters(state);
   const progress = getResearchNoteProgress(libraryNotes(state));
@@ -159,8 +161,8 @@ export function ResearchNoteListTools({
         <label className="research-note-search">
           <Search size={13} />
           <input
-            aria-label="搜索研究笔记"
-            placeholder="搜索笔记或标签"
+            aria-label={t("搜索研究笔记")}
+            placeholder={t("搜索笔记或标签")}
             value={filters.query}
             onChange={(event) =>
               setFilters({ ...filters, query: event.target.value })
@@ -170,10 +172,10 @@ export function ResearchNoteListTools({
         <button
           data-ui="icon-action"
           className="research-note-filter-button"
-          aria-label="筛选研究笔记"
+          aria-label={t("筛选研究笔记")}
           aria-expanded={!!trigger}
           data-active={filters.status !== "all" || !!filters.tag}
-          title="核对状态与层级标签筛选"
+          title={t("核对状态与层级标签筛选")}
           onClick={(event) =>
             trigger ? close() : setTrigger(event.currentTarget)
           }
@@ -184,8 +186,8 @@ export function ResearchNoteListTools({
           type="button"
           data-ui="icon-action"
           className="research-note-filter-button research-note-create-button"
-          aria-label="新建笔记"
-          title="新建笔记"
+          aria-label={t("新建笔记")}
+          title={t("新建笔记")}
           onClick={onCreateNote}
         >
           <FilePlus2 size={15} />
@@ -193,7 +195,7 @@ export function ResearchNoteListTools({
       </div>
       <div className="research-note-progress-copy">
         <button
-          aria-label="查看已核对笔记"
+          aria-label={t("查看已核对笔记")}
           onClick={() =>
             setFilters({
               ...filters,
@@ -201,26 +203,26 @@ export function ResearchNoteListTools({
             })
           }
         >
-          已核对 {progress.reviewed} / {progress.total}
+          {t("已核对")} {progress.reviewed} / {progress.total}
         </button>
-        <span>{filteredCount} 篇</span>
+        <span>{filteredCount}  {t("篇")}</span>
       </div>
       <progress
-        aria-label="笔记核对进度"
+        aria-label={t("笔记核对进度")}
         value={progress.reviewed}
         max={progress.total || 1}
       />
       {(filters.status !== "all" || filters.tag) && (
         <button
           className="research-note-active-filter"
-          title="点击清除筛选"
-          aria-label="清除笔记筛选"
+          title={t("点击清除筛选")}
+          aria-label={t("清除笔记筛选")}
           onClick={() => setFilters({ ...defaultResearchNoteFilters })}
         >
           <span>
             {[
-              noteReviewStates.find((status) => status.value === filters.status)
-                ?.label,
+              t(noteReviewStates.find((status) => status.value === filters.status)
+                ?.label ?? ""),
               filters.tag,
             ]
               .filter(Boolean)
@@ -250,13 +252,14 @@ function NoteTagsPopover({ state, note, onChange, trigger, getTrigger, onClose }
   getTrigger?: () => HTMLButtonElement;
   onClose: (focus?: boolean) => void;
 }) {
+  useLocale();
   const confirmDelete = useDeleteConfirmation();
   const latestState = useRef(state);
   useLayoutEffect(() => { latestState.current = state; }, [state]);
   return <ResearchTagsPopover noun="笔记" assigned={note.tags ?? []} tree={getResearchTagTree(state.notes)}
     trigger={trigger} getTrigger={getTrigger} onClose={onClose}
     onAdd={tag => onChange(setResearchNoteTags(state, note.id, [...(note.tags ?? []), tag]))}
-    onRemove={tag => confirmDelete({ title: "移除笔记标签", description: `确定从当前笔记移除标签“${tag}”吗？` }, () => {
+    onRemove={tag => confirmDelete({ title: t("移除笔记标签"), description: t`确定从当前笔记移除标签“${tag}”吗？` }, () => {
       const current = latestState.current;
       onChange(setResearchNoteTags(current, note.id, (current.notes.find(item => item.id === note.id)?.tags ?? []).filter(value => value !== tag)));
     })} />;
@@ -271,15 +274,16 @@ export function ResearchNoteReviewStatus({
   note: ResearchNote;
   onChange: (state: ResearchNotebookState) => void;
 }) {
+  useLocale();
   const status = getNoteReviewStatus(note);
   return (
     <label
       className="research-note-status-select"
       data-status={status}
-      title="点击切换核对状态；修改已核对笔记的正文、公式或引用定义后，自动回到待核对。"
+      title={t("点击切换核对状态；修改已核对笔记的正文、公式或引用定义后，自动回到待核对。")}
     >
       <select
-        aria-label="笔记核对状态"
+        aria-label={t("笔记核对状态")}
         value={status}
         onChange={(event) =>
           onChange(
@@ -293,7 +297,7 @@ export function ResearchNoteReviewStatus({
       >
         {noteReviewStates.map((value) => (
           <option key={value.value} value={value.value}>
-            {value.label}
+            {t(value.label)}
           </option>
         ))}
       </select>
@@ -310,14 +314,15 @@ export function ResearchNoteTags({
   note: ResearchNote;
   onChange: (state: ResearchNotebookState) => void;
 }) {
+  useLocale();
   if (!note.tags?.length) return null;
   return (
-    <div className="research-note-tag-list" aria-label="笔记层级标签">
+    <div className="research-note-tag-list" aria-label={t("笔记层级标签")}>
       {note.tags.map((tag) => (
         <button
           className="research-note-tag"
           key={tag}
-          title={"筛选 " + tag}
+          title={t("筛选 ") + tag}
           onClick={() =>
             onChange(
               setLibraryFilters(state, {
@@ -326,7 +331,7 @@ export function ResearchNoteTags({
               }),
             )
           }
-          aria-label={"筛选 " + tag}
+          aria-label={t("筛选 ") + tag}
         >
           {tag}
         </button>
@@ -346,6 +351,7 @@ export function ResearchNoteOrganizationPanel({ state, note, readOnly, onChange,
   getTrigger?: () => HTMLButtonElement;
   onClose: (restoreFocus?: boolean) => void;
 }) {
+  useLocale();
   return panel === "tags"
     ? <NoteTagsPopover state={state} note={note} onChange={onChange} trigger={trigger} getTrigger={getTrigger} onClose={onClose} />
     : <ResearchNoteMetadata state={state} note={note} readOnly={readOnly} onChange={onChange} trigger={trigger} getTrigger={getTrigger} onClose={onClose}
@@ -361,17 +367,18 @@ export function ResearchNoteOrganizationBar({
   activePanel?: "tags" | "metadata";
   onOpenPanel: (panel: "tags" | "metadata", trigger: HTMLButtonElement) => void;
 }) {
+  useLocale();
   const status = getNoteReviewStatus(note);
   const reviewedTime = note.reviewedAt
-    ? `${status === "reviewed" ? "核对时间" : "上次核对"}：${new Date(note.reviewedAt).toLocaleString()}`
+    ? `${status === "reviewed" ? t("核对时间") : t("上次核对")}：${formatDate(note.reviewedAt, { dateStyle: "medium", timeStyle: "short" })}`
     : "";
   return (
     <div className="research-note-organization">
       <button
         data-ui="icon-action"
         className="research-small-button research-note-manage-tags"
-        aria-label="管理笔记标签"
-        title="管理笔记标签"
+        aria-label={t("管理笔记标签")}
+        title={t("管理笔记标签")}
         aria-expanded={activePanel === "tags"}
         onClick={event => onOpenPanel("tags", event.currentTarget)}
       >
@@ -380,8 +387,8 @@ export function ResearchNoteOrganizationBar({
       <button
         data-ui="icon-action"
         className="research-small-button research-note-info"
-        aria-label="笔记元数据"
-        title="笔记元数据"
+        aria-label={t("笔记元数据")}
+        title={t("笔记元数据")}
         aria-expanded={activePanel === "metadata"}
         onClick={event => onOpenPanel("metadata", event.currentTarget)}
       >

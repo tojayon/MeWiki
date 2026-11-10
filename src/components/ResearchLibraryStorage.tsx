@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import {t, localizeError, getLocale as interfaceLocale } from "../i18n/locale.ts";
 import { useEffect, useRef, useState } from "react";
 import {
   Check,
@@ -30,13 +32,13 @@ import { useLibraryWorkspace } from "../state/LibraryWorkspaceContext.ts";
 
 type Library = ReturnType<typeof useResearchLibrary>;
 const date = (value: string) =>
-  new Date(value).toLocaleString("zh-CN", { hour12: false });
+  new Date(value).toLocaleString(interfaceLocale(), { hour12: false });
 function Counts({ value }: { value: ResearchLibrarySummary }) {
+  useLocale();
   return (
     <span className="research-storage-counts">
-      {value.foundations} 篇基础理论 · {value.notes} 篇研究记录 ·{" "}
-      {value.symbols} 个符号 · {value.maps} 张地图
-    </span>
+      {value.foundations}  {t("篇基础理论 ·")} {value.notes}  {t("篇研究记录 ·")}{" "}
+      {value.symbols}  {t("个符号 ·")} {value.maps}  {t("张地图")}</span>
   );
 }
 type Preview =
@@ -55,6 +57,7 @@ export default function ResearchLibraryStorage({
   library: Library;
   onClose: () => void;
 }) {
+  useLocale();
   const { controller } = library;
   const workspace = useLibraryWorkspace();
   const [directory, setDirectory] = useState(library.directory ?? "");
@@ -137,7 +140,7 @@ export default function ResearchLibraryStorage({
   return (
     <DeviceInspectorModal
       open
-      title="研究笔记设置"
+      title={t("研究笔记设置")}
       className="research-library-dialog"
       testId="research-library-storage"
       onClose={() => {
@@ -147,19 +150,18 @@ export default function ResearchLibraryStorage({
       <section className="research-storage-section">
         <div className="research-storage-heading">
           <FolderOpen size={17} />
-          <h3>本地资料库 · {workspace.profile.name}</h3>
+          <h3>{t("本地资料库 ·")} {workspace.profile.name}</h3>
         </div>
         <p>
-          基础理论、研究记录、符号词典、标签、公式关联与理论地图统一保存。编辑后自动写入本地文件。
-        </p>
+          {t("基础理论、研究记录、符号词典、标签、公式关联与理论地图统一保存。编辑后自动写入本地文件。")}</p>
         <small>
           {library.directory
-            ? "图片原件保存在此资料库的 assets 文件夹中，单文件不超过 1 GB。"
-            : "当前图片保存在浏览器中，单文件不超过 100 MB；更大附件请设置本地资料库。"}
+            ? t("图片原件保存在此资料库的 assets 文件夹中，单文件不超过 1 GB。")
+            : t("当前图片保存在浏览器中，单文件不超过 100 MB；更大附件请设置本地资料库。")}
         </small>
         {library.directory && (
           <div className="research-storage-location">
-            <strong>当前保存目录</strong>
+            <strong>{t("当前保存目录")}</strong>
             <code>{library.directory}</code>
             <small>{RESEARCH_LIBRARY_FILENAME}</small>
           </div>
@@ -175,39 +177,38 @@ export default function ResearchLibraryStorage({
             });
           }}
         >
-          <label htmlFor="research-storage-directory">本地保存路径</label>
+          <label htmlFor="research-storage-directory">{t("本地保存路径")}</label>
           <div className="research-storage-path-row">
             <input
               id="research-storage-directory"
               value={directory}
               disabled={busy}
-              placeholder="例如 D:\Research\Notebook"
+              placeholder={t("例如 D:\\Research\\Notebook")}
               onChange={(event) => {
                 setDirectory(event.target.value);
                 setInspection(null);
               }}
             />
             <button type="submit" disabled={busy || !directory.trim()}>
-              检查路径
-            </button>
+              {t("检查路径")}</button>
           </div>
         </form>
         {inspection && (
           <div className="research-storage-path-preview">
             <strong>
-              {inspection.exists ? "此目录已有资料库" : "此目录将创建新资料库"}
+              {inspection.exists ? t("此目录已有资料库") : t("此目录将创建新资料库")}
             </strong>
             <code>{inspection.directory}</code>
             {inspection.summary && (
               <>
                 <Counts value={inspection.summary} />
-                <small>上次保存：{date(inspection.summary.savedAt)}</small>
+                <small>{t("上次保存：")}{date(inspection.summary.savedAt)}</small>
               </>
             )}
             <p>
               {inspection.exists
-                ? "打开后读取此目录内容，当前页面内容会先保存为独立备份。"
-                : "先备份浏览器原始数据，再写入完整资料库；回读校验成功后启用自动保存。"}
+                ? t("打开后读取此目录内容，当前页面内容会先保存为独立备份。")
+                : t("先备份浏览器原始数据，再写入完整资料库；回读校验成功后启用自动保存。")}
             </p>
             <button
               type="button"
@@ -227,7 +228,7 @@ export default function ResearchLibraryStorage({
               }
             >
               <Check size={15} />
-              {inspection.exists ? "打开此目录资料库" : "迁移到此目录"}
+              {inspection.exists ? t("打开此目录资料库") : t("迁移到此目录")}
             </button>
           </div>
         )}
@@ -244,8 +245,7 @@ export default function ResearchLibraryStorage({
               }
             >
               <RefreshCw size={15} />
-              重试本地保存
-            </button>
+              {t("重试本地保存")}</button>
             {library.directory && (
               <button
                 type="button"
@@ -259,8 +259,7 @@ export default function ResearchLibraryStorage({
                   })
                 }
               >
-                保留副本并读取本地版本
-              </button>
+                {t("保留副本并读取本地版本")}</button>
             )}
           </div>
         )}
@@ -268,12 +267,10 @@ export default function ResearchLibraryStorage({
       <section className="research-storage-section">
         <div className="research-storage-heading">
           <Download size={17} />
-          <h3>完整备份与恢复</h3>
+          <h3>{t("完整备份与恢复")}</h3>
         </div>
         <p>
-          迁移电脑请使用含附件备份，或复制整个资料库文件夹。原有 JSON
-          备份保存笔记与附件引用。
-        </p>
+          {t("迁移电脑请使用含附件备份，或复制整个资料库文件夹。原有 JSON 备份保存笔记与附件引用。")}</p>
         <div className="research-storage-action-row">
           <button
             type="button"
@@ -281,34 +278,31 @@ export default function ResearchLibraryStorage({
             onClick={() => void run(downloadWithMedia)}
           >
             <Download size={15} />
-            导出含附件备份
-          </button>
+            {t("导出含附件备份")}</button>
           <button
             type="button"
             disabled={busy}
             onClick={() => void run(download)}
           >
             <Download size={15} />
-            导出完整备份
-          </button>
+            {t("导出完整备份")}</button>
           <button
             type="button"
             disabled={busy || !library.directory}
             onClick={() => importRef.current?.click()}
           >
             <Upload size={15} />
-            恢复完整备份
-          </button>
+            {t("恢复完整备份")}</button>
         </div>
         {!library.directory && (
-          <small>先设置本地保存路径，即可将完整备份恢复到该目录。</small>
+          <small>{t("先设置本地保存路径，即可将完整备份恢复到该目录。")}</small>
         )}
         <input
           ref={importRef}
           type="file"
           hidden
           accept=".webbench.json,.json,.zip,application/json,application/zip"
-          aria-label="选择完整资料库备份"
+          aria-label={t("选择完整资料库备份")}
           onChange={(event) => {
             const file = event.target.files?.[0];
             event.target.value = "";
@@ -352,12 +346,12 @@ export default function ResearchLibraryStorage({
       <section className="research-storage-section">
         <div className="research-storage-heading">
           <History size={17} />
-          <h3>历史版本</h3>
+          <h3>{t("历史版本")}</h3>
           <button
             type="button"
             data-ui="icon-action"
-            aria-label="刷新历史版本"
-            title="刷新历史版本"
+            aria-label={t("刷新历史版本")}
+            title={t("刷新历史版本")}
             disabled={busy || !library.directory}
             onClick={() => void run(loadHistory)}
           >
@@ -365,9 +359,7 @@ export default function ResearchLibraryStorage({
           </button>
         </div>
         <p>
-          保留最近 30 个已通过校验的历史版本。首次迁移与恢复前的独立备份位于
-          migration-backups，可通过“恢复完整备份”打开。
-        </p>
+          {t("保留最近 30 个已通过校验的历史版本。首次迁移与恢复前的独立备份位于 migration-backups，可通过“恢复完整备份”打开。")}</p>
         {history.length ? (
           <ol className="research-storage-history">
             {history.map((entry) => (
@@ -379,32 +371,31 @@ export default function ResearchLibraryStorage({
                 <button
                   type="button"
                   disabled={busy}
-                  aria-label={`预览历史版本 ${entry.savedAt}`}
+                  aria-label={t`预览历史版本 ${entry.savedAt}`}
                   onClick={() => {
                     setPreview({ kind: "history", entry });
                     setError("");
                     setNotice("");
                   }}
                 >
-                  预览恢复
-                </button>
+                  {t("预览恢复")}</button>
               </li>
             ))}
           </ol>
         ) : (
           <small>
             {library.directory
-              ? "暂无历史版本，后续保存会自动保留旧版本。"
-              : "设置保存路径后启用历史备份。"}
+              ? t("暂无历史版本，后续保存会自动保留旧版本。")
+              : t("设置保存路径后启用历史备份。")}
           </small>
         )}
       </section>
       {preview && (
         <section
           className="research-storage-restore-preview"
-          aria-label="恢复预览"
+          aria-label={t("恢复预览")}
         >
-          <h3>恢复预览</h3>
+          <h3>{t("恢复预览")}</h3>
           <strong>
             {preview.kind === "import"
               ? preview.filename
@@ -414,16 +405,14 @@ export default function ResearchLibraryStorage({
             value={preview.kind === "import" ? preview.summary : preview.entry}
           />
           <p>
-            将恢复整个资料库。当前文件保留为历史版本，当前页面内容另存为恢复前备份。
-          </p>
+            {t("将恢复整个资料库。当前文件保留为历史版本，当前页面内容另存为恢复前备份。")}</p>
           <div className="research-storage-action-row">
             <button
               type="button"
               disabled={busy}
               onClick={() => setPreview(null)}
             >
-              取消恢复
-            </button>
+              {t("取消恢复")}</button>
             <button
               type="button"
               className="research-storage-primary"
@@ -439,20 +428,19 @@ export default function ResearchLibraryStorage({
                 })
               }
             >
-              确认恢复此版本
-            </button>
+              {t("确认恢复此版本")}</button>
           </div>
         </section>
       )}
-      {busy && <p role="status">正在校验并保存资料库，请稍候…</p>}
+      {busy && <p role="status">{t("正在校验并保存资料库，请稍候…")}</p>}
       {(error || library.error || library.cacheError) && (
         <p className="research-storage-error" role="alert">
-          {error || library.error || library.cacheError}
+          {localizeError(error || library.error || library.cacheError)}
         </p>
       )}
       {notice && (
         <p className="research-storage-notice" role="status">
-          {notice}
+          {localizeError(notice)}
         </p>
       )}
     </DeviceInspectorModal>

@@ -1,3 +1,4 @@
+import { t } from "../i18n/locale.ts";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type HTMLAttributes } from "react";
 import type { ResearchTheorySection } from "../domain/researchNotebook.ts";
 import {
@@ -113,7 +114,7 @@ export function useResearchTheoryDrawerLayout(visible: boolean) {
       "aria-valuemin": Math.round(sizes.minimum),
       "aria-valuemax": Math.round(maximum),
       "aria-valuenow": Math.round(sizes[section]),
-      "aria-valuetext": `${Math.round(sizes[section])} 像素`,
+      "aria-valuetext": t`${Math.round(sizes[section])} 像素`,
       onPointerDown: event => {
         if (event.button !== 0 || frameHeight <= 0 || gesture.current) return;
         // Let the short open/close animation finish before capturing its edge.

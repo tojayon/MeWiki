@@ -1,9 +1,12 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { BookOpen, Download, GitBranch, MoreHorizontal, Trash2, Upload, X } from "lucide-react";
 import { useFormulaPopover } from "./useFormulaPopover.ts";
 import "./ResearchNoteMoreMenu.css";
 
 export interface ResearchNoteMenuAction {
+  id: string;
   label: string;
   icon: ReactNode;
   onSelect: (trigger: HTMLButtonElement) => void;
@@ -29,6 +32,7 @@ function NoteMorePopover({ id, trigger, onClose, ...actions }: NoteMoreMenuProps
   trigger: HTMLButtonElement;
   onClose: (restoreFocus?: boolean) => void;
 }) {
+  useLocale();
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement>(trigger);
   useFormulaPopover({ ref, triggerRef, getAnchor: () => trigger.getBoundingClientRect(), onCancel: onClose });
@@ -39,7 +43,7 @@ function NoteMorePopover({ id, trigger, onClose, ...actions }: NoteMoreMenuProps
     onClose(true);
     action();
   };
-  return <div ref={ref} id={id} popover="manual" className="research-note-more-menu" role="menu" aria-label="更多笔记功能"
+  return <div ref={ref} id={id} popover="manual" className="research-note-more-menu" role="menu" aria-label={t("更多笔记功能")}
     onKeyDown={event => {
       if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
       event.preventDefault();
@@ -49,27 +53,28 @@ function NoteMorePopover({ id, trigger, onClose, ...actions }: NoteMoreMenuProps
         : (index + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length;
       buttons[next]?.focus();
     }}>
-    {actions.extraActions?.map(action => <button key={action.label} type="button" role="menuitem" onClick={() => run(() => action.onSelect(trigger))}>
+    {actions.extraActions?.map(action => <button key={action.id} type="button" role="menuitem" onClick={() => run(() => action.onSelect(trigger))}>
       {action.icon}<span>{action.label}</span>
     </button>)}
     {!!actions.extraActions?.length && <div role="separator" />}
     {!actions.empty && <button type="button" role="menuitem" onClick={() => run(actions.onToggleMap)}>
       {actions.mapOpen ? <BookOpen size={15} /> : <GitBranch size={15} />}
-      <span>{actions.mapOpen ? "返回笔记正文" : "本篇推导图"}</span>
+      <span>{actions.mapOpen ? t("返回笔记正文") : t("本篇推导图")}</span>
     </button>}
-    <button type="button" role="menuitem" onClick={() => run(actions.onImport)}><Upload size={15} /><span>导入 Markdown</span></button>
-    <button type="button" role="menuitem" disabled={actions.empty} onClick={() => run(actions.onExport)}><Download size={15} /><span>导出 Markdown</span></button>
-    {actions.onExportMedia && <button type="button" role="menuitem" disabled={actions.empty} onClick={() => run(actions.onExportMedia!)}><Download size={15} /><span>导出 Markdown 与附件</span></button>}
-    {actions.onCloseReading && <button type="button" role="menuitem" onClick={() => run(actions.onCloseReading!)}><X size={15} /><span>关闭当前阅读笔记</span></button>}
+    <button type="button" role="menuitem" onClick={() => run(actions.onImport)}><Upload size={15} /><span>{t("导入 Markdown")}</span></button>
+    <button type="button" role="menuitem" disabled={actions.empty} onClick={() => run(actions.onExport)}><Download size={15} /><span>{t("导出 Markdown")}</span></button>
+    {actions.onExportMedia && <button type="button" role="menuitem" disabled={actions.empty} onClick={() => run(actions.onExportMedia!)}><Download size={15} /><span>{t("导出 Markdown 与附件")}</span></button>}
+    {actions.onCloseReading && <button type="button" role="menuitem" onClick={() => run(actions.onCloseReading!)}><X size={15} /><span>{t("关闭当前阅读笔记")}</span></button>}
     {!actions.empty && !actions.readOnly && <>
       <div role="separator" />
       <button type="button" role="menuitem" className="research-note-more-delete" disabled={actions.deleteDisabled}
-        title={actions.deleteTitle} onClick={() => run(actions.onDelete)}><Trash2 size={15} /><span>删除笔记</span></button>
+        title={actions.deleteTitle} onClick={() => run(actions.onDelete)}><Trash2 size={15} /><span>{t("删除笔记")}</span></button>
     </>}
   </div>;
 }
 
 export default function ResearchNoteMoreMenu(props: NoteMoreMenuProps) {
+  useLocale();
   const id = useId();
   const [trigger, setTrigger] = useState<HTMLButtonElement | null>(null);
   const close = (restoreFocus = false) => {
@@ -77,7 +82,7 @@ export default function ResearchNoteMoreMenu(props: NoteMoreMenuProps) {
     setTrigger(null);
   };
   return <>
-    <button type="button" data-ui="icon-action" className="research-note-more-toggle" aria-label="更多笔记功能" title="更多功能"
+    <button type="button" data-ui="icon-action" className="research-note-more-toggle" aria-label={t("更多笔记功能")} title={t("更多功能")}
       aria-haspopup="menu" aria-expanded={!!trigger} aria-controls={trigger ? id : undefined}
       onClick={event => trigger ? close() : setTrigger(event.currentTarget)}
       onKeyDown={event => {

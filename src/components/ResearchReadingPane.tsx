@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ResearchRichBlock from "./ResearchRichBlock.tsx";
 import { isResearchRichBlock } from "../domain/researchRichContent.ts";
@@ -25,6 +27,7 @@ export default function ResearchReadingPane({ pane, note, state, active, target,
   onOpenNote: (id: string, blockId?: string, source?: HTMLElement) => void;
   onContentRef: (element: HTMLDivElement | null) => void;
 }) {
+  useLocale();
   const content = useRef<HTMLDivElement>(null);
   const effectiveTarget = useMemo(() => target ?? (pane.blockId ? { blockId: pane.blockId } : undefined), [target, pane.blockId]);
   const [tabs, setTabs] = useState<{ target: ReadingContentTarget | undefined; selected: Record<string, string> }>({ target: undefined, selected: {} });
@@ -45,7 +48,7 @@ export default function ResearchReadingPane({ pane, note, state, active, target,
     return () => animation.cancel();
   }, [effectiveTarget, note.id, target]);
   const render = (block: ResearchNotebookBlock): ReactNode => <section key={block.id} className={`research-note-block is-${block.type}`} data-block-id={block.id} tabIndex={-1}>
-    {(block.type === "paragraph" || block.type === "markdown" || block.type === "heading") && <ResearchTextBlock readOnly label="分屏笔记正文" value={block.type === "heading" ? `${"#".repeat(block.level)} ${block.text}` : block.text} headings={outline.filter(heading => heading.blockId === block.id)} onChange={() => {}} />}
+    {(block.type === "paragraph" || block.type === "markdown" || block.type === "heading") && <ResearchTextBlock readOnly label={t("分屏笔记正文")} value={block.type === "heading" ? `${"#".repeat(block.level)} ${block.text}` : block.text} headings={outline.filter(heading => heading.blockId === block.id)} onChange={() => {}} />}
     {block.type === "list" && <ul className="research-note-read-list">{block.items.map((item, index) => <li key={index}><ResearchMathText text={item} /></li>)}</ul>}
     {block.type === "callout" && <ResearchCallout block={block} readOnly onPatch={() => {}} />}
     {block.type === "media" && <ResearchMediaBlock block={block} readOnly onPatch={() => {}} />}
@@ -58,13 +61,13 @@ export default function ResearchReadingPane({ pane, note, state, active, target,
     {block.type === 'noteEmbed' && <ResearchNoteEmbedContent block={block} ownerNoteId={note.id} state={state} onOpenNote={onOpenNote} />}
   </section>;
   return <ResearchNoteLinkContext.Provider value={{ notes: state.notes, symbols: state.symbols, state, sourceNoteId: note.id, openNote: onOpenNote }}>
-    <section className="research-reading-pane is-readonly" data-reading-pane-id={pane.id} data-reading-note-id={note.id} data-reading-active={active} aria-label={`阅读笔记 ${note.title || "未命名笔记"}`} onPointerDownCapture={onActivate} onFocusCapture={onActivate}>
-      <header className="research-reading-pane-header"><FileText size={15} aria-hidden="true" /><strong title={note.title}>{note.title || "未命名笔记"}</strong>
-        {pane.parentId ? <button type="button" data-ui="icon-action" aria-label={`解绑阅读笔记 ${note.title}`} title="解绑后，关闭来源笔记时保留此屏及其下游" onClick={onDetach}><Unlink size={14} /></button> : <span className="research-reading-independent">独立</span>}
-        <button type="button" data-ui="icon-action" aria-label={`关闭阅读笔记 ${note.title}`} title="关闭此屏及仍绑定的下游笔记" onClick={onClose}><X size={15} /></button>
+    <section className="research-reading-pane is-readonly" data-reading-pane-id={pane.id} data-reading-note-id={note.id} data-reading-active={active} aria-label={t`阅读笔记 ${note.title || t("未命名笔记")}`} onPointerDownCapture={onActivate} onFocusCapture={onActivate}>
+      <header className="research-reading-pane-header"><FileText size={15} aria-hidden="true" /><strong title={note.title}>{note.title || t("未命名笔记")}</strong>
+        {pane.parentId ? <button type="button" data-ui="icon-action" aria-label={t`解绑阅读笔记 ${note.title}`} title={t("解绑后，关闭来源笔记时保留此屏及其下游")} onClick={onDetach}><Unlink size={14} /></button> : <span className="research-reading-independent">{t("独立")}</span>}
+        <button type="button" data-ui="icon-action" aria-label={t`关闭阅读笔记 ${note.title}`} title={t("关闭此屏及仍绑定的下游笔记")} onClick={onClose}><X size={15} /></button>
       </header>
-      <div className="research-note-page" ref={element => { content.current = element; onContentRef(element); }}><div className="research-note-scroll"><div className="research-note-blocks">{note.blocks.map(render)}{!note.blocks.length && <p className="research-empty-note">这篇笔记暂无内容。</p>}</div></div></div>
-      <footer className="research-reading-pane-footer">只读对照<span>{pane.parentId ? "随来源关闭 · 可解绑" : "独立阅读"}</span></footer>
+      <div className="research-note-page" ref={element => { content.current = element; onContentRef(element); }}><div className="research-note-scroll"><div className="research-note-blocks">{note.blocks.map(render)}{!note.blocks.length && <p className="research-empty-note">{t("这篇笔记暂无内容。")}</p>}</div></div></div>
+      <footer className="research-reading-pane-footer">{t("只读对照")}<span>{pane.parentId ? t("随来源关闭 · 可解绑") : t("独立阅读")}</span></footer>
     </section>
   </ResearchNoteLinkContext.Provider>;
 }

@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t, localizeError } from "../i18n/locale.ts";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Search, X, ZoomIn, ZoomOut } from "lucide-react";
 import { getDocument, GlobalWorkerOptions, TextLayer, type PDFDocumentProxy, type RenderTask } from "pdfjs-dist";
@@ -14,6 +16,7 @@ interface SearchHit { page: number; count: number }
 export default function ResearchPdfReader({ src, name, referenceUrl, size, page: savedPage = 1, onPageChange }: {
   src: string; name: string; referenceUrl: string; size?: number; page?: number; onPageChange?: (page: number) => void;
 }) {
+  const locale = useLocale();
   const [document, setDocument] = useState<PDFDocumentProxy>();
   const [page, setPage] = useState(savedPage);
   const [pageInput, setPageInput] = useState(String(savedPage));
@@ -109,7 +112,7 @@ export default function ResearchPdfReader({ src, name, referenceUrl, size, page:
         const canvas = window.document.createElement("canvas");
         canvas.width = Math.ceil(viewport.width * density); canvas.height = Math.ceil(viewport.height * density);
         canvas.style.width = `${viewport.width}px`; canvas.style.height = `${viewport.height}px`;
-        canvas.setAttribute("aria-label", `${name} · 第 ${page} 页`);
+        canvas.setAttribute("aria-label", t`${name} · 第 ${page} 页`);
         const layer = window.document.createElement("div"); layer.className = "research-pdf-text";
         sheet.append(canvas, layer); stageRef.current?.replaceChildren(sheet);
         render = pdfPage.render({ canvas, viewport, transform: density === 1 ? undefined : [density, 0, 0, density, 0, 0] });
@@ -128,6 +131,10 @@ export default function ResearchPdfReader({ src, name, referenceUrl, size, page:
     })();
     return () => { cancelled = true; render?.cancel(); text?.cancel(); releasePage?.(); };
   }, [document, page, width, zoom, name, searched]);
+
+  useEffect(() => {
+    stageRef.current?.querySelector("canvas")?.setAttribute("aria-label", t`${name} · 第 ${page} 页`);
+  }, [locale, name, page, rendering]);
 
   const go = (value: number) => {
     if (!document) return;
@@ -166,29 +173,29 @@ export default function ResearchPdfReader({ src, name, referenceUrl, size, page:
     if (!token || token.aborted) return;
     const url = referenceUrl.split("#")[0] + `#page=${page}`;
     const title = name.replace(/[\\[\]]/g, "\\$&").replace(/\r?\n/g, " ");
-    try { await navigator.clipboard.writeText(`[${title} · 第 ${page} 页](${url.replaceAll("(", "%28").replaceAll(")", "%29")})`); if (!token.aborted) setCopyStatus("已复制当前页引用"); }
+    try { await navigator.clipboard.writeText(t`[${title} · 第 ${page} 页](${url.replaceAll("(", "%28").replaceAll(")", "%29")})`); if (!token.aborted) setCopyStatus("已复制当前页引用"); }
     catch { if (!token.aborted) setCopyStatus("复制失败，请允许剪贴板访问后重试。"); }
     if (token.aborted) return;
     clearTimeout(copyTimer.current); copyTimer.current = setTimeout(() => setCopyStatus(""), 2500);
   };
   const moveHit = (direction: number) => { const next = (hitIndex + direction + hits.length) % hits.length; setHitIndex(next); go(hits[next].page); };
   return <div className="research-pdf-reader">
-    <div className="research-pdf-controls" role="toolbar" aria-label="PDF 阅读工具">
-      <button type="button" data-ui="icon-action" aria-label="PDF 上一页" title="上一页" disabled={!document || page <= 1} onClick={() => go(page - 1)}><ChevronLeft size={16} /></button>
-      <input type="number" aria-label="PDF 页码" min={1} max={document?.numPages} value={pageInput} disabled={!document} onChange={event => setPageInput(event.target.value)} onBlur={() => go(Number(pageInput))} onKeyDown={event => { if (event.key === "Enter") go(Number(pageInput)); }} />
+    <div className="research-pdf-controls" role="toolbar" aria-label={t("PDF 阅读工具")}>
+      <button type="button" data-ui="icon-action" aria-label={t("PDF 上一页")} title={t("上一页")} disabled={!document || page <= 1} onClick={() => go(page - 1)}><ChevronLeft size={16} /></button>
+      <input type="number" aria-label={t("PDF 页码")} min={1} max={document?.numPages} value={pageInput} disabled={!document} onChange={event => setPageInput(event.target.value)} onBlur={() => go(Number(pageInput))} onKeyDown={event => { if (event.key === "Enter") go(Number(pageInput)); }} />
       <span>/ {document?.numPages ?? "—"}</span>
-      <button type="button" data-ui="icon-action" aria-label="PDF 下一页" title="下一页" disabled={!document || page >= document.numPages} onClick={() => go(page + 1)}><ChevronRight size={16} /></button>
-      <button type="button" data-ui="icon-action" aria-label="缩小 PDF" title="缩小" disabled={zoom <= 0.5} onClick={() => setZoom(value => Math.max(0.5, value - 0.25))}><ZoomOut size={15} /></button>
-      <button type="button" data-ui="icon-action" aria-label="放大 PDF" title="放大" disabled={zoom >= 3} onClick={() => setZoom(value => Math.min(3, value + 0.25))}><ZoomIn size={15} /></button>
-      <button type="button" data-ui="icon-action" aria-label="复制当前页引用" title="复制带页码的 Markdown 引用" disabled={!document} onClick={() => void copy()}>{copyStatus.startsWith("已") ? <Check size={15} /> : <Copy size={15} />}</button>
-      <a href={src.split("#")[0] + `#page=${page}`} target="_blank" rel="noopener noreferrer" title="在新窗口打开 PDF" aria-label="在新窗口打开 PDF"><ExternalLink size={15} /></a>
-      <label className="research-pdf-search"><input type="search" aria-label="搜索 PDF" placeholder="搜索文档…" value={query} disabled={!document} onChange={event => { searchOperation.current++; setSearching(false); setQuery(event.target.value); setHits([]); setSearchStatus(""); setSearched(""); }} onKeyDown={event => { if (event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); void search(); } }} /><button type="button" data-ui="icon-action" aria-label="开始搜索 PDF" title="搜索全文" disabled={!document || !query.trim() || searching} onClick={() => void search()}><Search size={14} /></button></label>
+      <button type="button" data-ui="icon-action" aria-label={t("PDF 下一页")} title={t("下一页")} disabled={!document || page >= document.numPages} onClick={() => go(page + 1)}><ChevronRight size={16} /></button>
+      <button type="button" data-ui="icon-action" aria-label={t("缩小 PDF")} title={t("缩小")} disabled={zoom <= 0.5} onClick={() => setZoom(value => Math.max(0.5, value - 0.25))}><ZoomOut size={15} /></button>
+      <button type="button" data-ui="icon-action" aria-label={t("放大 PDF")} title={t("放大")} disabled={zoom >= 3} onClick={() => setZoom(value => Math.min(3, value + 0.25))}><ZoomIn size={15} /></button>
+      <button type="button" data-ui="icon-action" aria-label={t("复制当前页引用")} title={t("复制带页码的 Markdown 引用")} disabled={!document} onClick={() => void copy()}>{copyStatus.startsWith("已") ? <Check size={15} /> : <Copy size={15} />}</button>
+      <a href={src.split("#")[0] + `#page=${page}`} target="_blank" rel="noopener noreferrer" title={t("在新窗口打开 PDF")} aria-label={t("在新窗口打开 PDF")}><ExternalLink size={15} /></a>
+      <label className="research-pdf-search"><input type="search" aria-label={t("搜索 PDF")} placeholder={t("搜索文档…")} value={query} disabled={!document} onChange={event => { searchOperation.current++; setSearching(false); setQuery(event.target.value); setHits([]); setSearchStatus(""); setSearched(""); }} onKeyDown={event => { if (event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); void search(); } }} /><button type="button" data-ui="icon-action" aria-label={t("开始搜索 PDF")} title={t("搜索全文")} disabled={!document || !query.trim() || searching} onClick={() => void search()}><Search size={14} /></button></label>
     </div>
-    {passwordRequest && <form className="research-pdf-password" onSubmit={event => { event.preventDefault(); passwordRequest.update(password); setPassword(""); setPasswordRequest(undefined); }}><label>{passwordRequest.incorrect ? "密码不正确，请重试" : "此 PDF 已加密"}<input type="password" aria-label="PDF 密码" value={password} onChange={event => setPassword(event.target.value)} autoComplete="off" /></label><button type="submit">解锁</button></form>}
+    {passwordRequest && <form className="research-pdf-password" onSubmit={event => { event.preventDefault(); passwordRequest.update(password); setPassword(""); setPasswordRequest(undefined); }}><label>{passwordRequest.incorrect ? t("密码不正确，请重试") : t("此 PDF 已加密")}<input type="password" aria-label={t("PDF 密码")} value={password} onChange={event => setPassword(event.target.value)} autoComplete="off" /></label><button type="submit">{t("解锁")}</button></form>}
     <div ref={viewportRef} className="research-pdf-viewport" aria-busy={!large && !error && rendering}>
-      {large ? <div className="research-pdf-message">此文档较大，已保留完整原件。<a href={src} target="_blank" rel="noopener noreferrer">在独立窗口阅读</a></div>
-        : <><div ref={stageRef} className="research-pdf-stage" />{!document && !error && !passwordRequest && <p className="research-pdf-message">正在打开 PDF…</p>}{error && <p className="research-pdf-message" role="alert">{error}</p>}</>}
+      {large ? <div className="research-pdf-message">{t("此文档较大，已保留完整原件。")}<a href={src} target="_blank" rel="noopener noreferrer">{t("在独立窗口阅读")}</a></div>
+        : <><div ref={stageRef} className="research-pdf-stage" />{!document && !error && !passwordRequest && <p className="research-pdf-message">{t("正在打开 PDF…")}</p>}{error && <p className="research-pdf-message" role="alert">{localizeError(error)}</p>}</>}
     </div>
-    {(searchStatus || copyStatus) && <div className="research-pdf-search-results"><span role="status">{copyStatus || searchStatus}</span>{hits.length > 1 && <><button type="button" data-ui="icon-action" aria-label="上一个匹配页" title="上一个匹配页" onClick={() => moveHit(-1)}><ArrowUp size={14} /></button><button type="button" data-ui="icon-action" aria-label="下一个匹配页" title="下一个匹配页" onClick={() => moveHit(1)}><ArrowDown size={14} /></button></>}{searching && <button type="button" data-ui="icon-action" aria-label="取消 PDF 搜索" title="取消搜索" onClick={() => { searchOperation.current++; setSearching(false); setSearchStatus("搜索已取消"); }}><X size={14} /></button>}</div>}
+    {(searchStatus || copyStatus) && <div className="research-pdf-search-results"><span role="status">{localizeError(copyStatus || searchStatus)}</span>{hits.length > 1 && <><button type="button" data-ui="icon-action" aria-label={t("上一个匹配页")} title={t("上一个匹配页")} onClick={() => moveHit(-1)}><ArrowUp size={14} /></button><button type="button" data-ui="icon-action" aria-label={t("下一个匹配页")} title={t("下一个匹配页")} onClick={() => moveHit(1)}><ArrowDown size={14} /></button></>}{searching && <button type="button" data-ui="icon-action" aria-label={t("取消 PDF 搜索")} title={t("取消搜索")} onClick={() => { searchOperation.current++; setSearching(false); setSearchStatus("搜索已取消"); }}><X size={14} /></button>}</div>}
   </div>;
 }

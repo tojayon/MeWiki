@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { Children, createElement, isValidElement, memo, useContext, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import Markdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -16,19 +18,21 @@ import { researchNoteLinkId } from "../domain/researchNoteLinks.ts";
 import { ResearchMediaInlineImage, ResearchMediaInlineLink } from "./ResearchMediaInline.tsx";
 
 function NoteAnchor({ href, children, ...props }: ComponentProps<"a">) {
+  useLocale();
   const context = useContext(ResearchNoteLinkContext);
   const id = researchNoteLinkId(href);
   if (href?.startsWith("webbench-asset:")) return <ResearchMediaInlineLink href={href}>{children}</ResearchMediaInlineLink>;
   if (id === null) return <a {...props} href={href} target={href?.startsWith("#") ? undefined : "_blank"} rel="noopener noreferrer">{children}</a>;
   const note = context?.notes.find(note => note.id === id);
   return <a {...props} href={href} className="research-note-link" aria-disabled={!note || undefined}
-    title={note ? `在右侧打开：${note.title || "未命名笔记"}` : "目标笔记已移除"}
+    title={note ? t`在右侧打开：${note.title || t("未命名笔记")}` : t("目标笔记已移除")}
     onClick={event => { event.preventDefault(); event.stopPropagation(); if (note) context?.openNote(note.id, undefined, event.currentTarget); }}>
-    <FileText size={14} aria-hidden="true" />{note ? note.title || "未命名笔记" : children}
+    <FileText size={14} aria-hidden="true" />{note ? note.title || t("未命名笔记") : children}
   </a>;
 }
 
 function CodeBlock({ children }: ComponentProps<"pre">) {
+  useLocale();
   const ref = useRef<HTMLPreElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [copied, setCopied] = useState(false);
@@ -48,12 +52,12 @@ function CodeBlock({ children }: ComponentProps<"pre">) {
     }
   };
   return <div className="research-markdown-code">
-    <div className="research-code-toolbar"><span>{language ?? "代码"}</span><button type="button" data-ui="icon-action" className="research-code-copy" aria-label={copied ? "代码已复制" : "复制代码"} title={copied ? "已复制" : "复制代码"} onClick={() => void copy()}>{copied ? <Check size={13} /> : <Copy size={13} />}</button></div>
+    <div className="research-code-toolbar"><span>{language ?? t("代码")}</span><button type="button" data-ui="icon-action" className="research-code-copy" aria-label={copied ? t("代码已复制") : t("复制代码")} title={copied ? t("已复制") : t("复制代码")} onClick={() => void copy()}>{copied ? <Check size={13} /> : <Copy size={13} />}</button></div>
     <pre ref={ref}>{children}</pre>
   </div>;
 }
 
-const components: Components = {
+const components: () => Components = () => ({
   pre: ({ children }) => {
     const code = Children.toArray(children).find((child) => isValidElement<{ className?: string; children?: string }>(child));
     return isValidElement<{ className?: string; children?: string }>(code) && code.props.className?.split(" ").includes("math-display")
@@ -65,17 +69,18 @@ const components: Components = {
   th: ({ children, style }) => <th style={style}><span className="research-table-cell-content">{children}</span></th>,
   td: ({ children, style }) => <td style={style}><span className="research-table-cell-content">{children}</span></td>,
   a: ({ node: _node, ...props }) => <NoteAnchor {...props} />,
-  img: ({ src, alt, title }) => typeof src === "string" && src.startsWith("webbench-asset:") ? <ResearchMediaInlineImage src={src} alt={alt} title={title} /> : src ? <img src={src} alt={alt ?? ""} title={title} loading="lazy" /> : <span className="research-markdown-image-placeholder">{alt || "图片"} · 待填写图片路径</span>,
-};
-const inlineComponents: Components = { ...components, p: ({ children }) => <>{children}</> };
+  img: ({ src, alt, title }) => typeof src === "string" && src.startsWith("webbench-asset:") ? <ResearchMediaInlineImage src={src} alt={alt} title={title} /> : src ? <img src={src} alt={alt ?? ""} title={title} loading="lazy" /> : <span className="research-markdown-image-placeholder">{alt || t("图片")}  {t("· 待填写图片路径")}</span>,
+});
+const inlineComponents: Components = { ...components(), p: ({ children }) => <>{children}</> };
 const remarkPlugins = [remarkGfm, remarkMath, remarkTableCellBreaks];
 const rehypePlugins: ComponentProps<typeof Markdown>["rehypePlugins"] = [[rehypeHighlight, { detect: false, ignoreMissing: true }]];
-const remarkRehypeOptions = { footnoteLabel: "注释", footnoteBackLabel: "返回正文" };
+const remarkRehypeOptions = () => ({ footnoteLabel: t("注释"), footnoteBackLabel: t("返回正文") });
 
 /** Parse prose and code separately; math plugins never process fenced or inline code. */
 export default memo(function ResearchMarkdown({ text, inline = false, headings }: { text: string; inline?: boolean; headings?: readonly ResearchOutlineHeading[] }) {
+  useLocale();
   const numberedComponents = useMemo<Components>(() => {
-    if (!headings?.length) return components;
+    if (!headings?.length) return components();
     const byOffset = new Map(headings.map(heading => [heading.offset, heading]));
     const heading: Components["h1"] = ({ node, children, ...props }) => {
       const entry = node?.position?.start.offset === undefined ? undefined : byOffset.get(node.position.start.offset);
@@ -83,7 +88,7 @@ export default memo(function ResearchMarkdown({ text, inline = false, headings }
         id: `research-heading-${entry.id}`, "data-outline-id": entry.id, tabIndex: -1,
       } : {}) }, entry ? <><span className="research-heading-number">{entry.number}</span>{" "}{children}</> : children);
     };
-    return { ...components, h1: heading, h2: heading, h3: heading, h4: heading, h5: heading, h6: heading };
+    return { ...components(), h1: heading, h2: heading, h3: heading, h4: heading, h5: heading, h6: heading };
   }, [headings]);
-  return <Markdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins} remarkRehypeOptions={remarkRehypeOptions} components={inline ? inlineComponents : numberedComponents} urlTransform={url => /^webbench-asset:[a-f0-9]{64}(#page=[1-9]\d*)?$/.test(url) ? url : defaultUrlTransform(url)} skipHtml>{text}</Markdown>;
+  return <Markdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins} remarkRehypeOptions={remarkRehypeOptions()} components={inline ? inlineComponents : numberedComponents} urlTransform={url => /^webbench-asset:[a-f0-9]{64}(#page=[1-9]\d*)?$/.test(url) ? url : defaultUrlTransform(url)} skipHtml>{text}</Markdown>;
 });

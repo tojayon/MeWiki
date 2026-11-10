@@ -7,7 +7,8 @@
 | 材料 | 入口 |
 | --- | --- |
 | 中文项目首页与安装说明 | [README](../../README.md) |
-| 英文简明介绍 | [English overview](../../README.en.md) |
+| 英文项目首页与安装说明 | [English overview](../../README.en.md) |
+| 界面翻译与截图维护 | [中英文开发约定](../i18n/README.md) |
 | 用户操作手册 | [Wiki 目录](../wiki/README.md) |
 | 开发接入与公共组件 | [开发说明](../DEVELOPMENT.md)、[开放接口](../integrations/README.md) |
 | 贡献与问题反馈 | [贡献指南](../../CONTRIBUTING.md)、[Issue 表单](../../.github/ISSUE_TEMPLATE/bug_report.yml)、[功能建议](../../.github/ISSUE_TEMPLATE/feature_request.yml) |

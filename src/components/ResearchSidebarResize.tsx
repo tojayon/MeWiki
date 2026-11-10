@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { researchSidebarWidths } from "./researchSidebarLayout.ts";
 
@@ -14,6 +16,7 @@ function loadWidth(storageKey: string) {
 }
 
 export default function ResearchSidebarResize({ side = "left" }: { side?: "left" | "right" }) {
+  useLocale();
   const storageKey = side === "left" ? "mewiki:research-notebook-sidebar-width" : "mewiki:research-notebook-outline-width";
   const separatorRef = useRef<HTMLDivElement>(null);
   const [preferredWidth, setPreferredWidth] = useState(() => loadWidth(storageKey));
@@ -88,13 +91,13 @@ export default function ResearchSidebarResize({ side = "left" }: { side?: "left"
     className={`research-notebook-divider${side === "right" ? " is-right" : ""}${dragging ? " is-resizing" : ""}`}
     role="separator"
     tabIndex={0}
-    aria-label={`调整${side === "left" ? "左" : "右"}侧栏宽度`}
+    aria-label={t`调整${side === "left" ? t("左") : t("右")}侧栏宽度`}
     aria-orientation="vertical"
     aria-valuemin={minimum}
     aria-valuemax={maximum}
     aria-valuenow={width}
-    aria-valuetext={`${width} 像素`}
-    title={`拖动调整${side === "left" ? "左" : "右"}栏宽度，也可使用左右方向键`}
+    aria-valuetext={t`${width} 像素`}
+    title={t`拖动调整${side === "left" ? t("左") : t("右")}栏宽度，也可使用左右方向键`}
     onPointerDown={(event) => {
       if (event.button !== 0) return;
       event.preventDefault();

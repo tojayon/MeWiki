@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { forwardRef, useContext, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type RefObject, type TextareaHTMLAttributes } from "react";
 import { Search, X } from "lucide-react";
 import { ResearchNoteLinkContext } from "./ResearchNoteLinkContext.ts";
@@ -31,6 +33,7 @@ function MentionPicker({ inputRef, popupRef, kind, choices, total, active, listR
   onQuery: (query: string) => void; onPick: (choice: MentionChoice) => void; onCancel: () => void;
   onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void; onSessionBlur: (event: FocusEvent<HTMLElement>) => void; onComposition: (active: boolean) => void;
 }) {
+  useLocale();
   const symbol = kind === "symbol";
   useLayoutEffect(() => {
     const popup = popupRef.current!, input = inputRef.current!;
@@ -53,25 +56,26 @@ function MentionPicker({ inputRef, popupRef, kind, choices, total, active, listR
     };
   }, [inputRef, popupRef]);
   useLayoutEffect(() => { popupRef.current?.querySelector('.is-highlighted')?.scrollIntoView({ block: "nearest" }); }, [active, query, popupRef]);
-  return <div ref={popupRef} id={id} popover="manual" className="research-note-mention-picker" role="dialog" aria-label={symbol ? "插入词典符号" : "插入笔记引用"}
+  return <div ref={popupRef} id={id} popover="manual" className="research-note-mention-picker" role="dialog" aria-label={symbol ? t("插入词典符号") : t("插入笔记引用")}
     onBlur={onSessionBlur}
     onKeyDown={event => { event.stopPropagation(); if (event.key === "Escape") { event.preventDefault(); if (!event.nativeEvent.isComposing) onCancel(); } }}
     onPointerDown={event => { if (!(event.target instanceof Element) || !event.target.closest("input")) event.preventDefault(); }}>
-    <header><strong>{symbol ? "插入词典符号" : "插入笔记"}</strong><button type="button" aria-label={symbol ? "取消符号选择" : "取消笔记选择"} title="取消选择" onClick={onCancel}><X size={14} /></button></header>
-    <label className="research-mention-search"><Search size={14} aria-hidden="true" /><input type="search" data-research-text-picker-search aria-label={symbol ? "搜索符号" : "搜索笔记"} placeholder={symbol ? "搜索名称、LaTeX、含义或标签" : "搜索标题、标签或所属库"} value={query}
+    <header><strong>{symbol ? t("插入词典符号") : t("插入笔记")}</strong><button type="button" aria-label={symbol ? t("取消符号选择") : t("取消笔记选择")} title={t("取消选择")} onClick={onCancel}><X size={14} /></button></header>
+    <label className="research-mention-search"><Search size={14} aria-hidden="true" /><input type="search" data-research-text-picker-search aria-label={symbol ? t("搜索符号") : t("搜索笔记")} placeholder={symbol ? t("搜索名称、LaTeX、含义或标签") : t("搜索标题、标签或所属库")} value={query}
       aria-controls={`${id}-list`} aria-autocomplete="list" aria-activedescendant={active || undefined}
       onChange={event => onQuery(event.target.value)} onKeyDown={onKeyDown}
       onCompositionStart={() => onComposition(true)} onCompositionEnd={() => onComposition(false)} /></label>
     <ResearchClassifiedList choices={choices.map(choice => choice.kind === 'note' ? researchNoteChoice(choice.note) : researchSymbolChoice(choice.symbol))}
-      className="research-mention-options" listId={`${id}-list`} listRef={listRef} query={query} label={symbol ? "选择要插入的符号" : "选择要引用的笔记"}
+      className="research-mention-options" listId={`${id}-list`} listRef={listRef} query={query} label={symbol ? t("选择要插入的符号") : t("选择要引用的笔记")}
       storageKey={`mewiki:mention-${kind}-folds`} onActiveChange={onActiveChange}
       onSelect={choice => onPick(choice.note ? { kind: 'note', note: choice.note } : { kind: 'symbol', symbol: choice.symbol! })}
-      empty={`${symbol ? '没有匹配的符号' : '没有匹配的笔记'}，可调整搜索词或按 Escape 取消。`} />
-    <footer>{total > choices.length ? `显示前 ${choices.length} 项，共 ${total} 项 · 可继续搜索` : "↑↓ 选择 · Enter 插入 · Esc 取消"}{symbol && <span>按词典默认角标插入行内公式</span>}</footer>
+      empty={t`${symbol ? t('没有匹配的符号') : t('没有匹配的笔记')}，可调整搜索词或按 Escape 取消。`} />
+    <footer>{total > choices.length ? t`显示前 ${choices.length} 项，共 ${total} 项 · 可继续搜索` : t("↑↓ 选择 · Enter 插入 · Esc 取消")}{symbol && <span>{t("按词典默认角标插入行内公式")}</span>}</footer>
   </div>;
 }
 
 const ResearchMentionTextarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function ResearchMentionTextarea(props, forwardedRef) {
+  useLocale();
   const context = useContext(ResearchNoteLinkContext);
   const input = useRef<HTMLTextAreaElement>(null), popup = useRef<HTMLDivElement>(null);
   useImperativeHandle(forwardedRef, () => input.current!);
@@ -84,7 +88,7 @@ const ResearchMentionTextarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttr
   const tokens = search.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
   const allChoices: MentionChoice[] = !mention ? [] : mention.kind === "symbol"
     ? searchResearchSymbols(context?.symbols ?? [], search).map(symbol => ({ kind: "symbol", symbol }))
-    : context?.notes.filter(note => note.id !== context.sourceNoteId && tokens.every(token => [note.title, ...(note.tags ?? []), getNoteLibrary(note) === "foundation" ? "基础理论" : "研究记录"].join(" ").toLocaleLowerCase().includes(token))).map(note => ({ kind: "note", note })) ?? [];
+    : context?.notes.filter(note => note.id !== context.sourceNoteId && tokens.every(token => [note.title, ...(note.tags ?? []), getNoteLibrary(note) === "foundation" ? t("基础理论") : t("研究记录")].join(" ").toLocaleLowerCase().includes(token))).map(note => ({ kind: "note", note })) ?? [];
   const choices = allChoices;
   const findMention = (element: HTMLTextAreaElement): TextMention | null => {
     if (!context) return null;

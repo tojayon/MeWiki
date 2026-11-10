@@ -1,3 +1,6 @@
+import { useLocale } from "../i18n/react.ts";
+import { t, localizeError } from "../i18n/locale.ts";
+import { localizeMediaError } from "../i18n/mediaError.ts";
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AlignCenter, AlignLeft, AlignRight, AudioLines, Download, File, FileText, Film, ImagePlus, Link, Maximize2, RefreshCw, Settings2, Upload, X } from "lucide-react";
 import { mediaFileAccept, mediaFileKind, mediaKindFromMime, mediaKindLabels, normalizeMediaUrl, validateMediaFile, type ResearchMediaBlock as MediaBlock } from "../domain/researchMedia.ts";
@@ -17,9 +20,11 @@ export default function ResearchMediaBlock({ block, readOnly = false, onPatch, o
   block: MediaBlock; readOnly?: boolean; onPatch: (patch: Partial<MediaBlock>) => void;
   onInsertAfter?: (blocks: MediaBlock[]) => void; onCancelEmpty?: () => void; onOpenStorage?: () => void;
 }) {
+  useLocale();
   const view = useResearchMediaSource(block.source);
   const posterView = useResearchMediaSource(block.kind === "video" ? block.poster : undefined);
-  const label = mediaKindLabels[block.kind];
+  const sourceLabel = mediaKindLabels[block.kind];
+  const label = t(sourceLabel);
   const isImage = block.kind === "image";
   const FileIcon = isImage ? ImagePlus : block.kind === "audio" ? AudioLines : block.kind === "video" ? Film : block.kind === "pdf" ? FileText : File;
   const [settings, setSettings] = useState(false);
@@ -91,12 +96,12 @@ export default function ResearchMediaBlock({ block, readOnly = false, onPatch, o
     if (!canEdit || abortRef.current) return;
     operation.current++;
     try { const valid = normalizeMediaUrl(url); onPatch({ source: { type: "url", url: valid }, legacySource: undefined, ...(block.kind === "pdf" ? { document: { page: 1 } } : {}) }); setImageError(undefined); setImporting(false); setError(""); }
-    catch { setError(`请输入 HTTP 或 HTTPS ${label}直链。`); }
+    catch { setError(`请输入 HTTP 或 HTTPS ${sourceLabel}直链。`); }
   };
   const downloadRemote = async () => {
     if (!canEdit || abortRef.current) return;
     const token = ++operation.current;
-    if (!view.directory) { setError(`下载保存网络${label}需要先设置本地资料库。`); onOpenStorage?.(); return; }
+    if (!view.directory) { setError(`下载保存网络${sourceLabel}需要先设置本地资料库。`); onOpenStorage?.(); return; }
     const directory = view.directory;
     const abort = new AbortController(); abortRef.current = abort;
     const expectedSource = JSON.stringify(block.source ?? null);
@@ -112,7 +117,7 @@ export default function ResearchMediaBlock({ block, readOnly = false, onPatch, o
       if (!current()) { pause(); return; }
       while (current()) {
         setRemote(job); setProgress({ phase: "downloading", loaded: job.bytes, total: job.total ?? 0 });
-        if (job.status === "complete" && job.asset) { if (block.kind !== "file" && mediaKindFromMime(job.asset.mimeType) !== block.kind) throw new Error(`该地址返回的文件不是${label}，原内容已保留。`); setImageError(undefined); refreshResearchMediaAsset(directory, job.asset.id); const latestAlt = latestContext.current.block.alt; onPatch({ source: { type: "asset", assetId: job.asset.id }, legacySource: undefined, ...(block.kind === "pdf" ? { document: { page: 1 } } : {}), ...(latestAlt === block.alt ? { alt: latestAlt || job.asset.name } : {}) }); setImporting(false); return; }
+        if (job.status === "complete" && job.asset) { if (block.kind !== "file" && mediaKindFromMime(job.asset.mimeType) !== block.kind) throw new Error(`该地址返回的文件不是${sourceLabel}，原内容已保留。`); setImageError(undefined); refreshResearchMediaAsset(directory, job.asset.id); const latestAlt = latestContext.current.block.alt; onPatch({ source: { type: "asset", assetId: job.asset.id }, legacySource: undefined, ...(block.kind === "pdf" ? { document: { page: 1 } } : {}), ...(latestAlt === block.alt ? { alt: latestAlt || job.asset.name } : {}) }); setImporting(false); return; }
         if (job.status === "error" || job.status === "paused") throw new Error(job.error || "下载已暂停，再次点击可继续。");
         await new Promise<void>(resolve => { const done = () => { clearTimeout(timer); abort.signal.removeEventListener("abort", done); resolve(); }; const timer = setTimeout(done, 700); abort.signal.addEventListener("abort", done, { once: true }); });
         if (current()) job = await researchMediaClient.remote(directory, job.id);
@@ -150,54 +155,54 @@ export default function ResearchMediaBlock({ block, readOnly = false, onPatch, o
     onPasteCapture={event => { const target = event.target instanceof HTMLElement ? event.target : null; if (!canEdit || target?.closest("input, textarea")) return; const files = [...event.clipboardData.files].filter(file => block.kind === "file" || mediaFileKind(file) === block.kind); if (files.length) { event.preventDefault(); event.stopPropagation(); void acceptFiles(files); } }}
     onDragOver={event => { if (canEdit && event.dataTransfer.types.includes("Files")) { event.preventDefault(); event.stopPropagation(); } }}
     onDrop={event => { if (canEdit && event.dataTransfer.files.length) { event.preventDefault(); event.stopPropagation(); void acceptFiles([...event.dataTransfer.files]); } }}>
-    <input ref={fileRef} type="file" hidden multiple={Boolean(onInsertAfter)} accept={mediaFileAccept(block.kind)} aria-label={`选择${label}文件`} disabled={!canEdit || Boolean(progress)} onChange={event => { const files = [...(event.target.files ?? [])]; event.target.value = ""; void acceptFiles(files); }} />
+    <input ref={fileRef} type="file" hidden multiple={Boolean(onInsertAfter)} accept={mediaFileAccept(block.kind)} aria-label={t`选择${label}文件`} disabled={!canEdit || Boolean(progress)} onChange={event => { const files = [...(event.target.files ?? [])]; event.target.value = ""; void acceptFiles(files); }} />
     {hasSource && <>
       <div className="research-media-toolbar">
-        {isImage && <button type="button" data-ui="icon-action" aria-label="放大图片" title="放大预览" disabled={!previewUrl || failed} onClick={() => setExpanded(true)}><Maximize2 size={15} /></button>}
-        {view.originalUrl && <a className="research-media-download" href={view.originalUrl} download={block.source?.type === "asset" ? view.asset?.name || block.kind : undefined} target={block.source?.type === "url" ? "_blank" : undefined} rel="noopener noreferrer" title={block.source?.type === "url" ? `打开来源${label}` : "下载原件"} aria-label={block.source?.type === "url" ? `打开来源${label}` : `下载${label}原件`}><Download size={15} /></a>}
+        {isImage && <button type="button" data-ui="icon-action" aria-label={t("放大图片")} title={t("放大预览")} disabled={!previewUrl || failed} onClick={() => setExpanded(true)}><Maximize2 size={15} /></button>}
+        {view.originalUrl && <a className="research-media-download" href={view.originalUrl} download={block.source?.type === "asset" ? view.asset?.name || block.kind : undefined} target={block.source?.type === "url" ? "_blank" : undefined} rel="noopener noreferrer" title={block.source?.type === "url" ? t`打开来源${label}` : t("下载原件")} aria-label={block.source?.type === "url" ? t`打开来源${label}` : t`下载${label}原件`}><Download size={15} /></a>}
         {canEdit && <>
           <span className="research-media-toolbar-divider" />
-          {(["left", "center", "right"] as const).map((align, index) => { const Icon = [AlignLeft, AlignCenter, AlignRight][index]; const alignLabel = [`${label}左对齐`, `${label}居中`, `${label}右对齐`][index]; return <button type="button" key={align} data-ui="icon-action" aria-label={alignLabel} title={alignLabel} aria-pressed={(block.display?.align ?? "left") === align} onClick={() => onPatch({ display: { ...block.display, align } })}><Icon size={15} /></button>; })}
-          <button type="button" data-ui="icon-action" aria-label={`替换${label}`} title={`替换${label}，原件保留用于历史恢复`} disabled={Boolean(progress)} onClick={() => { setUrl(block.source?.type === "url" ? block.source.url : ""); setImporting(value => !value); }}><RefreshCw size={15} /></button>
-          {block.source?.type === "url" && <button type="button" data-ui="icon-action" aria-label={`下载并保存${label}`} title="下载到本地资料库，之后可离线使用" disabled={Boolean(progress)} onClick={() => void downloadRemote()}><Upload size={15} /></button>}
-          <button type="button" data-ui="icon-action" aria-label={`${label}设置`} title={isImage ? "替代说明、尺寸与文件信息" : "名称、显示宽度与文件信息"} aria-expanded={settings} onClick={() => setSettings(value => !value)}><Settings2 size={15} /></button>
+          {(["left", "center", "right"] as const).map((align, index) => { const Icon = [AlignLeft, AlignCenter, AlignRight][index]; const alignLabel = [t`${label}左对齐`, t`${label}居中`, t`${label}右对齐`][index]; return <button type="button" key={align} data-ui="icon-action" aria-label={alignLabel} title={alignLabel} aria-pressed={(block.display?.align ?? "left") === align} onClick={() => onPatch({ display: { ...block.display, align } })}><Icon size={15} /></button>; })}
+          <button type="button" data-ui="icon-action" aria-label={t`替换${label}`} title={t`替换${label}，原件保留用于历史恢复`} disabled={Boolean(progress)} onClick={() => { setUrl(block.source?.type === "url" ? block.source.url : ""); setImporting(value => !value); }}><RefreshCw size={15} /></button>
+          {block.source?.type === "url" && <button type="button" data-ui="icon-action" aria-label={t`下载并保存${label}`} title={t("下载到本地资料库，之后可离线使用")} disabled={Boolean(progress)} onClick={() => void downloadRemote()}><Upload size={15} /></button>}
+          <button type="button" data-ui="icon-action" aria-label={t`${label}设置`} title={isImage ? t("替代说明、尺寸与文件信息") : t("名称、显示宽度与文件信息")} aria-expanded={settings} onClick={() => setSettings(value => !value)}><Settings2 size={15} /></button>
         </>}
       </div>
       <div className="research-media-visual" data-align={block.display?.align ?? "left"}>
         <div className="research-media-picture" style={{ width: `${block.display?.widthPercent ?? 100}%` }}>
-          {pdfSource ? <><div className="research-media-document-title"><FileText size={16} /><strong>{name}</strong></div><Suspense fallback={<p className="research-media-unavailable">正在打开 PDF…</p>}><ResearchPdfReader key={view.playbackUrl} src={view.playbackUrl!} name={name} size={view.asset?.size} referenceUrl={block.source?.type === "asset" ? `webbench-asset:${block.source.assetId}` : block.source?.url ?? ""} page={block.document?.page} onPageChange={canEdit ? page => onPatch({ document: { ...block.document, page } }) : undefined} /></Suspense></>
-            : block.kind === "file" && view.originalUrl ? <a className="research-attachment-card" href={view.originalUrl} download={block.source?.type === "asset" ? view.asset?.name || name : undefined} target={block.source?.type === "url" ? "_blank" : undefined} rel="noopener noreferrer" aria-label={block.source?.type === "url" ? "打开来源附件" : "下载附件原件"}><File size={28} aria-hidden="true" /><span><strong>{name}</strong><small>{view.asset ? `${view.asset.name.split(".").at(-1)?.toUpperCase() || "FILE"} · ${sizeLabel(view.asset.size)}` : "网络附件"}</small></span><Download size={17} aria-hidden="true" /></a>
+          {pdfSource ? <><div className="research-media-document-title"><FileText size={16} /><strong>{name}</strong></div><Suspense fallback={<p className="research-media-unavailable">{t("正在打开 PDF…")}</p>}><ResearchPdfReader key={view.playbackUrl} src={view.playbackUrl!} name={name} size={view.asset?.size} referenceUrl={block.source?.type === "asset" ? `webbench-asset:${block.source.assetId}` : block.source?.url ?? ""} page={block.document?.page} onPageChange={canEdit ? page => onPatch({ document: { ...block.document, page } }) : undefined} /></Suspense></>
+            : block.kind === "file" && view.originalUrl ? <a className="research-attachment-card" href={view.originalUrl} download={block.source?.type === "asset" ? view.asset?.name || name : undefined} target={block.source?.type === "url" ? "_blank" : undefined} rel="noopener noreferrer" aria-label={block.source?.type === "url" ? t("打开来源附件") : t("下载附件原件")}><File size={28} aria-hidden="true" /><span><strong>{name}</strong><small>{view.asset ? `${view.asset.name.split(".").at(-1)?.toUpperCase() || "FILE"} · ${sizeLabel(view.asset.size)}` : t("网络附件")}</small></span><Download size={17} aria-hidden="true" /></a>
             : playable ? <ResearchMediaPlayer key={view.playbackUrl} kind={block.kind as "audio" | "video"} src={view.playbackUrl!} name={name} poster={posterUrl} playback={block.playback} onPlaybackChange={canEdit ? playback => onPatch({ playback }) : undefined} />
-            : isImage && previewUrl && !failed ? <button type="button" className="research-media-open" aria-label="查看图片预览" onClick={() => setExpanded(true)}><img src={previewUrl} alt={block.alt || "图片"} loading="lazy" decoding="async" onError={() => setImageError(previewUrl)} /></button>
-            : block.legacySource ? <div className="research-media-legacy"><ResearchMarkdown text={block.legacySource} /><small>保留的旧媒体引用，可重新选择文件保存原件。</small></div>
-            : <div className="research-media-unavailable">{view.loading ? `正在读取${label}…` : view.error || (isImage ? failed ? "图片未能显示，请重试、更换链接或重新关联文件。" : "原件已保存，未能生成受限预览；可下载原件查看。" : `未能读取${label}，可重新关联原文件。`)}{canEdit && <button type="button" onClick={() => setImporting(true)}>重新关联</button>}</div>}
+            : isImage && previewUrl && !failed ? <button type="button" className="research-media-open" aria-label={t("查看图片预览")} onClick={() => setExpanded(true)}><img src={previewUrl} alt={block.alt || t("图片")} loading="lazy" decoding="async" onError={() => setImageError(previewUrl)} /></button>
+            : block.legacySource ? <div className="research-media-legacy"><ResearchMarkdown text={block.legacySource} /><small>{t("保留的旧媒体引用，可重新选择文件保存原件。")}</small></div>
+            : <div className="research-media-unavailable">{view.loading ? t`正在读取${label}…` : localizeError(view.error) || (isImage ? failed ? t("图片未能显示，请重试、更换链接或重新关联文件。") : t("原件已保存，未能生成受限预览；可下载原件查看。") : t`未能读取${label}，可重新关联原文件。`)}{canEdit && <button type="button" onClick={() => setImporting(true)}>{t("重新关联")}</button>}</div>}
         </div>
       </div>
     </>}
     {showImporter && <div className="research-media-importer">
-      <button type="button" className="research-media-file" disabled={Boolean(progress)} onClick={() => fileRef.current?.click()}><FileIcon size={24} /><span>选择{label}</span><small>或拖入、粘贴{label}</small></button>
-      <div className="research-media-url"><label><Link size={15} /><input aria-label={`${label}网址`} type="url" placeholder={`粘贴${label}直链…`} value={url} disabled={Boolean(progress)} onChange={event => setUrl(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); applyLink(); } }} /></label>
-        <div><button type="button" disabled={!url.trim() || Boolean(progress)} onClick={applyLink}>使用链接</button><button type="button" disabled={!url.trim() || Boolean(progress)} title="下载到本地资料库，可离线使用" onClick={() => void downloadRemote()}>下载并保存</button>
-        {hasSource ? <button type="button" data-ui="icon-action" aria-label={`取消替换${label}`} title="取消替换" onClick={() => setImporting(false)}><X size={14} /></button> : onCancelEmpty && <button type="button" data-ui="icon-action" aria-label={`取消插入${label}`} title="取消插入" onClick={onCancelEmpty}><X size={14} /></button>}</div>
+      <button type="button" className="research-media-file" disabled={Boolean(progress)} onClick={() => fileRef.current?.click()}><FileIcon size={24} /><span>{t("选择")}{label}</span><small>{t("或拖入、粘贴")}{label}</small></button>
+      <div className="research-media-url"><label><Link size={15} /><input aria-label={t`${label}网址`} type="url" placeholder={t`粘贴${label}直链…`} value={url} disabled={Boolean(progress)} onChange={event => setUrl(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); applyLink(); } }} /></label>
+        <div><button type="button" disabled={!url.trim() || Boolean(progress)} onClick={applyLink}>{t("使用链接")}</button><button type="button" disabled={!url.trim() || Boolean(progress)} title={t("下载到本地资料库，可离线使用")} onClick={() => void downloadRemote()}>{t("下载并保存")}</button>
+        {hasSource ? <button type="button" data-ui="icon-action" aria-label={t`取消替换${label}`} title={t("取消替换")} onClick={() => setImporting(false)}><X size={14} /></button> : onCancelEmpty && <button type="button" data-ui="icon-action" aria-label={t`取消插入${label}`} title={t("取消插入")} onClick={onCancelEmpty}><X size={14} /></button>}</div>
       </div>
     </div>}
-    {progress && <div className="research-media-progress" role="status"><progress max={progress.total || undefined} value={progress.total ? progress.loaded : undefined} /><span>{({ hashing: "正在校验", uploading: "正在保存", saving: "正在验证原件", downloading: "正在下载" })[progress.phase]}{progress.total ? ` ${Math.round(progress.loaded / progress.total * 100)}%` : ` ${sizeLabel(progress.loaded)}`}</span><button type="button" data-ui="icon-action" aria-label={`暂停${label}导入`} title="暂停；重新选择相同文件可续传" onClick={() => abortRef.current?.abort()}><X size={14} /></button></div>}
+    {progress && <div className="research-media-progress" role="status"><progress max={progress.total || undefined} value={progress.total ? progress.loaded : undefined} /><span>{({ hashing: t("正在校验"), uploading: t("正在保存"), saving: t("正在验证原件"), downloading: t("正在下载") })[progress.phase]}{progress.total ? ` ${Math.round(progress.loaded / progress.total * 100)}%` : ` ${sizeLabel(progress.loaded)}`}</span><button type="button" data-ui="icon-action" aria-label={t`暂停${label}导入`} title={t("暂停；重新选择相同文件可续传")} onClick={() => abortRef.current?.abort()}><X size={14} /></button></div>}
     {remote?.message && progress && <small>{remote.message}</small>}
-    {(hasSource || block.caption) && <figcaption>{canEdit ? <textarea rows={1} aria-label={isImage ? "图片图注" : `${label}说明`} placeholder={isImage ? "添加图注…" : "添加说明…"} value={block.caption ?? ""} onChange={event => onPatch({ caption: event.target.value })} /> : block.caption}</figcaption>}
+    {(hasSource || block.caption) && <figcaption>{canEdit ? <textarea rows={1} aria-label={isImage ? t("图片图注") : t`${label}说明`} placeholder={isImage ? t("添加图注…") : t("添加说明…")} value={block.caption ?? ""} onChange={event => onPatch({ caption: event.target.value })} /> : block.caption}</figcaption>}
     {settings && canEdit && <div className="research-media-settings">
-      <label>{isImage ? "替代说明" : "名称"}<input aria-label={isImage ? "图片替代说明" : `${label}名称`} value={block.alt ?? ""} onChange={event => onPatch({ alt: event.target.value })} /></label>
-      <label>显示宽度<select aria-label={`${label}显示宽度`} value={block.display?.widthPercent ?? 100} onChange={event => onPatch({ display: { ...block.display, widthPercent: Number(event.target.value) } })}>{[25, 50, 75, 100].map(width => <option key={width} value={width}>{width}%</option>)}</select></label>
+      <label>{isImage ? t("替代说明") : t("名称")}<input aria-label={isImage ? t("图片替代说明") : t`${label}名称`} value={block.alt ?? ""} onChange={event => onPatch({ alt: event.target.value })} /></label>
+      <label>{t("显示宽度")}<select aria-label={t`${label}显示宽度`} value={block.display?.widthPercent ?? 100} onChange={event => onPatch({ display: { ...block.display, widthPercent: Number(event.target.value) } })}>{[25, 50, 75, 100].map(width => <option key={width} value={width}>{width}%</option>)}</select></label>
       {block.kind === "video" && <div className="research-media-poster">
-        <input ref={posterFileRef} type="file" hidden accept={imageFileAccept} aria-label="选择视频封面文件" disabled={Boolean(progress)} onChange={event => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void acceptPoster(file); }} />
-        {posterUrl && <img src={posterUrl} alt="视频封面" />}
-        <button type="button" disabled={Boolean(progress)} onClick={() => posterFileRef.current?.click()}>{block.poster ? "替换封面" : "选择封面"}</button>
-        {block.poster && <button type="button" disabled={Boolean(progress)} onClick={() => onPatch({ poster: undefined })}>移除封面</button>}
-        {block.poster && !posterView.loading && !posterUrl && <span className="research-media-poster-status">封面预览不可用，可重新选择图片。</span>}
+        <input ref={posterFileRef} type="file" hidden accept={imageFileAccept} aria-label={t("选择视频封面文件")} disabled={Boolean(progress)} onChange={event => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void acceptPoster(file); }} />
+        {posterUrl && <img src={posterUrl} alt={t("视频封面")} />}
+        <button type="button" disabled={Boolean(progress)} onClick={() => posterFileRef.current?.click()}>{block.poster ? t("替换封面") : t("选择封面")}</button>
+        {block.poster && <button type="button" disabled={Boolean(progress)} onClick={() => onPatch({ poster: undefined })}>{t("移除封面")}</button>}
+        {block.poster && !posterView.loading && !posterUrl && <span className="research-media-poster-status">{t("封面预览不可用，可重新选择图片。")}</span>}
       </div>}
-      {view.asset && <small title={view.asset.sourceUrl}>{view.asset.name} · {sizeLabel(view.asset.size)}{view.asset.width && view.asset.height ? ` · ${view.asset.width} × ${view.asset.height}` : ""}{view.asset.mimeType === "image/gif" ? " · GIF 预览显示首帧" : ""}</small>}
+      {view.asset && <small title={view.asset.sourceUrl}>{view.asset.name} · {sizeLabel(view.asset.size)}{view.asset.width && view.asset.height ? ` · ${view.asset.width} × ${view.asset.height}` : ""}{view.asset.mimeType === "image/gif" ? t(" · GIF 预览显示首帧") : ""}</small>}
       {block.source?.type === "url" && <small className="research-media-source-url" title={block.source.url}>{block.source.url}</small>}
     </div>}
-    {error && <div className="research-media-error" role="alert">{error}{!view.directory && onOpenStorage && <button type="button" onClick={onOpenStorage}>设置本地资料库</button>}</div>}
-    {expanded && isImage && previewUrl && <DeviceInspectorModal open title="图片预览" className="research-media-preview-dialog" onClose={() => setExpanded(false)}><img src={previewUrl} alt={block.alt || "图片"} /><p>{block.caption}</p>{view.originalUrl && <a href={view.originalUrl} download={view.asset?.name} target={block.source?.type === "url" ? "_blank" : undefined} rel="noopener noreferrer">{block.source?.type === "url" ? "打开来源图片" : "下载原件"}</a>}</DeviceInspectorModal>}
+    {error && <div className="research-media-error" role="alert">{localizeMediaError(error)}{!view.directory && onOpenStorage && <button type="button" onClick={onOpenStorage}>{t("设置本地资料库")}</button>}</div>}
+    {expanded && isImage && previewUrl && <DeviceInspectorModal open title={t("图片预览")} className="research-media-preview-dialog" onClose={() => setExpanded(false)}><img src={previewUrl} alt={block.alt || t("图片")} /><p>{block.caption}</p>{view.originalUrl && <a href={view.originalUrl} download={view.asset?.name} target={block.source?.type === "url" ? "_blank" : undefined} rel="noopener noreferrer">{block.source?.type === "url" ? t("打开来源图片") : t("下载原件")}</a>}</DeviceInspectorModal>}
   </figure>;
 }

@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import type { ResearchSymbolEntry } from "../domain/researchDictionary.ts";
 import { Formula } from "./Formula.tsx";
@@ -88,6 +90,7 @@ export default function ResearchSymbolDiagram({ active, entry, entries, bindings
   bindings: Record<string, string>;
   onBindingChange: (key: string, value: string) => void;
 }) {
+  useLocale();
   const canvasRef = useRef<HTMLDivElement>(null);
   const targetsRef = useRef<SymbolDiagramTargets>({ body: [], x1: [], x2: [], x3: [] });
   const { tex, markedTex } = markSymbolDiagram(entry, bindings);
@@ -157,13 +160,13 @@ export default function ResearchSymbolDiagram({ active, entry, entries, bindings
     })) ?? null);
   };
 
-  return <section className="research-symbol-diagram" aria-label="符号结构解释图" data-active-part={highlighted ?? undefined}>
+  return <section className="research-symbol-diagram" aria-label={t("符号结构解释图")} data-active-part={highlighted ?? undefined}>
     <div className="symbol-diagram-canvas" ref={canvasRef}>
       <article className="symbol-diagram-callout symbol-diagram-body" data-symbol-callout="body" data-active={highlighted === "body"}
         onPointerEnter={() => setHovered("body")} onPointerLeave={() => setHovered(null)}>
-        <h3>主体含义</h3>
+        <h3>{t("主体含义")}</h3>
         <p className="research-symbol-meaning"><ResearchMathText text={entry.meaning} /></p>
-        {entry.unit && <p className="research-symbol-meta"><strong>单位</strong><span>{entry.unit}</span></p>}
+        {entry.unit && <p className="research-symbol-meta"><strong>{t("单位")}</strong><span>{entry.unit}</span></p>}
       </article>
       <div className="research-symbol-hero" onPointerMove={highlightFormulaPart} onPointerLeave={() => setHovered(null)}>
         <Formula className="symbol-diagram-formula" tex={tex} block />
@@ -175,12 +178,12 @@ export default function ResearchSymbolDiagram({ active, entry, entries, bindings
         return <article key={slot.key} className={`symbol-diagram-callout symbol-diagram-${slot.key}`} data-symbol-callout={slot.key} data-active={highlighted === part}
           onPointerEnter={() => setHovered(part)} onPointerLeave={() => setHovered(null)}
           onFocusCapture={() => setFocused(part)} onBlurCapture={() => setFocused(null)}>
-          <h3>{slot.label}</h3>
-          <div className="symbol-diagram-description" aria-label={`${slot.label}说明`}>
-            {slot.description?.trim() ? <ResearchMathText text={slot.description} /> : <span className="symbol-diagram-missing-description">尚未填写说明</span>}
+          <h3>{t(slot.label)}</h3>
+          <div className="symbol-diagram-description" aria-label={t`${t(slot.label)}说明`}>
+            {slot.description?.trim() ? <ResearchMathText text={slot.description} /> : <span className="symbol-diagram-missing-description">{t("尚未填写说明")}</span>}
           </div>
-          <input aria-label={`${slot.label}示例值`} value={value} placeholder="留空" autoComplete="off" spellCheck={false} onChange={event => onBindingChange(slot.key, event.target.value)} />
-          {!value && <p className="symbol-diagram-empty">当前留空</p>}
+          <input aria-label={t`${t(slot.label)}示例值`} value={value} placeholder={t("留空")} autoComplete="off" spellCheck={false} onChange={event => onBindingChange(slot.key, event.target.value)} />
+          {!value && <p className="symbol-diagram-empty">{t("当前留空")}</p>}
           {reference && <div className="symbol-diagram-reference"><strong>{reference.name}</strong><p><ResearchMathText text={reference.meaning} /></p></div>}
         </article>;
       })}
@@ -191,6 +194,6 @@ export default function ResearchSymbolDiagram({ active, entry, entries, bindings
         </g>)}
       </svg>}
     </div>
-    <p className="symbol-diagram-hint">修改周围的示例值，实时查看符号写法。</p>
+    <p className="symbol-diagram-hint">{t("修改周围的示例值，实时查看符号写法。")}</p>
   </section>;
 }

@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 
@@ -12,6 +14,7 @@ export default function TheoryMapDialog({
   onClose: () => void;
   alert?: boolean;
 }) {
+  useLocale();
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -60,8 +63,8 @@ export default function TheoryMapDialog({
           <button
             type="button"
             data-ui="icon-action"
-            aria-label="关闭地图配置"
-            title="关闭"
+            aria-label={t("关闭地图配置")}
+            title={t("关闭")}
             onClick={onClose}
           >
             <X size={16} />

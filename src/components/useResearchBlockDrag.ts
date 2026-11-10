@@ -1,3 +1,4 @@
+import { t } from "../i18n/locale.ts";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type RefObject } from "react";
 import type { ResearchNotebookBlock } from "../domain/researchNotebook.ts";
 import { findResearchBlock, type ResearchExampleContainer } from "../domain/researchBlockTree.ts";
@@ -106,7 +107,7 @@ export function useResearchBlockDrag(options: {
     }
     ids = selectedRoots(latest.current.blocks, ids);
     setSelection({ noteId: latest.current.noteId, ids, mode: selectionRef.current.mode });
-    setAnnouncement(`已选 ${ids.length} 项内容，按住任一选中把手拖动`);
+    setAnnouncement(t`已选 ${ids.length} 项内容，按住任一选中把手拖动`);
   };
 
   const focusHandle = (blockId: string) => {
@@ -146,7 +147,7 @@ export function useResearchBlockDrag(options: {
       const siblings = location.siblings.filter(block => area === undefined || (block.section ?? "derivation") === area);
       const ids = selectionRef.current.ids.includes(blockId) ? selectionRef.current.ids : [blockId];
       if (ids.some(id => !siblings.some(block => block.id === id))) {
-        setAnnouncement("跨层级选择请拖动到目标位置");
+        setAnnouncement(t("跨层级选择请拖动到目标位置"));
         return;
       }
       const selected = new Set(ids);
@@ -155,7 +156,7 @@ export function useResearchBlockDrag(options: {
       const boundary = down ? indexes.at(-1)! : indexes[0];
       if (down ? boundary === siblings.length - 1 : boundary === 0) return;
       latest.current.onMove(ids, { container: location.container, area, beforeBlockId: siblings[boundary + (down ? 2 : -1)]?.id });
-      setAnnouncement(`已将 ${ids.length} 项内容${down ? "下移" : "上移"}`);
+      setAnnouncement(t`已将 ${ids.length} 项内容${down ? t("下移") : t("上移")}`);
       focusHandle(blockId);
     },
     onPointerDown(event, onStart) {
@@ -276,7 +277,7 @@ export function useResearchBlockDrag(options: {
           onStart();
           if (!selectionRef.current.ids.includes(blockId)) setSelection({ noteId: latest.current.noteId, ids: selecting ? [blockId] : [], mode: selecting });
           setActiveIds(ids);
-          setAnnouncement(`已抓取 ${ids.length} 项内容，松开放置，Escape 取消`);
+          setAnnouncement(t`已抓取 ${ids.length} 项内容，松开放置，Escape 取消`);
           frame = requestAnimationFrame(tick);
         }
         if (drag.started) { pointer.preventDefault(); locate(); }
@@ -302,13 +303,13 @@ export function useResearchBlockDrag(options: {
           latest.current.onMove(ids, drag.target!);
           if (drag.target!.container) latest.current.onRevealExample(drag.target!.container!);
           const area = drag.target!.area;
-          setAnnouncement(drag.target!.container ? `已将 ${ids.length} 项内容放入标签页` : area ? `已将 ${ids.length} 项内容放入${theoryAreaLabels[area]}` : `已调整 ${ids.length} 项内容的顺序`);
+          setAnnouncement(drag.target!.container ? t`已将 ${ids.length} 项内容放入标签页` : area ? t`已将 ${ids.length} 项内容放入${theoryAreaLabels[area]}` : t`已调整 ${ids.length} 项内容的顺序`);
         } else {
           const origin = findResearchBlock(latest.current.blocks, blockId);
           origin?.path.forEach(owner => latest.current.onRevealExample(owner));
           const rootBlock = origin?.path.length ? latest.current.blocks.find(block => block.id === origin.path[0].exampleBlockId) : origin?.block;
           if (rootBlock?.section) latest.current.onRevealArea(rootBlock.section);
-          setAnnouncement("已取消移动");
+          setAnnouncement(t("已取消移动"));
         }
         focusHandle(blockId);
       }

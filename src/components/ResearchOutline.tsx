@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import type { ResearchOutlineHeading } from "../domain/researchOutline.ts";
 import "./ResearchOutline.css";
@@ -19,6 +21,7 @@ export default function ResearchOutline({ headings, contentRef, onNavigate, onCl
   recipeActive?: boolean;
   onRecipeActiveChange?: (active: boolean) => void;
 }) {
+  useLocale();
   const [tab, setTab] = useState<"outline" | "backlinks">("outline");
   const backlinks = useMemo(() => notes && noteId ? buildResearchNoteBacklinks(notes, noteId) : [], [notes, noteId]);
   const [activeId, setActiveId] = useState<string | undefined>(headings[0]?.id);
@@ -57,35 +60,35 @@ export default function ResearchOutline({ headings, contentRef, onNavigate, onCl
     return () => { cancelAnimationFrame(frame); content.removeEventListener("scroll", onScroll, true); };
   }, [headings, contentRef, contentId]);
 
-  return <aside id="research-note-outline" className="research-note-outline" aria-label="文章大纲" onKeyDown={event => {
+  return <aside id="research-note-outline" className="research-note-outline" aria-label={t("文章大纲")} onKeyDown={event => {
     if (event.key !== "Escape") return;
     event.preventDefault(); event.stopPropagation(); onClose();
   }}>
-    <header>{notes ? <div className="research-outline-tabs" role="tablist" aria-label="笔记右侧面板">
-      <button type="button" role="tab" aria-selected={!recipeActive && tab === "outline"} onClick={() => { setTab("outline"); onRecipeActiveChange?.(false); }}>大纲</button>
-      <button type="button" role="tab" aria-selected={!recipeActive && tab === "backlinks"} onClick={() => { setTab("backlinks"); onRecipeActiveChange?.(false); }}>反向链接</button>
-      {recipe && <button id="research-note-recipe-tab" type="button" role="tab" aria-selected={recipeActive} aria-controls="research-note-recipe-panel" onClick={() => onRecipeActiveChange?.(true)}>变量配方</button>}
-    </div> : <strong>大纲</strong>}</header>
+    <header>{notes ? <div className="research-outline-tabs" role="tablist" aria-label={t("笔记右侧面板")}>
+      <button type="button" role="tab" aria-selected={!recipeActive && tab === "outline"} onClick={() => { setTab("outline"); onRecipeActiveChange?.(false); }}>{t("大纲")}</button>
+      <button type="button" role="tab" aria-selected={!recipeActive && tab === "backlinks"} onClick={() => { setTab("backlinks"); onRecipeActiveChange?.(false); }}>{t("反向链接")}</button>
+      {recipe && <button id="research-note-recipe-tab" type="button" role="tab" aria-selected={recipeActive} aria-controls="research-note-recipe-panel" onClick={() => onRecipeActiveChange?.(true)}>{t("变量配方")}</button>}
+    </div> : <strong>{t("大纲")}</strong>}</header>
     {recipe && <div id="research-note-recipe-panel" className="research-outline-recipe-panel" role="tabpanel" aria-labelledby="research-note-recipe-tab" hidden={!recipeActive}>{recipe}</div>}
     {!recipeActive && (tab === "outline" ? <>
-    <nav aria-label="文章标题">
+    <nav aria-label={t("文章标题")}>
       {headings.length ? <ol>{headings.map(heading => <li key={heading.id}>
         <button type="button" style={{ "--outline-depth": heading.depth } as CSSProperties}
           aria-current={selected === heading.id ? "location" : undefined}
           title={`${heading.number} ${heading.text}`} onClick={() => {
             clickedId.current = heading.id; setActiveId(heading.id); onNavigate(heading);
-          }}><span className="research-outline-number">{heading.number}</span>{" "}<span>{heading.text || "未命名标题"}</span></button>
-      </li>)}</ol> : <p className="research-outline-empty">这篇文章还没有层级标题。<span>使用 # 至 ###### 添加标题后，会在这里显示。</span></p>}
+          }}><span className="research-outline-number">{heading.number}</span>{" "}<span>{heading.text || t("未命名标题")}</span></button>
+      </li>)}</ol> : <p className="research-outline-empty">{t("这篇文章还没有层级标题。")}<span>{t("使用 # 至 ###### 添加标题后，会在这里显示。")}</span></p>}
     </nav>
-    <footer>{headings.length} 个标题</footer>
-    </> : <><nav aria-label="引用当前笔记的笔记">
+    <footer>{headings.length}  {t("个标题")}</footer>
+    </> : <><nav aria-label={t("引用当前笔记的笔记")}>
       {backlinks.length ? <ol className="research-note-backlinks">{backlinks.map(link => {
         const source = notes?.find(note => note.id === link.noteId);
         return <li key={link.noteId}><button type="button" onClick={() => onOpenNote?.(link.noteId, link.blockId)}>
-          <strong><FileText size={14} aria-hidden="true" />{source?.title || "未命名笔记"}</strong>
-          <small>{source && getNoteLibrary(source) === "foundation" ? "基础理论" : "研究记录"}</small><span>{link.excerpt}</span>
+          <strong><FileText size={14} aria-hidden="true" />{source?.title || t("未命名笔记")}</strong>
+          <small>{source && getNoteLibrary(source) === "foundation" ? t("基础理论") : t("研究记录")}</small><span>{link.excerpt}</span>
         </button></li>;
-      })}</ol> : <p className="research-outline-empty">暂无笔记引用此篇。<span>在其他笔记中输入 @，即可插入指向这里的链接。</span></p>}
-    </nav><footer>{backlinks.length} 篇引用笔记</footer></>)}
+      })}</ol> : <p className="research-outline-empty">{t("暂无笔记引用此篇。")}<span>{t("在其他笔记中输入 @，即可插入指向这里的链接。")}</span></p>}
+    </nav><footer>{backlinks.length}  {t("篇引用笔记")}</footer></>)}
   </aside>;
 }

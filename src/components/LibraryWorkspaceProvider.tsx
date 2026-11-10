@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t, localizeError } from "../i18n/locale.ts";
 import {
   useCallback,
   useEffect,
@@ -25,6 +27,7 @@ export default function LibraryWorkspaceProvider({
 }: {
   children: ReactNode;
 }) {
+  useLocale();
   const [context] = useState(
     () => new URLSearchParams(location.search).get("workspace") || "standalone",
   );
@@ -214,7 +217,7 @@ export default function LibraryWorkspaceProvider({
       <main className="mewiki-workspace-loading">
         {error ? (
           <>
-            <p role="alert">{error}</p>
+            <p role="alert">{localizeError(error)}</p>
             <button
               type="button"
               onClick={() => {
@@ -222,8 +225,7 @@ export default function LibraryWorkspaceProvider({
                 setAttempt((value) => value + 1);
               }}
             >
-              重试
-            </button>
+              {t("重试")}</button>
             <button
               type="button"
               onClick={() => {
@@ -233,11 +235,10 @@ export default function LibraryWorkspaceProvider({
                 setAttempt((value) => value + 1);
               }}
             >
-              返回入口资料库
-            </button>
+              {t("返回入口资料库")}</button>
           </>
         ) : (
-          <p role="status">正在打开资料库…</p>
+          <p role="status">{t("正在打开资料库…")}</p>
         )}
       </main>
     );

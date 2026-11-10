@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useRef, useState } from "react";
 import { RotateCcw, Settings2, X } from "lucide-react";
 import { defaultCalloutAppearance, normalizeCalloutAppearance, normalizeCalloutColor, type CalloutAppearance, type ResearchCalloutBlock } from "../domain/researchCallout.ts";
@@ -12,6 +14,7 @@ const borderStyles = [
 ] as const;
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (color: string) => void }) {
+  useLocale();
   return <label className="research-callout-color-field">
     <span>{label}</span>
     <span className="research-callout-color-inputs">
@@ -33,6 +36,7 @@ function CalloutSettings({ block, trigger, onPatch, onClose }: {
   onPatch: (patch: Partial<Pick<ResearchCalloutBlock, "title" | "text" | "appearance">>) => void;
   onClose: (restoreFocus?: boolean) => void;
 }) {
+  useLocale();
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement>(trigger);
   const close = (restoreFocus = false) => {
@@ -42,22 +46,22 @@ function CalloutSettings({ block, trigger, onPatch, onClose }: {
   };
   useFormulaPopover({ ref, triggerRef, getAnchor: () => trigger.getBoundingClientRect(), onCancel: close });
   const updateAppearance = (patch: Partial<CalloutAppearance>) => onPatch({ appearance: { ...block.appearance, ...patch } });
-  return <div ref={ref} className="research-callout-settings" popover="manual" role="dialog" aria-label="Callout 设置">
-    <header><strong>Callout 设置</strong><button type="button" data-ui="icon-action" aria-label="关闭 Callout 设置" title="关闭" onClick={() => close(true)}><X size={14} /></button></header>
-    <label className="research-callout-title-field"><span>标签文字</span><input aria-label="标签文字" defaultValue={block.title === "提示" ? "" : block.title} placeholder="提示" onChange={(event) => onPatch({ title: event.target.value })} /></label>
+  return <div ref={ref} className="research-callout-settings" popover="manual" role="dialog" aria-label={t("Callout 设置")}>
+    <header><strong>{t("Callout 设置")}</strong><button type="button" data-ui="icon-action" aria-label={t("关闭 Callout 设置")} title={t("关闭")} onClick={() => close(true)}><X size={14} /></button></header>
+    <label className="research-callout-title-field"><span>{t("标签文字")}</span><input aria-label={t("标签文字")} defaultValue={block.title === "提示" ? "" : block.title} placeholder={t("提示")} onChange={(event) => onPatch({ title: event.target.value })} /></label>
     <div className="research-callout-label-colors">
-      <ColorField label="标签背景色" value={block.appearance.labelBackground} onChange={(labelBackground) => updateAppearance({ labelBackground })} />
-      <ColorField label="标签文字色" value={block.appearance.labelColor} onChange={(labelColor) => updateAppearance({ labelColor })} />
+      <ColorField label={t("标签背景色")} value={block.appearance.labelBackground} onChange={(labelBackground) => updateAppearance({ labelBackground })} />
+      <ColorField label={t("标签文字色")} value={block.appearance.labelColor} onChange={(labelColor) => updateAppearance({ labelColor })} />
     </div>
     <div className="research-callout-border-settings">
-      <div role="group" aria-label="边框线型" className="research-callout-line-field"><span>边框线型</span><div className="research-callout-border-options">
-        {borderStyles.map((style) => <button key={style.value} type="button" aria-label={style.label} aria-pressed={block.appearance.borderStyle === style.value} onClick={() => updateAppearance({ borderStyle: style.value })}>
-          <svg viewBox="0 0 44 8" aria-hidden="true"><line x1="1" y1="4" x2="43" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray={style.dashes} /></svg><span>{style.label}</span>
+      <div role="group" aria-label={t("边框线型")} className="research-callout-line-field"><span>{t("边框线型")}</span><div className="research-callout-border-options">
+        {borderStyles.map((style) => <button key={style.value} type="button" aria-label={t(style.label)} aria-pressed={block.appearance.borderStyle === style.value} onClick={() => updateAppearance({ borderStyle: style.value })}>
+          <svg viewBox="0 0 44 8" aria-hidden="true"><line x1="1" y1="4" x2="43" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray={style.dashes} /></svg><span>{t(style.label)}</span>
         </button>)}
       </div></div>
       <div className="research-callout-border-values">
-        <ColorField label="边框颜色" value={block.appearance.borderColor} onChange={(borderColor) => updateAppearance({ borderColor })} />
-        <label className="research-callout-width-field"><span>边框粗细</span><span><input key={block.appearance.borderWidth} type="number" aria-label="边框粗细" min={0.5} max={6} step={0.5} defaultValue={block.appearance.borderWidth}
+        <ColorField label={t("边框颜色")} value={block.appearance.borderColor} onChange={(borderColor) => updateAppearance({ borderColor })} />
+        <label className="research-callout-width-field"><span>{t("边框粗细")}</span><span><input key={block.appearance.borderWidth} type="number" aria-label={t("边框粗细")} min={0.5} max={6} step={0.5} defaultValue={block.appearance.borderWidth}
           onBlur={(event) => {
             const input = event.currentTarget;
             const borderWidth = normalizeCalloutAppearance({ ...block.appearance, borderWidth: input.valueAsNumber }).borderWidth;
@@ -66,7 +70,7 @@ function CalloutSettings({ block, trigger, onPatch, onClose }: {
           }} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /><small>px</small></span></label>
       </div>
     </div>
-    <footer><button type="button" className="research-callout-reset" onClick={() => onPatch({ appearance: { ...defaultCalloutAppearance } })}><RotateCcw size={12} />恢复默认样式</button></footer>
+    <footer><button type="button" className="research-callout-reset" onClick={() => onPatch({ appearance: { ...defaultCalloutAppearance } })}><RotateCcw size={12} />{t("恢复默认样式")}</button></footer>
   </div>;
 }
 
@@ -76,6 +80,7 @@ export default function ResearchCallout({ block, readOnly, onPatch, onComplete }
   onPatch: (patch: Partial<Pick<ResearchCalloutBlock, "title" | "text" | "appearance">>) => void;
   onComplete?: () => void;
 }) {
+  useLocale();
   const [trigger, setTrigger] = useState<HTMLButtonElement | null>(null);
   const { appearance } = block;
   const width = appearance.borderWidth;
@@ -87,10 +92,10 @@ export default function ResearchCallout({ block, readOnly, onPatch, onComplete }
       <svg className="research-callout-border" aria-hidden="true">
         <rect x={width / 2} y={width / 2} width={`calc(100% - ${width}px)`} height={`calc(100% - ${width}px)`} rx={Math.max(0, 4 - width / 2)} fill="none" stroke={appearance.borderColor} strokeWidth={width} strokeDasharray={dasharray} />
       </svg>
-      <span className="research-callout-label" style={{ backgroundColor: appearance.labelBackground, color: appearance.labelColor }}>{block.title || "提示"}</span>
-      <div className="research-callout-body"><ResearchTextBlock value={block.text} label="Callout 正文" kind="callout" readOnly={readOnly} onChange={(text) => onPatch({ text })} onComplete={onComplete} /></div>
+      <span className="research-callout-label" style={{ backgroundColor: appearance.labelBackground, color: appearance.labelColor }}>{block.title || t("提示")}</span>
+      <div className="research-callout-body"><ResearchTextBlock value={block.text} label={t("Callout 正文")} kind="callout" readOnly={readOnly} onChange={(text) => onPatch({ text })} onComplete={onComplete} /></div>
     </div>
-    {!readOnly && <button className="research-callout-settings-button" type="button" data-ui="icon-action" aria-label="Callout 设置" title="Callout 设置" aria-expanded={!!trigger} onClick={(event) => setTrigger(trigger ? null : event.currentTarget)}><Settings2 size={13} /></button>}
+    {!readOnly && <button className="research-callout-settings-button" type="button" data-ui="icon-action" aria-label={t("Callout 设置")} title={t("Callout 设置")} aria-expanded={!!trigger} onClick={(event) => setTrigger(trigger ? null : event.currentTarget)}><Settings2 size={13} /></button>}
     {!readOnly && trigger && <CalloutSettings block={block} trigger={trigger} onPatch={onPatch} onClose={close} />}
   </>;
 }

@@ -5,6 +5,7 @@
 | 目录 | 内容 |
 | --- | --- |
 | `src/components/` | 页面编辑、阅读、符号与选择界面 |
+| `src/i18n/` | 界面语言、英文消息与 React 订阅 |
 | `src/domain/` | 资料模型、公式、标签、引用及校验逻辑 |
 | `src/state/` | 浏览器保存、本地资料库客户端与窗口状态 |
 | `src/integrations/`、`src/plugins/` | 外部内容协议、插件宿主与随附插件 |
@@ -30,7 +31,7 @@
 
 `ResearchClassifiedList` 接收 `choices` 和 `onSelect`。单选传 `selectedId`，多选传 `selectedIds`；导航列表传 `navigation`。`id` 表示业务身份，空字符串也是合法选项值，例如“仅使用词典定义”；没有当前值时不传 `selectedId`。同一对象的多个标签位置共享业务 ID，每个按钮会生成独立的 DOM ID。
 
-需要带搜索框的紧凑入口时使用 `ResearchSelectionField`，提供 `label`、`choices`、`value` 和 `onChange`。`label` 是用户可读名称，`value` 仍使用稳定 ID。不要按标题回查选项。停用选项、循环来源、基础理论范围等资格由调用方约束。
+需要带搜索框的紧凑入口时使用 `ResearchSelectionField`，提供 `label`、`choices`、`value`、稳定的 `storageKey` 和 `onChange`。`label` 是用户可读名称，`value` 仍使用稳定 ID。不要按标题回查选项。停用选项、循环来源、基础理论范围等资格由调用方约束。
 
 列表外置搜索时，先筛选 `choices`，把同一搜索词传给 `query`，并从完整候选中提供当前选择的 `activeTags`。这样搜索前后的展开状态不会误变。键盘移动、活动项与回车确认共用有效活动行；已经收起或禁用的条目不会被键盘选中。
 
@@ -55,3 +56,9 @@
 资料读取只做结构规范化，不按笔记或符号 ID 推断研究主题，不补齐默认内容，不修改已有正文或数学记号。旧命名槽位按保存的模板转换成三个位置；缺少旧模板的混合历史引用使用只含编码布局的兼容表。当前编码的值、说明、来源与结果 ID 保持原样。不要再引入自动生成研究内容的升级路径。清理边界见[源码清理记录](open-source/SOURCE_CLEANUP.md)，公开前事项见[发布清单](open-source/RELEASE_CHECKLIST.md)。
 
 第三方声明通过 `node scripts/generate-third-party-notices.mjs` 生成，`--check` 检查当前环境与已生成材料一致。工具读取锁文件与本机安装包，不执行依赖脚本、不联网，生成的清单不包含本机绝对路径。跨平台和二进制分发还要单独核对其组件。
+
+## 界面国际化与公开截图
+
+中英文界面复用同一资料模型；翻译只在显示边界进行，不改用户内容、稳定 ID 或协议。新增组件订阅语言、补充消息和参数校验，细节见[翻译约定](i18n/README.md)。
+
+`npm run check` 同时执行翻译校验、代码检查、单测与构建。`npm run docs:screenshots` 用隔离虚构内容更新 README 的 8 张截图；发布前目视核对，不以真实资料充当演示。

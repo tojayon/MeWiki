@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useEffect, useId, useState, type CSSProperties, type ReactNode } from "react";
 import { normalizeResearchTags, type ResearchTagBranch, type ResearchTaggedItem } from "../domain/researchTags.ts";
 import "./ResearchNoteManagement.css";
@@ -25,6 +27,7 @@ export default function ResearchTagTree<T extends ResearchTaggedItem>({
   empty: ReactNode;
   revealActiveOnMount?: boolean;
 }) {
+  useLocale();
   const id = useId();
   const tags = normalizeResearchTags(activeTags);
   const tagSignature = JSON.stringify(tags);
@@ -62,9 +65,9 @@ export default function ResearchTagTree<T extends ResearchTaggedItem>({
     return <li className="research-note-tree-branch" key={key} data-tag-path={branch.path}>
       <button type="button" className="research-note-folder" data-leaf={branch.children.length === 0}
         style={{ "--research-tag-depth": depth } as CSSProperties}
-        aria-label={`${open ? "收起" : "展开"}标签 ${branch.path || "未分类"}`} aria-expanded={open} aria-controls={childrenId}
-        title={branch.path || "未分类"} onClick={() => toggle(key)}>
-        <span className="research-note-folder-content"><span className="research-note-folder-label">{branch.label}</span></span>
+        aria-label={t`${open ? t("收起") : t("展开")}标签 ${branch.path || t("未分类")}`} aria-expanded={open} aria-controls={childrenId}
+        title={branch.path || t("未分类")} onClick={() => toggle(key)}>
+        <span className="research-note-folder-content"><span className="research-note-folder-label">{branch.path ? branch.label : t("未分类")}</span></span>
       </button>
       <ul id={childrenId} className="research-note-tree-children" hidden={!open}>
         {branch.items.map(item => <li className="research-note-tree-note" key={item.id}>{renderItem(item)}</li>)}

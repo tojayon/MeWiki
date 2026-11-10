@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Formula } from "./Formula.tsx";
@@ -18,19 +20,21 @@ function SymbolChoices({ match, target, onChoose, onCancel }: {
   match: InlineResearchSymbol; target: HTMLElement;
   onChoose: (entry: ResearchSymbolEntry) => void; onCancel: (restore?: boolean) => void;
 }) {
+  useLocale();
   const ref = useRef<HTMLDivElement>(null), triggerRef = useRef(target);
   useFormulaPopover({ ref, triggerRef, getAnchor: () => target.getBoundingClientRect(), onCancel });
   useLayoutEffect(() => {
     const options = [...(ref.current?.querySelectorAll<HTMLButtonElement>('[data-research-choice]') ?? [])];
     (options.find(option => option.getClientRects().length > 0) ?? ref.current?.querySelector<HTMLButtonElement>('button'))?.focus({ preventScroll: true });
   }, []);
-  return <div ref={ref} className="research-formula-inline-editor research-inline-symbol-choices" popover="manual" role="dialog" aria-label="选择符号含义">
-    <strong>此记号有多个含义</strong>
-    <ResearchClassifiedList choices={match.candidates.map(researchSymbolChoice)} label="选择符号含义" storageKey="mewiki:inline-symbol-choice-folds" onSelect={choice => onChoose(choice.symbol!)} />
+  return <div ref={ref} className="research-formula-inline-editor research-inline-symbol-choices" popover="manual" role="dialog" aria-label={t("选择符号含义")}>
+    <strong>{t("此记号有多个含义")}</strong>
+    <ResearchClassifiedList choices={match.candidates.map(researchSymbolChoice)} label={t("选择符号含义")} storageKey="mewiki:inline-symbol-choice-folds" onSelect={choice => onChoose(choice.symbol!)} />
   </div>;
 }
 
 export default function ResearchInlineFormula({ tex }: { tex: string }) {
+  useLocale();
   const context = useContext(ResearchNoteLinkContext);
   const enabled = useContext(InlineSymbolDetailsContext);
   const symbols = context?.symbols;
@@ -80,7 +84,7 @@ export default function ResearchInlineFormula({ tex }: { tex: string }) {
       if (!match) return null;
       return <button type="button" key={box.index} className="research-inline-symbol-hit" data-inline-symbol-index={box.index}
         style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
-        aria-label={match.candidates.length === 1 ? `查看符号 ${match.candidates[0].name}` : "查看符号的多个含义"} title="查看含义与推导来源" aria-haspopup="dialog" aria-expanded={current?.match === match}
+        aria-label={match.candidates.length === 1 ? t`查看符号 ${match.candidates[0].name}` : t("查看符号的多个含义")} title={t("查看含义与推导来源")} aria-haspopup="dialog" aria-expanded={current?.match === match}
         onPointerDown={event => event.stopPropagation()} onClick={event => {
           event.preventDefault(); event.stopPropagation();
           const target = event.currentTarget;

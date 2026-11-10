@@ -1,3 +1,4 @@
+import { translate, getLocale, type Locale } from "../i18n/locale.ts";
 import type { ResearchNote } from '../domain/researchNotebook.ts';
 import { resolveSymbolEntry, type ResearchSymbolEntry } from '../domain/researchDictionary.ts';
 import { getNoteLibrary } from '../domain/researchNoteLibraries.ts';
@@ -11,9 +12,9 @@ export interface ResearchChoice {
   note?: ResearchNote;
   symbol?: ResearchSymbolEntry;
 }
-export function researchNoteChoice(note: ResearchNote, extra: Partial<Pick<ResearchChoice, 'id' | 'label' | 'detail'>> = {}): ResearchChoice {
-  return { id: note.id, label: note.title || '未命名笔记', tags: note.tags, note,
-    searchText: [note.title, ...(note.tags ?? []), getNoteLibrary(note) === 'foundation' ? '基础理论' : '研究记录', extra.detail, extra.label].join(' '), ...extra };
+export function researchNoteChoice(note: ResearchNote, extra: Partial<Pick<ResearchChoice, 'id' | 'label' | 'detail'>> = {}, language: Locale = getLocale()): ResearchChoice {
+  return { id: note.id, label: note.title || translate('未命名笔记', [], language), tags: note.tags, note,
+    searchText: [note.title, ...(note.tags ?? []), getNoteLibrary(note) === 'foundation' ? '基础理论 Foundations' : '研究记录 Research notes', extra.detail, extra.label].join(' '), ...extra };
 }
 export function researchSymbolChoice(symbol: ResearchSymbolEntry): ResearchChoice {
   const tex = resolveSymbolEntry(symbol, Object.fromEntries(symbol.slots.map(slot => [slot.key, slot.defaultValue]))).tex;

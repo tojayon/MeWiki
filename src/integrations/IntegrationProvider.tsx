@@ -1,3 +1,6 @@
+import { translate } from "../i18n/locale.ts";
+import { useLocale } from "../i18n/react.ts";
+
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { IntegrationContext } from './IntegrationContext.ts';
 import { parseExternalContent, type ExternalContent } from './externalContent.ts';
@@ -13,6 +16,7 @@ interface InsertionRequest {
 }
 
 export default function IntegrationProvider({ children }: { children: ReactNode }) {
+  const locale = useLocale();
   const [plugins, setPlugins] = useState(() => loadPluginState(window.localStorage));
   const [content, setContent] = useState<ExternalContent | null>(null);
   const [connection, setConnection] = useState<ConnectedApplication | null>(null);
@@ -54,12 +58,12 @@ export default function IntegrationProvider({ children }: { children: ReactNode 
   const insertion = useMemo(() => {
     const plugin = availablePlugins.find(item => item.id === content?.provider && plugins[item.id] === 'enabled');
     if (!plugin || !content) return null;
-    try { return { label: plugin.insertionLabel, content: plugin.validate(content) }; } catch { return null; }
-  }, [plugins, content]);
+    try { return { label: translate(plugin.insertionLabel, [], locale), content: plugin.validate(content) }; } catch { return null; }
+  }, [plugins, content, locale]);
   const insertions = useMemo(() => availablePlugins.filter(plugin => plugins[plugin.id] === 'enabled').map(plugin => ({
-    provider: plugin.id, label: plugin.insertionLabel,
-    description: insertion?.content.provider === plugin.id ? insertion.content.title : plugin.description,
-  })), [plugins, insertion]);
+    provider: plugin.id, label: translate(plugin.insertionLabel, [], locale),
+    description: insertion?.content.provider === plugin.id ? insertion.content.title : translate(plugin.description, [], locale),
+  })), [plugins, insertion, locale]);
   const chooseContent = useCallback((provider: string, signal: AbortSignal): Promise<ExternalContent | null> => {
     const plugin = availablePlugins.find(item => item.id === provider && plugins[item.id] === 'enabled');
     if (!plugin || signal.aborted) return Promise.resolve(null);

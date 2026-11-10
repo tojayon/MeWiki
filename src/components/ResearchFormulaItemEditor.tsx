@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t, localizeError } from "../i18n/locale.ts";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, Check, Info, PanelRightClose, PanelRightOpen, Plus, SlidersHorizontal, Trash2, X } from "lucide-react";
 import { Formula } from "./Formula.tsx";
@@ -35,11 +37,11 @@ export interface ResearchFormulaItemEditorProps {
 type SlotEditor = { key: SymbolPositionKey; value: string };
 type PositionRect = { left: number; top: number; width: number; height: number };
 
-const positionLabels: Record<SymbolPositionKey, string> = {
-  x1: "右上角标",
-  x2: "右下角标",
-  x3: "右侧变量",
-};
+const positionLabels: () => Record<SymbolPositionKey, string> = () => ({
+  x1: t("右上角标"),
+  x2: t("右下角标"),
+  x3: t("右侧变量"),
+});
 
 function entryBindings(entry: ResearchSymbolEntry) {
   return Object.fromEntries(entry.slots.map((slot) => [slot.key, slot.defaultValue]));
@@ -49,6 +51,7 @@ function entryBindings(entry: ResearchSymbolEntry) {
 export function ResearchFormulaItemEditor({
   part: initialPart, mode, state, owner, initialQuery, error, getAnchor, onCancel, onSave, onDelete, onOpenFormula,
 }: ResearchFormulaItemEditorProps) {
+  useLocale();
   const ref = useRef<HTMLDivElement>(null);
   const queryInputRef = useRef<HTMLInputElement>(null);
   const latexInputRef = useRef<HTMLInputElement>(null);
@@ -226,61 +229,61 @@ export function ResearchFormulaItemEditor({
 
   return (
     <div ref={ref} className={`research-formula-inline-editor research-formula-item-editor${operatorsOpen ? "" : " is-operators-collapsed"}`} popover="manual" role="dialog"
-      aria-label={mode === "add" ? "添加公式项" : "编辑公式项"}>
+      aria-label={mode === "add" ? t("添加公式项") : t("编辑公式项")}>
       <div className="research-formula-input-columns">
         <div className="research-formula-symbol-column">
           <ResearchFormulaSymbolPicker entries={state.symbols} selectedId={part.entryId} query={query} inputRef={queryInputRef}
             inserting={mode === "add"} onQueryChange={setQuery} onSelect={chooseSymbol} />
-          <section className="research-formula-item-symbol-editor" aria-label="符号选择与编辑">
+          <section className="research-formula-item-symbol-editor" aria-label={t("符号选择与编辑")}>
             {symbol ? <>
               <div className="research-formula-symbol-preview-heading">
                 <strong>{symbol.name}</strong>
                 <span className="research-formula-symbol-preview-tools">
-                  <button type="button" data-ui="icon-action" aria-label="高级设置" title="高级设置：推导来源"
+                  <button type="button" data-ui="icon-action" aria-label={t("高级设置")} title={t("高级设置：推导来源")}
                     aria-expanded={advancedOpen} aria-controls={advancedId}
                     onClick={() => setAdvancedOpen(value => !value)}><SlidersHorizontal size={14} /></button>
-                  <button type="button" data-ui="icon-action" aria-label="符号说明"
-                    title={[symbol.meaning, symbol.unit && `单位：${symbol.unit}`, symbol.scope && `范围：${symbol.scope}`, "点击预览中的角标编辑，空位置点击 + 添加；回车完成，Esc 取消。"].filter(Boolean).join("\n")}><Info size={14} /></button>
+                  <button type="button" data-ui="icon-action" aria-label={t("符号说明")}
+                    title={[symbol.meaning, symbol.unit && t`单位：${symbol.unit}`, symbol.scope && t`范围：${symbol.scope}`, t("点击预览中的角标编辑，空位置点击 + 添加；回车完成，Esc 取消。")].filter(Boolean).join("\n")}><Info size={14} /></button>
                   <button type="button" data-ui="icon-action" className="research-definition-open"
                     onClick={() => window.dispatchEvent(new CustomEvent("research-dictionary-open", { detail: symbol.id }))}
-                    aria-label="打开词典词条" title="打开词典词条"><BookOpen size={14} /></button>
+                    aria-label={t("打开词典词条")} title={t("打开词典词条")}><BookOpen size={14} /></button>
                   <button type="button" data-ui="icon-action" aria-expanded={operatorsOpen} aria-controls={operatorPanelId}
-                    aria-label={operatorsOpen ? "收起运算符面板" : "展开运算符面板"} title={operatorsOpen ? "收起运算符面板" : "展开运算符面板"}
+                    aria-label={operatorsOpen ? t("收起运算符面板") : t("展开运算符面板")} title={operatorsOpen ? t("收起运算符面板") : t("展开运算符面板")}
                     onClick={() => setOperatorsOpen(value => !value)}>{operatorsOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}</button>
                 </span>
               </div>
-              <div ref={previewRef} className="research-formula-symbol-preview" aria-label="符号预览">
-                <div className="research-formula-symbol-preview-drag-area" data-popover-drag-handle="" aria-hidden="true" title="拖动空白处移动窗口" />
+              <div ref={previewRef} className="research-formula-symbol-preview" aria-label={t("符号预览")}>
+                <div className="research-formula-symbol-preview-drag-area" data-popover-drag-handle="" aria-hidden="true" title={t("拖动空白处移动窗口")} />
                 <Formula tex={previewTex ?? ""} block />
                 {symbolPositions.map(({ key }) => positionRects[key] && <button type="button" key={key}
                   ref={(element) => { positionButtons.current[key] = element; }} style={positionRects[key]}
                   className={`research-formula-symbol-position-hit${previewBindings[key] ? " has-value" : ""}`}
-                  aria-label={`编辑${positionLabels[key]}`} title={`编辑${positionLabels[key]}`}
+                  aria-label={t`编辑${positionLabels()[key]}`} title={t`编辑${positionLabels()[key]}`}
                   onClick={() => { if (slotEditor && slotEditor.key !== key) commitSlot(); openSlot(key); }}>{!previewBindings[key] && "+"}</button>)}
                 {slotEditor && <div ref={slotPopupRef} className="research-formula-symbol-slot-popover" role="dialog" data-popover-no-drag=""
-                  aria-label={`编辑${positionLabels[slotEditor.key]}`} onPointerDown={(event) => event.stopPropagation()}>
-                  <label>{positionLabels[slotEditor.key]}<input ref={slotInputRef}
-                    aria-label={symbol.slots.find((slot) => slot.key === slotEditor.key)?.label ?? positionLabels[slotEditor.key]}
+                  aria-label={t`编辑${positionLabels()[slotEditor.key]}`} onPointerDown={(event) => event.stopPropagation()}>
+                  <label>{positionLabels()[slotEditor.key]}<input ref={slotInputRef}
+                    aria-label={t(symbol.slots.find((slot) => slot.key === slotEditor.key)?.label ?? positionLabels()[slotEditor.key])}
                     value={slotEditor.value} placeholder={symbol.slots.find((slot) => slot.key === slotEditor.key)?.defaultValue}
                     onChange={(event) => setSlotEditor({ ...slotEditor, value: event.target.value })} onKeyDown={(event) => {
                       if (event.nativeEvent.isComposing || event.keyCode === 229) return;
                       if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); commitSlot(); }
                     }} /></label>
                   <div className="research-formula-symbol-slot-actions">
-                    <button type="button" onClick={commitSlot} aria-label="完成位置编辑" title="完成位置编辑"><Check size={13} /></button>
-                    <button type="button" onClick={() => setSlotEditor(null)} aria-label="取消位置编辑" title="取消位置编辑"><X size={13} /></button>
+                    <button type="button" onClick={commitSlot} aria-label={t("完成位置编辑")} title={t("完成位置编辑")}><Check size={13} /></button>
+                    <button type="button" onClick={() => setSlotEditor(null)} aria-label={t("取消位置编辑")} title={t("取消位置编辑")}><X size={13} /></button>
                   </div>
                 </div>}
               </div>
-            </> : <p className="research-formula-symbol-empty">暂无符号，请先在词典中添加。</p>}
+            </> : <p className="research-formula-symbol-empty">{t("暂无符号，请先在词典中添加。")}</p>}
             {(symbol || onDelete) && <div className="research-formula-symbol-insert-actions">
               {symbol && <button type="button" className="research-symbol-save" disabled={!symbolChosen} onClick={saveItem}
-                  aria-label={mode === "add" ? "插入符号" : replacingOperator ? "替换为符号" : "保存公式项"}
-                  title={!symbolChosen ? "请先从候选中选择符号" : mode === "add" ? "插入当前符号，可连续点击" : "保存当前公式项并继续插入"}>
-                  {mode === "add" ? <Plus size={14} /> : <Check size={14} />}{mode === "add" ? "插入符号" : replacingOperator ? "替换为符号" : "保存修改"}
+                  aria-label={mode === "add" ? t("插入符号") : replacingOperator ? t("替换为符号") : t("保存公式项")}
+                  title={!symbolChosen ? t("请先从候选中选择符号") : mode === "add" ? t("插入当前符号，可连续点击") : t("保存当前公式项并继续插入")}>
+                  {mode === "add" ? <Plus size={14} /> : <Check size={14} />}{mode === "add" ? t("插入符号") : replacingOperator ? t("替换为符号") : t("保存修改")}
               </button>}
               {onDelete && <button type="button" className="research-symbol-delete" data-tone="danger"
-                onClick={onDelete} aria-label="删除" title="删除当前公式项"><Trash2 size={14} />删除</button>}
+                onClick={onDelete} aria-label={t("删除")} title={t("删除当前公式项")}><Trash2 size={14} />{t("删除")}</button>}
             </div>}
             {symbol && <div id={advancedId} className="research-formula-symbol-advanced" hidden={!advancedOpen}>
                 <FormulaSourceSelector state={state} owner={owner} part={part} onChange={setSymbolPart} onOpenFormula={onOpenFormula} />
@@ -288,29 +291,29 @@ export function ResearchFormulaItemEditor({
           </section>
         </div>
         <div id={operatorPanelId} className="research-formula-operator-column" hidden={!operatorsOpen} data-popover-no-drag="">
-          <form className="research-formula-latex-input" aria-label="LaTeX 输入" onSubmit={event => {
+          <form className="research-formula-latex-input" aria-label={t("LaTeX 输入")} onSubmit={event => {
             event.preventDefault();
             if (latexError) return;
             if (slotEditor) commitSlot();
             if (onSave({ type: "latex", tex: latex.trim() })) setInserted(value => value + 1);
           }}>
             <div className="research-formula-latex-actions">
-              <input ref={latexInputRef} aria-label="LaTeX 数学符号" placeholder={"LaTeX，如 \\alpha"} value={latex}
+              <input ref={latexInputRef} aria-label={t("LaTeX 数学符号")} placeholder={t("LaTeX，如 \\alpha")} value={latex}
                 onChange={event => setLatex(event.target.value)}
                 onKeyDown={event => { if (event.key === "Enter" && (event.nativeEvent.isComposing || event.keyCode === 229)) event.preventDefault(); }}
-                aria-invalid={!!latex.trim() && !!latexError} title="输入 LaTeX，回车插入；矩阵等完整表达式也可使用" />
-              <button type="submit" aria-label={mode === "edit" ? "替换为 LaTeX" : "插入 LaTeX"}
-                title={latexError ?? (mode === "edit" ? "替换当前项" : "插入 LaTeX，可连续点击")} disabled={!!latexError}><Plus size={14} /></button>
+                aria-invalid={!!latex.trim() && !!latexError} title={t("输入 LaTeX，回车插入；矩阵等完整表达式也可使用")} />
+              <button type="submit" aria-label={mode === "edit" ? t("替换为 LaTeX") : t("插入 LaTeX")}
+                title={localizeError(latexError) || (mode === "edit" ? t("替换当前项") : t("插入 LaTeX，可连续点击"))} disabled={!!latexError}><Plus size={14} /></button>
             </div>
-            {latex.trim() && (latexError ? <p className="research-formula-latex-error" role="status">{latexError}</p>
-              : <div className="research-formula-latex-preview" aria-label="LaTeX 预览"><Formula tex={latex} /></div>)}
+            {latex.trim() && (latexError ? <p className="research-formula-latex-error" role="status">{localizeError(latexError)}</p>
+              : <div className="research-formula-latex-preview" aria-label={t("LaTeX 预览")}><Formula tex={latex} /></div>)}
           </form>
-          <div className="research-formula-operator-palette" role="group" aria-label="运算符键盘">
-          {operatorPalette.map(group => <section className="research-formula-operator-group" key={group.label} aria-label={group.label}>
-            <h4 title={group.label === "常用" ? "近期多次使用的运算符，下次打开面板时更新" : group.label}>{group.shortLabel}</h4>
+          <div className="research-formula-operator-palette" role="group" aria-label={t("运算符键盘")}>
+          {operatorPalette.map(group => <section className="research-formula-operator-group" key={group.label} aria-label={t(group.label)}>
+            <h4 title={group.label === "常用" ? t("近期多次使用的运算符，下次打开面板时更新") : t(group.label)}>{t(group.shortLabel)}</h4>
             <div className="research-formula-operator-keys">{group.keys.map(key => <button type="button" key={key.id}
               data-operator={key.id} className={mode === "edit" && initialPart.type === "operator" && initialPart.operator === key.id ? "is-current" : ""}
-              aria-label={`插入运算符 ${key.label}`} title={`${mode === "edit" ? "替换为" : "插入"}${key.label}`}
+              aria-label={t`插入运算符 ${t(key.label)}`} title={`${mode === "edit" ? t("替换为") : t("插入")}${t(key.label)}`}
               onClick={() => {
                 if (slotEditor) commitSlot();
                 if (onSave({ type: "operator", operator: key.id })) {
@@ -322,8 +325,8 @@ export function ResearchFormulaItemEditor({
           </div>
         </div>
       </div>
-      {error && <p className="research-formula-error" role="alert">{error}</p>}
-      <span role="status" className="visually-hidden">{inserted ? `已写入 ${inserted} 次，可继续输入` : ""}</span>
+      {error && <p className="research-formula-error" role="alert">{localizeError(error)}</p>}
+      <span role="status" className="visually-hidden">{inserted ? t`已写入 ${inserted} 次，可继续输入` : ""}</span>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AlignCenter, AlignLeft, AlignRight, Code2, Columns3, Plus, Redo2, Rows3, TableProperties, Trash2, Undo2, X } from "lucide-react";
@@ -33,6 +35,7 @@ function TableTools({ trigger, selected, model, history, onAction, onHistory, on
   onSource: () => void;
   onClose: (restoreFocus?: boolean) => void;
 }) {
+  useLocale();
   const ref = useRef<HTMLDivElement>(null);
   const confirmDelete = useDeleteConfirmation();
   const triggerRef = useRef<HTMLElement>(trigger);
@@ -40,22 +43,22 @@ function TableTools({ trigger, selected, model, history, onAction, onHistory, on
   const { row, column } = selected;
   const item = (label: string, icon: ReactNode, action: () => void, disabled = false) =>
     <button type="button" aria-label={label} disabled={disabled} onClick={action}>{icon}<span>{label}</span></button>;
-  return <div ref={ref} popover="manual" role="dialog" aria-label="表格操作" className="research-table-tools">
-    <header><strong>表格操作<span>第 {row + 1} 行 · 第 {column + 1} 列</span></strong><button type="button" data-ui="icon-action" aria-label="关闭表格操作" onClick={() => onClose(true)}><X size={14} /></button></header>
+  return <div ref={ref} popover="manual" role="dialog" aria-label={t("表格操作")} className="research-table-tools">
+    <header><strong>{t("表格操作")}<span>{t("第")} {row + 1}  {t("行 · 第")} {column + 1}  {t("列")}</span></strong><button type="button" data-ui="icon-action" aria-label={t("关闭表格操作")} onClick={() => onClose(true)}><X size={14} /></button></header>
     <div className="research-table-structure">
-      {item("下方插入行", <><Rows3 size={15} /><Plus size={10} /></>, () => onAction(table => insertTableRow(table, row + 1), { row: row + 1, column }), !model)}
-      {item("删除当前行", <Trash2 size={15} />, () => confirmDelete({ title: "删除表格行", description: `确定删除第 ${row + 1} 行及其中的全部单元格吗？` }, () => onAction(table => deleteTableRow(table, row))), !model || row === 0)}
-      {item("右侧插入列", <><Columns3 size={15} /><Plus size={10} /></>, () => onAction(table => insertTableColumn(table, column + 1), { row, column: column + 1 }), !model)}
-      {item("删除当前列", <Trash2 size={15} />, () => confirmDelete({ title: "删除表格列", description: `确定删除第 ${column + 1} 列及其中的全部单元格吗？` }, () => onAction(table => deleteTableColumn(table, column))), !model || model.align.length < 2)}
+      {item(t("下方插入行"), <><Rows3 size={15} /><Plus size={10} /></>, () => onAction(table => insertTableRow(table, row + 1), { row: row + 1, column }), !model)}
+      {item(t("删除当前行"), <Trash2 size={15} />, () => confirmDelete({ title: t("删除表格行"), description: t`确定删除第 ${row + 1} 行及其中的全部单元格吗？` }, () => onAction(table => deleteTableRow(table, row))), !model || row === 0)}
+      {item(t("右侧插入列"), <><Columns3 size={15} /><Plus size={10} /></>, () => onAction(table => insertTableColumn(table, column + 1), { row, column: column + 1 }), !model)}
+      {item(t("删除当前列"), <Trash2 size={15} />, () => confirmDelete({ title: t("删除表格列"), description: t`确定删除第 ${column + 1} 列及其中的全部单元格吗？` }, () => onAction(table => deleteTableColumn(table, column))), !model || model.align.length < 2)}
     </div>
-    <div className="research-table-alignment" role="group" aria-label="当前列对齐方式"><span>列对齐</span>{([
-      ["left", "左对齐", AlignLeft], ["center", "居中对齐", AlignCenter], ["right", "右对齐", AlignRight],
+    <div className="research-table-alignment" role="group" aria-label={t("当前列对齐方式")}><span>{t("列对齐")}</span>{([
+      ["left", t("左对齐"), AlignLeft], ["center", t("居中对齐"), AlignCenter], ["right", t("右对齐"), AlignRight],
     ] as const).map(([alignment, label, Icon]) => <button type="button" key={alignment} data-ui="icon-action" aria-label={label} title={label}
       aria-pressed={(model?.align[column] ?? "left") === alignment} disabled={!model} onClick={() => onAction(table => setTableAlignment(table, column, alignment))}><Icon size={15} /></button>)}</div>
     <footer>
-      <button type="button" data-ui="icon-action" aria-label="撤销表格操作" title="撤销表格操作" disabled={!history.past.length} onClick={() => onHistory(false)}><Undo2 size={15} /></button>
-      <button type="button" data-ui="icon-action" aria-label="重做表格操作" title="重做表格操作" disabled={!history.future.length} onClick={() => onHistory(true)}><Redo2 size={15} /></button>
-      <button type="button" className="research-table-source-toggle" onClick={onSource}><Code2 size={15} />编辑表格源码</button>
+      <button type="button" data-ui="icon-action" aria-label={t("撤销表格操作")} title={t("撤销表格操作")} disabled={!history.past.length} onClick={() => onHistory(false)}><Undo2 size={15} /></button>
+      <button type="button" data-ui="icon-action" aria-label={t("重做表格操作")} title={t("重做表格操作")} disabled={!history.future.length} onClick={() => onHistory(true)}><Redo2 size={15} /></button>
+      <button type="button" className="research-table-source-toggle" onClick={onSource}><Code2 size={15} />{t("编辑表格源码")}</button>
     </footer>
   </div>;
 }
@@ -68,6 +71,7 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
   onChange: (text: string, focusOnCancel?: HTMLElement) => boolean | void;
   onComplete?: () => void;
 }) {
+  useLocale();
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const sourceRef = useRef<HTMLTextAreaElement>(null);
@@ -205,7 +209,7 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
   useLayoutEffect(() => { if (sourceMode) sourceRef.current?.focus({ preventScroll: true }); }, [sourceMode]);
 
   return <div ref={rootRef} className="research-table-editor research-editable-text research-markdown" role="group" aria-label={label} tabIndex={0}
-    aria-description="点击单元格编辑，Tab 切换单元格，Enter 保存，Ctrl/Cmd+Enter 完成本块并选择下一内容块，Shift+Enter 换行，Esc 放弃当前输入。聚焦表格后按 Enter 开始编辑。"
+    aria-description={t("点击单元格编辑，Tab 切换单元格，Enter 保存，Ctrl/Cmd+Enter 完成本块并选择下一内容块，Shift+Enter 换行，Esc 放弃当前输入。聚焦表格后按 Enter 开始编辑。")}
     onKeyDown={event => {
       if (event.target !== event.currentTarget) return;
       if (event.nativeEvent.isComposing || event.keyCode === 229) return;
@@ -225,11 +229,11 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
       activate({ row: (cell.parentElement as HTMLTableRowElement).rowIndex, column: cell.cellIndex });
     }}
     onClick={event => { if (event.target instanceof Element && event.target.closest("td, th")?.closest("table") === rootRef.current?.querySelector(":scope > .research-markdown-table > table") && !event.ctrlKey && !event.metaKey) event.preventDefault(); }}>
-    {!sourceMode && <button type="button" data-ui="icon-action" className="research-table-options" aria-label="表格操作" title="表格行列、对齐与源码" aria-expanded={!!trigger}
+    {!sourceMode && <button type="button" data-ui="icon-action" className="research-table-options" aria-label={t("表格操作")} title={t("表格行列、对齐与源码")} aria-expanded={!!trigger}
       onPointerDown={event => event.preventDefault()} onClick={event => { closeCell(true); setTrigger(trigger ? null : event.currentTarget); }}><TableProperties size={15} /></button>}
     {sourceMode ? <div className="research-table-source">
-      <header><strong>表格源码</strong><button type="button" onPointerDown={event => event.preventDefault()} onClick={() => finishSource(true)}>返回表格</button></header>
-      <ResearchMentionTextarea ref={sourceRef} aria-label="表格 Markdown 源码" defaultValue={value} rows={Math.min(16, value.split("\n").length + 1)} spellCheck={false}
+      <header><strong>{t("表格源码")}</strong><button type="button" onPointerDown={event => event.preventDefault()} onClick={() => finishSource(true)}>{t("返回表格")}</button></header>
+      <ResearchMentionTextarea ref={sourceRef} aria-label={t("表格 Markdown 源码")} defaultValue={value} rows={Math.min(16, value.split("\n").length + 1)} spellCheck={false}
         onBlur={() => finishSource(true)} onKeyDown={event => {
           if (event.key !== "Escape" && !(event.key === "Enter" && (event.ctrlKey || event.metaKey))) return;
           event.stopPropagation(); event.preventDefault();
@@ -239,8 +243,8 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
           }
         }} />
     </div> : <ResearchMarkdown text={value} headings={headings} />}
-    {active && createPortal(<ResearchMentionTextarea key={active.id} ref={inputRef} className="research-table-cell-editor" aria-label="单元格内容"
-      aria-description="支持文字、行内 Markdown 和公式。Enter 保存，Esc 取消，Tab 切换，Shift+Enter 换行。" spellCheck={false}
+    {active && createPortal(<ResearchMentionTextarea key={active.id} ref={inputRef} className="research-table-cell-editor" aria-label={t("单元格内容")}
+      aria-description={t("支持文字、行内 Markdown 和公式。Enter 保存，Esc 取消，Tab 切换，Shift+Enter 换行。")} spellCheck={false}
       style={active.style} rows={1} defaultValue={active.initial} onBlur={() => closeCell(true)} onKeyDown={handleKeys}
       onPaste={event => {
         const text = event.clipboardData.getData("text/plain");

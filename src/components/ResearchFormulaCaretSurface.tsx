@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type RefObject } from "react";
 import { CornerDownLeft, AlignCenter, AlignLeft, TextCursorInput, CodeXml } from "lucide-react";
 import { Formula } from "./Formula.tsx";
@@ -97,6 +99,7 @@ export function FormulaCaretSurface({
   texInputOpen: boolean;
   apiRef: RefObject<FormulaSurfaceApi | null>;
 }) {
+  const locale = useLocale();
   const surfaceRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const measured = useRef<FormulaCaretRect[]>([]);
@@ -128,8 +131,8 @@ export function FormulaCaretSurface({
       if (!element) continue;
       element.dataset.formulaIndex = String(index);
       const part = parts[index];
-      const name = part.type === "symbol" ? symbols.find((entry) => entry.id === part.entryId)?.name : part.type === "operator" ? formulaOperators.find((entry) => entry.id === part.operator)?.label : part.type === "latex" ? `LaTeX：${part.tex}` : undefined;
-      element.title = (name ?? "公式项") + " · 单击选择 · 拖选多项 · 拖动已选内容移动 · 双击编辑";
+      const name = part.type === "symbol" ? symbols.find((entry) => entry.id === part.entryId)?.name : part.type === "operator" ? t(formulaOperators.find((entry) => entry.id === part.operator)?.label ?? "公式项") : part.type === "latex" ? `LaTeX：${part.tex}` : undefined;
+      element.title = (name ?? t("公式项")) + t(" · 单击选择 · 拖选多项 · 拖动已选内容移动 · 双击编辑");
     }
     const measure = () => {
       measured.current = measureCarets(canvas, model);
@@ -141,7 +144,7 @@ export function FormulaCaretSurface({
     observer.observe(canvas);
     document.fonts.ready.then(() => { if (canvas.isConnected) measure(); });
     return () => observer.disconnect();
-  }, [model, parts, symbols, position]);
+  }, [model, parts, symbols, position, locale]);
   useLayoutEffect(() => {
     const canvas = canvasRef.current!;
     canvas.querySelectorAll(".research-formula-selected, .research-formula-drag-source").forEach((element) => element.classList.remove("research-formula-selected", "research-formula-drag-source"));
@@ -323,8 +326,8 @@ export function FormulaCaretSurface({
   };
   return (
     <div className="research-formula-editor-surface">
-      <div ref={surfaceRef} className={"research-formula-interactive-expression" + (drag ? drag.kind === "move" ? " is-dragging-formula" : " is-selecting-formula" : "")} role="textbox" aria-label="公式光标编辑器" aria-multiline="true" tabIndex={0}
-        title="单击选择 · 边缘定位 · 拖动选择多项 · 拖动已选内容移动 · Ctrl/Cmd+C/V 复制粘贴 · 双击编辑"
+      <div ref={surfaceRef} className={"research-formula-interactive-expression" + (drag ? drag.kind === "move" ? " is-dragging-formula" : " is-selecting-formula" : "")} role="textbox" aria-label={t("公式光标编辑器")} aria-multiline="true" tabIndex={0}
+        title={t("单击选择 · 边缘定位 · 拖动选择多项 · 拖动已选内容移动 · Ctrl/Cmd+C/V 复制粘贴 · 双击编辑")}
         data-selection-start={selection?.start} data-selection-end={selection?.end}
         onClick={placeCaret} onKeyDown={handleKeys}
         onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelDrag} onLostPointerCapture={() => { if (gesture.current) cancelDrag(); }}
@@ -336,22 +339,22 @@ export function FormulaCaretSurface({
         }}>
         <div ref={canvasRef} className="research-formula-math-canvas">
           <Formula tex={formulaPartsToTex(parts, symbols, layout).tex} markedTex={model.tex} block interactive />
-          {caret && !drag && <button className={"research-formula-caret" + (selection ? " has-selection" : "")} type="button" data-position={position} aria-label="在光标处插入公式项"
+          {caret && !drag && <button className={"research-formula-caret" + (selection ? " has-selection" : "")} type="button" data-position={position} aria-label={t("在光标处插入公式项")}
             style={{ left: caret.x, top: caret.top, height: caret.height }}
             onClick={(event) => { event.stopPropagation(); onInsert(); }} />}
           {drag?.kind === "move" && drag.target && <span className={"research-formula-drop-caret" + (drag.range.start <= drag.target.position && drag.target.position <= drag.range.end ? " is-unchanged" : "")} data-position={drag.target.position} aria-hidden="true"
             style={{ left: drag.target.x, top: drag.target.top, height: drag.target.height }} />}
         </div>
       </div>
-      {selection && <span className="research-formula-selection-status" role="status">已选择 {selection.end - selection.start} 项 · Ctrl/Cmd+C 复制 · Ctrl/Cmd+X 剪切</span>}
-      <div className="research-formula-layout-toolbar" role="toolbar" aria-label="多行公式工具">
-        <div className="research-formula-layout-modes" role="group" aria-label="公式对齐方式">
-          <button data-ui="icon-action" type="button" aria-label="居中多行" aria-pressed={layout === "centered"} disabled={hasAlignmentPoint} title={hasAlignmentPoint ? "居中多行 · 请先移除公式中的对齐点" : "居中多行"} onClick={() => onLayout("centered")}><AlignCenter size={15} /></button>
-          <button data-ui="icon-action" type="button" aria-label="等号对齐" title="等号对齐" aria-pressed={layout === "aligned"} onClick={() => onLayout("aligned")}><AlignLeft size={15} /></button>
+      {selection && <span className="research-formula-selection-status" role="status">{t("已选择")} {selection.end - selection.start}  {t("项 · Ctrl/Cmd+C 复制 · Ctrl/Cmd+X 剪切")}</span>}
+      <div className="research-formula-layout-toolbar" role="toolbar" aria-label={t("多行公式工具")}>
+        <div className="research-formula-layout-modes" role="group" aria-label={t("公式对齐方式")}>
+          <button data-ui="icon-action" type="button" aria-label={t("居中多行")} aria-pressed={layout === "centered"} disabled={hasAlignmentPoint} title={hasAlignmentPoint ? t("居中多行 · 请先移除公式中的对齐点") : t("居中多行")} onClick={() => onLayout("centered")}><AlignCenter size={15} /></button>
+          <button data-ui="icon-action" type="button" aria-label={t("等号对齐")} title={t("等号对齐")} aria-pressed={layout === "aligned"} onClick={() => onLayout("aligned")}><AlignLeft size={15} /></button>
         </div>
-        <button data-ui="icon-action" type="button" aria-label="插入换行" title="插入换行 · Shift+Enter" disabled={!canInsertAtRoot} onClick={() => onInsertStructure({ type: "lineBreak" })}><CornerDownLeft size={15} /></button>
-        <button data-ui="icon-action" type="button" aria-label="插入对齐点" title="插入对齐点 · 将等号等关系符对齐" disabled={layout === "centered" || !canInsertAtRoot} onClick={() => onInsertStructure({ type: "alignmentPoint" })}><TextCursorInput size={15} /></button>
-        <button data-ui="icon-action" type="button" aria-label="粘贴 LaTeX 公式" title="粘贴 LaTeX 公式 · 预览后插入" aria-expanded={texInputOpen} aria-controls={texInputOpen ? texInputId : undefined} onClick={onTexInput}><CodeXml size={15} /></button>
+        <button data-ui="icon-action" type="button" aria-label={t("插入换行")} title={t("插入换行 · Shift+Enter")} disabled={!canInsertAtRoot} onClick={() => onInsertStructure({ type: "lineBreak" })}><CornerDownLeft size={15} /></button>
+        <button data-ui="icon-action" type="button" aria-label={t("插入对齐点")} title={t("插入对齐点 · 将等号等关系符对齐")} disabled={layout === "centered" || !canInsertAtRoot} onClick={() => onInsertStructure({ type: "alignmentPoint" })}><TextCursorInput size={15} /></button>
+        <button data-ui="icon-action" type="button" aria-label={t("粘贴 LaTeX 公式")} title={t("粘贴 LaTeX 公式 · 预览后插入")} aria-expanded={texInputOpen} aria-controls={texInputOpen ? texInputId : undefined} onClick={onTexInput}><CodeXml size={15} /></button>
       </div>
     </div>
   );

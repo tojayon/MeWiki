@@ -1,3 +1,4 @@
+import { useLocale } from "../i18n/react.ts";
 import { memo, useMemo } from "react";
 import katex from "katex";
 
@@ -14,6 +15,7 @@ export const Formula = memo(function Formula({
   interactive?: boolean;
   markedTex?: string;
 }) {
+  useLocale();
   const html = useMemo(
     () => {
       const rendered = katex.renderToString(markedTex ?? tex, {

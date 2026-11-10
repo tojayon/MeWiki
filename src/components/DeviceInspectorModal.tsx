@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 
@@ -20,6 +22,7 @@ export default function DeviceInspectorModal({
   children: ReactNode;
   testId?: string;
 }) {
+  useLocale();
   const dialog = useRef<HTMLDialogElement>(null);
   const closeRef = useRef(onClose);
   const titleId = `device-modal-title-${testId ?? title}`;
@@ -59,8 +62,8 @@ export default function DeviceInspectorModal({
           )}
           <button data-ui="icon-action"
             className="icon-button"
-            aria-label={`关闭${title}`}
-            title={`关闭${title}`}
+            aria-label={t`关闭${title}`}
+            title={t`关闭${title}`}
             onClick={() => closeRef.current()}
           >
             <X size={15} />

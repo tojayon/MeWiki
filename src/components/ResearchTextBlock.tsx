@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { isPlainResearchText } from "../domain/researchMarkdown.ts";
 import ResearchMarkdown from "./ResearchMarkdown.tsx";
@@ -21,12 +23,14 @@ interface TextBlockProps {
 }
 
 export default function ResearchTextBlock(props: TextBlockProps) {
+  useLocale();
   const value = props.readOnly ? props.value : researchTextEditorState(props.value, props.kind).source;
   const table = useMemo(() => props.kind !== "list" && !props.readOnly && value.includes("|") ? parseResearchTable(value) : null, [props.kind, props.readOnly, value]);
   return table ? <ResearchTableBlock value={value} model={table} label={props.label} headings={props.headings} onChange={props.onChange} onComplete={props.onComplete} /> : <SourceTextBlock {...props} />;
 }
 
 function SourceTextBlock({ value, label, readOnly = false, kind = "paragraph", placeholder, headings, onChange, onComplete }: TextBlockProps) {
+  useLocale();
   const [editing, setEditing] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
   const composing = useRef(false);
@@ -65,7 +69,7 @@ function SourceTextBlock({ value, label, readOnly = false, kind = "paragraph", p
     onFocus={(event) => { if (event.target === event.currentTarget) setEditing(true); }}
   >{editing ? <ResearchMentionTextarea ref={ref} className="research-text-source" aria-label={label} rows={1} defaultValue={editorSource} spellCheck={kind !== "code"}
     aria-keyshortcuts="Control+Enter Meta+Enter Shift+Enter"
-    aria-description="Ctrl/Cmd+Enter 完成本块并选择下一内容块；Shift+Enter 续写列表或引用。"
+    aria-description={t("Ctrl/Cmd+Enter 完成本块并选择下一内容块；Shift+Enter 续写列表或引用。")}
     onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
     onBlur={(event) => {
       save(event.currentTarget);

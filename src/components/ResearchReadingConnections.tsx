@@ -1,3 +1,4 @@
+import { useLocale } from "../i18n/react.ts";
 import { useEffect, useState, type RefObject } from "react";
 import type { ResearchNote } from "../domain/researchNotebook.ts";
 import { researchNoteLinkId } from "../domain/researchNoteLinks.ts";
@@ -53,6 +54,7 @@ function measureConnections(rail: HTMLElement, panes: ResearchReadingPane[]): Ge
 export default function ResearchReadingConnections({ railRef, panes, notes }: {
   railRef: RefObject<HTMLDivElement | null>; panes: ResearchReadingPane[]; notes: readonly ResearchNote[];
 }) {
+  useLocale();
   const [geometry, setGeometry] = useState<Geometry>({ width: 0, height: 0, connections: [] });
   useEffect(() => {
     const rail = railRef.current;

@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t } from "../i18n/locale.ts";
 import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { ChevronLeft, GitBranch, LocateFixed } from "lucide-react";
 import { recipeInputRoles } from "../domain/researchRecipeMetadata.ts";
@@ -7,13 +9,13 @@ import { layoutRecipeTree, recipeTreePath, type RecipeNodeSize, type RecipeTree,
 const recipeMapHelp = "点击符号逐层展开并查看配方，可在图内横向或纵向滚动。\n蓝色表示当前路径，橙色表示基础输入，虚线表示关系待确认。";
 
 function nodeStatus(node: RecipeTreeNode) {
-  if (node.role !== "derived") return recipeInputRoles[node.role];
-  if (node.cycle) return "循环来源 · 停止展开";
-  if (node.limited) return "已达展开上限";
-  if (node.source.error) return "来源失效";
-  if (node.recipe?.warning) return "配方待补充或复核";
-  if (node.recipe) return node.recipe.kind === "related" ? "共同涉及 · 待确认" : `${node.recipe.inputs.length} 项输入`;
-  return node.source.candidates.length ? "待选择配方" : "来源待补充";
+  if (node.role !== "derived") return t(recipeInputRoles[node.role]);
+  if (node.cycle) return t("循环来源 · 停止展开");
+  if (node.limited) return t("已达展开上限");
+  if (node.source.error) return t("来源失效");
+  if (node.recipe?.warning) return t("配方待补充或复核");
+  if (node.recipe) return node.recipe.kind === "related" ? t("共同涉及 · 待确认") : t`${node.recipe.inputs.length} 项输入`;
+  return node.source.candidates.length ? t("待选择配方") : t("来源待补充");
 }
 
 export default function ResearchRecipeTree({ tree, selectedId, name, renderVariable, onSelect, onCollapse }: {
@@ -23,6 +25,7 @@ export default function ResearchRecipeTree({ tree, selectedId, name, renderVaria
   onSelect: (id: string) => void;
   onCollapse: (id: string) => void;
 }) {
+  useLocale();
   const viewport = useRef<HTMLDivElement>(null);
   const buttons = useRef(new Map<string, HTMLButtonElement>());
   const [sizes, setSizes] = useState<Record<string, RecipeNodeSize>>({});
@@ -72,14 +75,14 @@ export default function ResearchRecipeTree({ tree, selectedId, name, renderVaria
     event.preventDefault(); event.stopPropagation();
     if (next) onSelect(next);
   };
-  return <section className="recipe-tree" aria-label="变量关系图">
-    <div className="recipe-tree-toolbar"><strong title={recipeMapHelp}><GitBranch size={14} />变量关系</strong><div role="group" aria-label="关系图操作">
-      <button type="button" aria-label="收起当前分支" title="收起当前变量的输入 · ←" disabled={!selected?.expanded} onClick={() => selected && onCollapse(selected.id)}><ChevronLeft size={14} /></button>
-      <button type="button" aria-label="回到目标变量" title="回到目标变量" onClick={() => onSelect("root")}><LocateFixed size={14} /></button>
+  return <section className="recipe-tree" aria-label={t("变量关系图")}>
+    <div className="recipe-tree-toolbar"><strong title={t(recipeMapHelp)}><GitBranch size={14} />{t("变量关系")}</strong><div role="group" aria-label={t("关系图操作")}>
+      <button type="button" aria-label={t("收起当前分支")} title={t("收起当前变量的输入 · ←")} disabled={!selected?.expanded} onClick={() => selected && onCollapse(selected.id)}><ChevronLeft size={14} /></button>
+      <button type="button" aria-label={t("回到目标变量")} title={t("回到目标变量")} onClick={() => onSelect("root")}><LocateFixed size={14} /></button>
     </div></div>
     <div className="recipe-tree-viewport" ref={viewport}>
-      <div className="recipe-tree-canvas" role="tree" aria-label="变量配方依赖树" aria-description={recipeMapHelp} style={{ width: layout.width, height: layout.height }}>
-        {layout.columns.map(column => <span key={column.depth} className="recipe-tree-column" aria-hidden="true" style={{ left: column.x, width: column.width }}>{column.depth === 0 ? "目标" : column.depth === 1 ? "依赖" : `第 ${column.depth} 层`}</span>)}
+      <div className="recipe-tree-canvas" role="tree" aria-label={t("变量配方依赖树")} aria-description={t(recipeMapHelp)} style={{ width: layout.width, height: layout.height }}>
+        {layout.columns.map(column => <span key={column.depth} className="recipe-tree-column" aria-hidden="true" style={{ left: column.x, width: column.width }}>{column.depth === 0 ? t("目标") : column.depth === 1 ? t("依赖") : t`第 ${column.depth} 层`}</span>)}
         <svg className="recipe-tree-edges" width={layout.width} height={layout.height} aria-hidden="true">
           {layout.nodes.filter(node => node.parentId).map(node => {
             const parent = layout.nodes.find(parent => parent.id === node.parentId)!;
@@ -90,13 +93,13 @@ export default function ResearchRecipeTree({ tree, selectedId, name, renderVaria
         {layout.nodes.map(node => <button key={node.id} ref={element => { if (element) buttons.current.set(node.id, element); else buttons.current.delete(node.id); }}
           type="button" role="treeitem" className="recipe-tree-node" data-basic={node.role !== "derived"} data-root={node.id === "root"} data-on-path={path.has(node.id)} data-warning={!!node.source.error || node.cycle || !!node.recipe?.warning}
           style={{ left: node.x, top: node.y, width: node.width, height: node.height }}
-          aria-label={`查看配方 ${name(node.part)}`} aria-level={node.depth + 1} aria-posinset={node.parentId ? nodes.get(node.parentId)!.children.indexOf(node.id) + 1 : 1} aria-setsize={node.parentId ? nodes.get(node.parentId)!.children.length : 1}
+          aria-label={t`查看配方 ${name(node.part)}`} aria-level={node.depth + 1} aria-posinset={node.parentId ? nodes.get(node.parentId)!.children.indexOf(node.id) + 1 : 1} aria-setsize={node.parentId ? nodes.get(node.parentId)!.children.length : 1}
           aria-selected={node.id === selectedId} aria-expanded={node.expandable ? node.expanded : undefined} aria-description={nodeStatus(node)} tabIndex={node.id === selectedId ? 0 : -1}
           title={`${name(node.part)} · ${nodeStatus(node)}`} onClick={() => onSelect(node.id)} onKeyDown={event => keyDown(event, node)}>
           {renderVariable(node.part)}
         </button>)}
       </div>
     </div>
-    {tree.truncated && <p className="recipe-notice" role="status">已达当前关系图的显示上限，可收起其他分支后继续展开。</p>}
+    {tree.truncated && <p className="recipe-notice" role="status">{t("已达当前关系图的显示上限，可收起其他分支后继续展开。")}</p>}
   </section>;
 }

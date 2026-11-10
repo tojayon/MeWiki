@@ -519,3 +519,14 @@
 .research-formula-operator-keys > button:active {
   background: #dce8fa;
 }
+
+/* Latin operator names read horizontally; Chinese keeps the compact column. */
+html:lang(en) .research-formula-operator-group { flex-direction: column; gap: 3px; }
+html:lang(en) .research-formula-operator-group h4 {
+  flex-basis: auto;
+  margin-top: 4px;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  white-space: normal;
+}
+html:lang(en) .research-formula-operator-keys { width: 100%; }

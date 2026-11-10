@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t, localizeError } from "../i18n/locale.ts";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ExternalLink, Globe, Link, RefreshCw, Settings2 } from "lucide-react";
 import { normalizeMediaUrl } from "../domain/researchMedia.ts";
@@ -7,6 +9,7 @@ import { useResearchLibrary } from "../state/useResearchNotebook.ts";
 import "./ResearchBookmarkBlock.css";
 
 export default function ResearchBookmarkBlock({ block, readOnly = false, onPatch }: { block: BookmarkBlock; readOnly?: boolean; onPatch: (patch: Partial<BookmarkBlock>) => void }) {
+  useLocale();
   const library = useResearchLibrary();
   const [draftState, setDraft] = useState({ url: block.url, value: block.url ?? "" });
   const draft = draftState.url === block.url ? draftState.value : block.url ?? "";
@@ -45,25 +48,25 @@ export default function ResearchBookmarkBlock({ block, readOnly = false, onPatch
     } catch (cause) { if (current()) setError(cause instanceof Error ? cause.message : "暂时无法读取网页，可手动填写标题和摘要。"); }
     finally { if (token === state.operation) setPending(undefined); if (state.abort === controller) state.abort = undefined; }
   };
-  let host = "网页链接";
+  let host = t("网页链接");
   try { if (block.url) host = new URL(block.url).hostname; } catch { /* Invalid browser data is repaired by the normalizer. */ }
   return <div className="research-bookmark-block" aria-busy={loading}>
     {block.url && <a className="research-bookmark-link" href={block.url} target="_blank" rel="noopener noreferrer"><Globe className="research-bookmark-icon" size={26} aria-hidden="true" /><span><strong>{block.title || host}</strong>{block.description && <p>{block.description}</p>}<small>{block.siteName || host}<span aria-hidden="true"> · </span>{block.url}</small></span><ExternalLink size={15} aria-hidden="true" /></a>}
     {canEdit && <>
-      {!block.url && <div className="research-bookmark-input"><Link size={16} /><input type="url" aria-label="网页网址" placeholder="粘贴网页链接…" value={draft} onChange={event => setDraft({ url: block.url, value: event.target.value })} onKeyDown={event => { if (event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); save(); } }} /><button type="button" onClick={save} disabled={!draft.trim()}>保存链接</button></div>}
+      {!block.url && <div className="research-bookmark-input"><Link size={16} /><input type="url" aria-label={t("网页网址")} placeholder={t("粘贴网页链接…")} value={draft} onChange={event => setDraft({ url: block.url, value: event.target.value })} onKeyDown={event => { if (event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); save(); } }} /><button type="button" onClick={save} disabled={!draft.trim()}>{t("保存链接")}</button></div>}
       <div className="research-bookmark-tools">
-        {block.url && <button type="button" data-ui="icon-action" aria-label="获取网页信息" title="读取标题、摘要与来源；获取期间的手动修改会保留" disabled={loading} onClick={() => void fetchMetadata()}><RefreshCw size={14} /></button>}
-        <button type="button" data-ui="icon-action" aria-label="网页卡片设置" title="编辑网址、标题、摘要与来源" aria-expanded={settings} onClick={() => setSettings(value => !value)}><Settings2 size={14} /></button>
-        {loading && <span role="status">正在读取网页信息…</span>}
+        {block.url && <button type="button" data-ui="icon-action" aria-label={t("获取网页信息")} title={t("读取标题、摘要与来源；获取期间的手动修改会保留")} disabled={loading} onClick={() => void fetchMetadata()}><RefreshCw size={14} /></button>}
+        <button type="button" data-ui="icon-action" aria-label={t("网页卡片设置")} title={t("编辑网址、标题、摘要与来源")} aria-expanded={settings} onClick={() => setSettings(value => !value)}><Settings2 size={14} /></button>
+        {loading && <span role="status">{t("正在读取网页信息…")}</span>}
       </div>
       {settings && <div className="research-bookmark-settings">
-        {block.url && <label>网址<div className="research-bookmark-edit-url"><input type="url" aria-label="网页网址" value={draft} onChange={event => setDraft({ url: block.url, value: event.target.value })} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); save(); } }} /><button type="button" onClick={save}>更新链接</button></div></label>}
-        <label>标题<input aria-label="网页标题" value={block.title ?? ""} onChange={event => onPatch({ title: event.target.value })} /></label>
-        <label>摘要<textarea aria-label="网页摘要" rows={3} value={block.description ?? ""} onChange={event => onPatch({ description: event.target.value })} /></label>
-        <label>来源<input aria-label="网页来源" value={block.siteName ?? ""} onChange={event => onPatch({ siteName: event.target.value })} /></label>
+        {block.url && <label>{t("网址")}<div className="research-bookmark-edit-url"><input type="url" aria-label={t("网页网址")} value={draft} onChange={event => setDraft({ url: block.url, value: event.target.value })} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); save(); } }} /><button type="button" onClick={save}>{t("更新链接")}</button></div></label>}
+        <label>{t("标题")}<input aria-label={t("网页标题")} value={block.title ?? ""} onChange={event => onPatch({ title: event.target.value })} /></label>
+        <label>{t("摘要")}<textarea aria-label={t("网页摘要")} rows={3} value={block.description ?? ""} onChange={event => onPatch({ description: event.target.value })} /></label>
+        <label>{t("来源")}<input aria-label={t("网页来源")} value={block.siteName ?? ""} onChange={event => onPatch({ siteName: event.target.value })} /></label>
       </div>}
-      {error && <p role="alert" className="research-bookmark-error">{error}</p>}
+      {error && <p role="alert" className="research-bookmark-error">{localizeError(error)}</p>}
     </>}
-    {!canEdit && !block.url && <p className="research-bookmark-empty">{block.title || "网页链接待填写"}{block.description && ` · ${block.description}`}</p>}
+    {!canEdit && !block.url && <p className="research-bookmark-empty">{block.title || t("网页链接待填写")}{block.description && ` · ${block.description}`}</p>}
   </div>;
 }

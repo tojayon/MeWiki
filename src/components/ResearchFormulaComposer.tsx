@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import { t, localizeError } from "../i18n/locale.ts";
 import { useContext, useEffect, useId, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { X, Check, Copy, Pencil, Settings } from "lucide-react";
 import katex from "katex";
@@ -39,6 +41,7 @@ function FormulaSettingsPopover({ block, state, owner, triggerRef, onCancel, onS
   onSave: (patch: Pick<FormulaBlock, "caption" | "conditions" | "outputs">) => void;
   onOpenFormula: (address: FormulaAddress) => void;
 }) {
+  useLocale();
   const ref = useRef<HTMLDivElement>(null);
   const [caption, setCaption] = useState(() => researchCaptionInputValue(block.caption));
   const [conditions, setConditions] = useState(block.conditions ?? "");
@@ -46,22 +49,22 @@ function FormulaSettingsPopover({ block, state, owner, triggerRef, onCancel, onS
   const [error, setError] = useState("");
   useFormulaPopover({ ref, getAnchor: () => triggerRef.current!.getBoundingClientRect(), onCancel, triggerRef });
   return (
-    <div ref={ref} id={"formula-settings-" + block.id} className="research-formula-inline-editor research-formula-settings-popover" popover="manual" role="dialog" aria-label="公式设置">
-      <strong className="research-formula-settings-heading">公式设置</strong>
-      <label>公式说明<textarea aria-label="公式说明" rows={3} value={caption} placeholder="填写公式的含义或补充说明"
+    <div ref={ref} id={"formula-settings-" + block.id} className="research-formula-inline-editor research-formula-settings-popover" popover="manual" role="dialog" aria-label={t("公式设置")}>
+      <strong className="research-formula-settings-heading">{t("公式设置")}</strong>
+      <label>{t("公式说明")}<textarea aria-label={t("公式说明")} rows={3} value={caption} placeholder={t("填写公式的含义或补充说明")}
         onChange={(event) => setCaption(event.target.value)} /></label>
-      <p className="research-formula-settings-hint">显示在公式左下方，留空则隐藏。</p>
-      <label>适用条件<textarea aria-label="适用条件" rows={2} value={conditions} placeholder="记录模型假设、使用范围或成立条件"
+      <p className="research-formula-settings-hint">{t("显示在公式左下方，留空则隐藏。")}</p>
+      <label>{t("适用条件")}<textarea aria-label={t("适用条件")} rows={2} value={conditions} placeholder={t("记录模型假设、使用范围或成立条件")}
         onChange={(event) => setConditions(event.target.value)} /></label>
       <FormulaResultSettings state={state} owner={owner} block={block} outputs={outputs} onChange={(next) => { setOutputs(next); setError(""); }} onOpenFormula={onOpenFormula} />
-      {error && <p className="research-formula-error" role="alert">{error}</p>}
+      {error && <p className="research-formula-error" role="alert">{localizeError(error)}</p>}
       <div className="research-formula-inline-editor-actions">
-        <button data-ui="icon-action" onClick={() => onCancel(true)} aria-label="取消" title="取消"><X size={15} /></button>
+        <button data-ui="icon-action" onClick={() => onCancel(true)} aria-label={t("取消")} title={t("取消")}><X size={15} /></button>
         <button data-ui="icon-action" className="research-symbol-save" onClick={() => {
           const issue = formulaMetadataError(state, owner, outputs);
           if (issue) { setError(issue); return; }
           onSave({ caption: caption.trim(), conditions: conditions.trim(), outputs });
-        }} aria-label="保存设置" title="保存设置"><Check size={15} /></button>
+        }} aria-label={t("保存设置")} title={t("保存设置")}><Check size={15} /></button>
       </div>
     </div>
   );
@@ -76,6 +79,7 @@ export default function ResearchFormulaComposer({ block, state, owner, readOnly 
   onOpenFormula: (address: FormulaAddress) => void;
   onComplete?: () => void;
 }) {
+  useLocale();
   const parts = block.parts ?? [];
   const [isEditing, setIsEditing] = useState(false);
   const confirmDelete = useDeleteConfirmation();
@@ -223,7 +227,7 @@ export default function ResearchFormulaComposer({ block, state, owner, readOnly 
     if (!parts[index]) return;
     const result = removeFormulaPart(parts, index);
     const count = parts.length - result.parts.length;
-    confirmDelete({ title: "删除公式内容", description: count > 1 ? `确定删除所选公式结构及其中的 ${count} 个公式项吗？` : "确定删除选中的公式项吗？" }, () => {
+    confirmDelete({ title: t("删除公式内容"), description: count > 1 ? t`确定删除所选公式结构及其中的 ${count} 个公式项吗？` : t("确定删除选中的公式项吗？") }, () => {
       const current = latestEdit.current;
       if (JSON.stringify(current.parts) !== JSON.stringify(parts)) {
         setError("公式内容已变更，请重新选择要删除的公式项。");
@@ -294,7 +298,7 @@ export default function ResearchFormulaComposer({ block, state, owner, readOnly 
     if (!selected) return;
     const range = { ...selected };
     const expected = fingerprint;
-    confirmDelete({ title: cut ? "剪切公式内容" : "删除公式内容", description: `${cut ? "所选内容已复制。确定从公式中剪切" : "确定删除"}选中的 ${range.end - range.start} 个公式项吗？` }, () => {
+    confirmDelete({ title: cut ? t("剪切公式内容") : t("删除公式内容"), description: t`${cut ? t("所选内容已复制。确定从公式中剪切") : t("确定删除")}选中的 ${range.end - range.start} 个公式项吗？` }, () => {
       const current = latestEdit.current;
       if (current.fingerprint !== expected) { setError("公式内容已变更，请重新选择公式项。"); surfaceRef.current?.focus(); return; }
       const result = replaceFormulaSelection(current.parts, range, [], { state: current.state, owner: current.owner, layout: current.layout });
@@ -343,7 +347,7 @@ export default function ResearchFormulaComposer({ block, state, owner, readOnly 
   };
   return (
     <div className="research-formula-composer">
-      <div className={"research-formula-inline-expression" + (isEditing && !readOnly ? " is-editing" : "")} aria-label="公式预览"
+      <div className={"research-formula-inline-expression" + (isEditing && !readOnly ? " is-editing" : "")} aria-label={t("公式预览")}
         onKeyDown={event => {
           if (!onComplete || !isEditing || readOnly || event.key !== "Enter" || !(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey || event.nativeEvent.isComposing || event.keyCode === 229) return;
           if (!(event.target instanceof Element) || !event.target.closest(".research-formula-interactive-expression")) return;
@@ -354,7 +358,7 @@ export default function ResearchFormulaComposer({ block, state, owner, readOnly 
           ? block.parts !== undefined
             ? <FormulaCaretSurface parts={parts} symbols={state.symbols} position={position} selection={selection} layout={layout} onPosition={moveCaret} onSelect={selectRange} onInsert={openInsert} onInsertStructure={insertStructure} onLayout={changeLayout} onEdit={openPart} onRemove={removeAt} onRemoveSelection={() => removeSelection()} onCopy={copySelection} onCut={(clipboard, range) => { if (copySelection(clipboard, range)) removeSelection(true, range); }} onPaste={pasteSelection} onMove={moveSelection} onHistory={restoreHistory} onTexInput={toggleTexInput} texInputId={texInputId} texInputOpen={!!texInput} apiRef={surfaceRef} />
             : <div className="research-formula-tex-editor">
-              <label>公式 LaTeX<textarea ref={texRef} aria-label="公式 LaTeX" value={texDraft} rows={3} spellCheck={false}
+              <label>{t("公式 LaTeX")}<textarea ref={texRef} aria-label={t("公式 LaTeX")} value={texDraft} rows={3} spellCheck={false}
                 onChange={event => { setTexDraft(event.target.value); setError(""); }}
                 onKeyDown={event => {
                   if (event.key === "Escape") {
@@ -366,8 +370,8 @@ export default function ResearchFormulaComposer({ block, state, owner, readOnly 
                   }
                 }} /></label>
               <div className="research-formula-inline-editor-actions">
-                <button type="button" onClick={cancelTexEdit}>取消公式编辑</button>
-                <button type="button" onClick={saveTex}>保存公式</button>
+                <button type="button" onClick={cancelTexEdit}>{t("取消公式编辑")}</button>
+                <button type="button" onClick={saveTex}>{t("保存公式")}</button>
               </div>
             </div>
           : block.parts !== undefined ? <FormulaReadSurface parts={parts} symbols={state.symbols} layout={layout} onInspect={(index, target) => {
@@ -375,16 +379,16 @@ export default function ResearchFormulaComposer({ block, state, owner, readOnly 
           }} /> : <div className="research-formula-read-expression"><Formula tex={block.tex} block /></div>}
       </div>
       {!readOnly && isEditing && block.parts !== undefined && texInput && <ResearchFormulaTexInput id={texInputId} symbols={state.symbols} onInsert={insertTexDraft} onCancel={() => close(true)} />}
-      {openRecipePanel && block.parts === undefined && !!block.outputs?.length && <div className="research-formula-result-recipes">{block.outputs.map(output => <button key={output.id} type="button" aria-label={"查看公式结果的变量配方 " + (state.symbols.find(entry => entry.id === output.entryId)?.name ?? "未知符号")} onClick={event => {
+      {openRecipePanel && block.parts === undefined && !!block.outputs?.length && <div className="research-formula-result-recipes">{block.outputs.map(output => <button key={output.id} type="button" aria-label={t("查看公式结果的变量配方 ") + (state.symbols.find(entry => entry.id === output.entryId)?.name ?? t("未知符号"))} onClick={event => {
         close(); closeSettings(); closeInspection();
         openRecipePanel({ owner, part: { type: "symbol", entryId: output.entryId, bindings: output.bindings }, target: event.currentTarget });
-      }}>变量配方 · {state.symbols.find(entry => entry.id === output.entryId)?.name ?? "未知符号"}</button>)}</div>}
-      <button type="button" data-ui="icon-action" className="research-formula-copy-button" aria-label={copyStatus === "copied" ? "公式 LaTeX 已复制" : "复制公式 LaTeX"}
-        title={copyStatus === "copied" ? "已复制 LaTeX" : copyStatus === "error" ? "复制失败，点击重试" : "复制公式 LaTeX"}
+      }}>{t("变量配方 ·")} {state.symbols.find(entry => entry.id === output.entryId)?.name ?? t("未知符号")}</button>)}</div>}
+      <button type="button" data-ui="icon-action" className="research-formula-copy-button" aria-label={copyStatus === "copied" ? t("公式 LaTeX 已复制") : t("复制公式 LaTeX")}
+        title={copyStatus === "copied" ? t("已复制 LaTeX") : copyStatus === "error" ? t("复制失败，点击重试") : t("复制公式 LaTeX")}
         onClick={() => void copyFormula()}>{copyStatus === "copied" ? <Check size={13} /> : <Copy size={13} />}</button>
-      <span role="status" className={copyStatus === "error" ? "research-formula-copy-error" : "visually-hidden"}>{copyStatus === "copied" ? "公式 LaTeX 已复制" : copyStatus === "error" ? "复制失败，请允许浏览器访问剪贴板后重试。" : ""}</span>
-      {!readOnly && <button type="button" ref={editRef} data-ui="icon-action" className="research-remove-block research-formula-edit-button" aria-label={isEditing ? "完成公式编辑" : "编辑公式"} aria-pressed={isEditing}
-        title={isEditing ? "完成公式编辑" : "编辑公式"} onClick={() => {
+      <span role="status" className={copyStatus === "error" ? "research-formula-copy-error" : "visually-hidden"}>{copyStatus === "copied" ? t("公式 LaTeX 已复制") : copyStatus === "error" ? t("复制失败，请允许浏览器访问剪贴板后重试。") : ""}</span>
+      {!readOnly && <button type="button" ref={editRef} data-ui="icon-action" className="research-remove-block research-formula-edit-button" aria-label={isEditing ? t("完成公式编辑") : t("编辑公式")} aria-pressed={isEditing}
+        title={isEditing ? t("完成公式编辑") : t("编辑公式")} onClick={() => {
           close(); closeSettings(); closeInspection();
           if (isEditing && block.parts === undefined) { saveTex(); return; }
           setTexDraft(block.tex);
@@ -394,19 +398,19 @@ export default function ResearchFormulaComposer({ block, state, owner, readOnly 
           setTransferStatus("");
           setIsEditing(value => !value);
         }}>{isEditing && block.parts === undefined ? <Check size={13} /> : <Pencil size={13} />}</button>}
-      {!readOnly && <button data-ui="icon-action" ref={settingsRef} className="research-remove-block research-formula-settings-button" aria-label="公式设置" title="公式设置"
+      {!readOnly && <button data-ui="icon-action" ref={settingsRef} className="research-remove-block research-formula-settings-button" aria-label={t("公式设置")} title={t("公式设置")}
         aria-expanded={settingsOpen} aria-haspopup="dialog" aria-controls={settingsOpen ? "formula-settings-" + block.id : undefined}
         onClick={() => { close(); closeInspection(); setSettingsOpen((value) => !value); }}><Settings size={13} /></button>}
-      {!readOnly && isEditing && error && <p className="research-formula-error" role="alert">{error}</p>}
+      {!readOnly && isEditing && error && <p className="research-formula-error" role="alert">{localizeError(error)}</p>}
       {!readOnly && isEditing && transferStatus && <p className="research-formula-transfer-status" role="status">{transferStatus}</p>}
-      {!readOnly && isEditing && <p className="research-formula-caret-hint" title={block.parts === undefined ? undefined : "单击选择单项，拖动选择多项；拖动已选内容移动，双击编辑。Ctrl/Cmd+C/X/V 复制、剪切和粘贴；Ctrl/Cmd+V 也可导入 TeX，Ctrl/Cmd+Z 撤销。"}>{block.parts === undefined ? "Ctrl/Cmd+Enter 保存并插入下一块 · Esc 取消" : "回车插入 · Ctrl/Cmd+Enter 下一块 · 单击或拖动选择 · Ctrl/Cmd+V 粘贴 TeX"}</p>}
+      {!readOnly && isEditing && <p className="research-formula-caret-hint" title={block.parts === undefined ? undefined : t("单击选择单项，拖动选择多项；拖动已选内容移动，双击编辑。Ctrl/Cmd+C/X/V 复制、剪切和粘贴；Ctrl/Cmd+V 也可导入 TeX，Ctrl/Cmd+Z 撤销。")}>{block.parts === undefined ? t("Ctrl/Cmd+Enter 保存并插入下一块 · Esc 取消") : t("回车插入 · Ctrl/Cmd+Enter 下一块 · 单击或拖动选择 · Ctrl/Cmd+V 粘贴 TeX")}</p>}
       {block.caption?.trim() && <p className="research-formula-caption">{block.caption}</p>}
       {!readOnly && settingsOpen && <FormulaSettingsPopover block={block} state={state} owner={owner} triggerRef={settingsRef} onCancel={closeSettings} onOpenFormula={openFormula}
         onSave={(patch) => { onPatch(patch); closeSettings(true); }} />}
       {inspection && parts[inspection.index]?.type === "symbol" && <FormulaSymbolPopover key={inspection.index} state={state} owner={owner} part={parts[inspection.index] as Extract<FormulaPart, { type: "symbol" }>} target={inspection.target} onCancel={closeInspection} onOpenFormula={openFormula} onOpenRecipe={openRecipePanel ? () => {
         openRecipePanel({ owner, part: parts[inspection.index] as Extract<FormulaPart, { type: "symbol" }>, target: inspection.target }); closeInspection();
       } : undefined} />}
-      {!readOnly && active && draft && <ResearchFormulaItemEditor key={active.id} part={draft} mode={active.mode} state={state} owner={owner} initialQuery={active.query} error={error} onOpenFormula={openFormula}
+      {!readOnly && active && draft && <ResearchFormulaItemEditor key={active.id} part={draft} mode={active.mode} state={state} owner={owner} initialQuery={active.query} error={localizeError(error)} onOpenFormula={openFormula}
         getAnchor={() => active.anchor}
         onCancel={close} onSave={save} onDelete={active.mode === "edit" ? () => removeAt(active.index) : undefined} />}
     </div>

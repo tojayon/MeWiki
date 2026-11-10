@@ -1,3 +1,5 @@
+import { useLocale } from "../i18n/react.ts";
+import {t, localizeError } from "../i18n/locale.ts";
 import { useId, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { normalizeResearchTags, type getResearchTagTree } from "../domain/researchTags.ts";
@@ -14,6 +16,7 @@ export default function ResearchTagsPopover({ noun, assigned, tree, onAdd, onRem
   getTrigger?: () => HTMLButtonElement;
   onClose: (restoreFocus?: boolean) => void;
 }) {
+  useLocale();
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement>(trigger);
   const [draft, setDraft] = useState("");
@@ -34,20 +37,20 @@ export default function ResearchTagsPopover({ noun, assigned, tree, onAdd, onRem
     triggerRef.current = getTrigger?.() ?? trigger;
     return triggerRef.current.getBoundingClientRect();
   }, onCancel: onClose });
-  return <div ref={ref} popover="manual" className="research-note-management-popover research-note-tags-popover" role="dialog" aria-label={`管理${noun}标签`}>
-    <header><strong>层级标签</strong><button data-ui="icon-action" aria-label="关闭标签管理" onClick={() => onClose(true)} title="关闭标签管理"><X size={14} /></button></header>
-    <p>用 / 分隔层级，例如 模型/控制/LQR；{noun === "笔记" ? "一篇笔记" : "一个符号"}可关联多个标签。</p>
+  return <div ref={ref} popover="manual" className="research-note-management-popover research-note-tags-popover" role="dialog" aria-label={t`管理${t(noun)}标签`}>
+    <header><strong>{t("层级标签")}</strong><button data-ui="icon-action" aria-label={t("关闭标签管理")} onClick={() => onClose(true)} title={t("关闭标签管理")}><X size={14} /></button></header>
+    <p>{t("用 / 分隔层级，例如 模型/控制/LQR；")}{noun === "笔记" ? t("一篇笔记") : t("一个符号")}{t("可关联多个标签。")}</p>
     <form className="research-note-tag-form" onSubmit={event => { event.preventDefault(); add(draft); }}>
-      <input aria-label="新增层级标签" placeholder="模型/控制/LQR" value={draft} list={listId} onChange={event => { setDraft(event.target.value); setMessage(""); }} />
+      <input aria-label={t("新增层级标签")} placeholder={t("模型/控制/LQR")} value={draft} list={listId} onChange={event => { setDraft(event.target.value); setMessage(""); }} />
       <datalist id={listId}>{tree.map(tag => <option key={tag.path} value={tag.path} />)}</datalist>
-      <button data-ui="icon-action" className="research-small-button" type="submit" aria-label={`添加${noun}标签`} disabled={!draft.trim()} title={`添加${noun}标签`}><Plus size={15} /></button>
+      <button data-ui="icon-action" className="research-small-button" type="submit" aria-label={t`添加${t(noun)}标签`} disabled={!draft.trim()} title={t`添加${t(noun)}标签`}><Plus size={15} /></button>
     </form>
-    {message && <p role="status">{message}</p>}
-    <div className="research-note-assigned-tags" aria-label={`当前${noun}标签`}>
-      {assigned.map(tag => <span className="research-note-tag" key={tag}><span>{tag}</span><button data-ui="icon-action" aria-label={`移除标签 ${tag}`} title="移除此标签" onClick={() => onRemove(tag)}><X size={12} /></button></span>)}
-      {!assigned.length && <p>尚未添加标签。</p>}
+    {message && <p role="status">{localizeError(message)}</p>}
+    <div className="research-note-assigned-tags" aria-label={t`当前${t(noun)}标签`}>
+      {assigned.map(tag => <span className="research-note-tag" key={tag}><span>{tag}</span><button data-ui="icon-action" aria-label={t`移除标签 ${tag}`} title={t("移除此标签")} onClick={() => onRemove(tag)}><X size={12} /></button></span>)}
+      {!assigned.length && <p>{t("尚未添加标签。")}</p>}
     </div>
-    {tree.some(tag => !has(tag.path)) && <><strong className="research-note-tag-suggestions-heading">复用已有标签</strong>
+    {tree.some(tag => !has(tag.path)) && <><strong className="research-note-tag-suggestions-heading">{t("复用已有标签")}</strong>
       <div className="research-note-tag-suggestions">{tree.filter(tag => !has(tag.path) && tag.path.toLocaleLowerCase().includes(draft.trim().toLocaleLowerCase())).slice(0, 12).map(tag => <button key={tag.path} onClick={() => add(tag.path)}><span>{tag.path}</span><small>{tag.count}</small></button>)}</div>
     </>}
   </div>;
