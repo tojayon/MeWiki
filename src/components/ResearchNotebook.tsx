@@ -1,4 +1,7 @@
-import LanguageSettings from "./LanguageSettings.tsx";
+import SettingsPage from "./SettingsPage.tsx";
+import AiWorkspace from './AiWorkspace.tsx';
+import { openSettings } from "../state/settingsNavigation.ts";
+import { useSettingsNavigation } from "../state/useSettingsNavigation.ts";
 import { useLocale } from "../i18n/react.ts";
 import {t, localizeError, getLocale as interfaceLocale } from "../i18n/locale.ts";
 import ResearchRichBlock from "./ResearchRichBlock.tsx";
@@ -8,9 +11,15 @@ import { noteEmbedSelectionError, type ResearchNoteEmbedBlock } from '../domain/
 import ExternalContentCard from "../integrations/ExternalContentCard.tsx";
 import IntegrationNotice from "../integrations/IntegrationNotice.tsx";
 import { useIntegration } from "../integrations/IntegrationContext.ts";
+import { openPublicationTab, openImageCreation, withPublicationPdfPages } from '../state/publicationNavigation.ts';
 import { useLibraryWorkspace } from "../state/LibraryWorkspaceContext.ts";
+import { isMeWikiManualNote } from "../domain/meWikiManual.ts";
+import { ensureMeWikiManual } from "../domain/meWikiWorkspace.ts";
+import ResearchManualSidebar from "./ResearchManualSidebar.tsx";
+import { ResearchTagTreeToolbarContext } from "./ResearchTagTreeToolbarContext.ts";
 import { isResearchRichBlock } from "../domain/researchRichContent.ts";
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -21,10 +30,17 @@ import {
 } from "react";
 import {
   Languages,
+  Bot,
   ArrowDown,
   ArrowUp,
   BookmarkPlus,
   BookOpen,
+  BookMarked,
+  Atom,
+  Network,
+  NotebookPen,
+  Sigma,
+  CircleUserRound,
   ExternalLink,
   Eye,
   Info,
@@ -99,6 +115,7 @@ import {
   ResearchNoteOrganizationPanel,
   ResearchNoteTags,
   ResearchNoteReviewStatus,
+  ResearchNoteReviewTime,
 } from "./ResearchNoteManagement.tsx";
 import ResearchBlockInsert, {
   type BlockInsertPosition,
@@ -125,11 +142,9 @@ import {
   noteBasisIds,
   openLibraryNote,
   prepareLibraryNote,
-  selectNoteLibrary,
-  setLibraryFilters,
+  type ResearchNoteLibrary,
 } from "../domain/researchNoteLibraries.ts";
 import { useResearchLibrary } from "../state/useResearchNotebook.ts";
-import ResearchLibraryStorage from "./ResearchLibraryStorage.tsx";
 import ResearchTheoryDrawer from "./ResearchTheoryDrawer.tsx";
 import {
   partitionTheoryBlocks,
@@ -182,6 +197,15 @@ export interface ResearchEvidenceContext {
 const modeStorageKey = "mewiki:research-notebook-mode";
 const sidebarStorageKey = "mewiki:research-notebook-sidebar-collapsed";
 const outlineStorageKey = "mewiki:research-notebook-outline-collapsed";
+const sidebarModes = [
+  { view: "symbols", label: "符号", Icon: Sigma },
+  { view: "terms", label: "术语", Icon: Atom },
+  { view: "foundations", label: "基础理论", Icon: BookOpen },
+  { view: "notes", label: "研究记录", Icon: NotebookPen },
+  { view: "maps", label: "理论地图", Icon: Network },
+] as const;
+type MainSidebarView = typeof sidebarModes[number]["view"];
+type SidebarView = MainSidebarView | "manual";
 type ContentTarget = FormulaAddress & { headingId?: string };
 
 function loadReadOnlyMode() {
@@ -325,19 +349,66 @@ export default function ResearchNotebook({
   onChange,
   citation,
   standalonePage = false,
-  onOpenHelp,
 }: {
   state: ResearchNotebookState;
   onChange: (next: ResearchNotebookState) => void;
   citation?: ResearchEvidenceContext;
   standalonePage?: boolean;
-  onOpenHelp?: () => void;
 }) {
   useLocale();
-  const [languageOpen, setLanguageOpen] = useState(false);
-  const state = useMemo(() => ensureTheoryMaps(inputState), [inputState]);
-  const integration = useIntegration();
+  const settingsSection = useSettingsNavigation();
+  const [settingsVisited, setSettingsVisited] = useState(settingsSection !== null);
   const workspace = useLibraryWorkspace();
+  const aiPanelStorageKey = `mewiki:library:${encodeURIComponent(workspace.profile.id)}:ai-panel-open`;
+  const [aiOpen, setAiOpen] = useState(() => {
+    try { return localStorage.getItem(aiPanelStorageKey) === 'true'; }
+    catch { return false; }
+  });
+  const [aiVisited, setAiVisited] = useState(aiOpen);
+  const [aiReviewHost, setAiReviewHost] = useState<HTMLDivElement | null>(null);
+  if (settingsSection && !settingsVisited) setSettingsVisited(true);
+  useEffect(() => {
+    const shortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "," && !event.altKey && !event.shiftKey &&
+          !document.querySelector('dialog[open]:not([data-testid="research-notebook"])')) {
+        event.preventDefault(); openSettings("general");
+      }
+    };
+    window.addEventListener("keydown", shortcut);
+    return () => window.removeEventListener("keydown", shortcut);
+  }, []);
+  const state = useMemo(() => ensureTheoryMaps(inputState), [inputState]);
+  const activeManual = (state.view === "notes" || state.view === "foundations") && state.notes.some(note => note.id === state.activeNoteId && isMeWikiManualNote(note));
+  const manualPreferenceKey = `mewiki:manual-sidebar-open:${workspace.profile.id}`;
+  const [manualOpen, setManualOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem(manualPreferenceKey);
+      if (saved !== null) return saved === "true";
+    } catch { /* Help remains available without persistent preferences. */ }
+    return activeManual;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(manualPreferenceKey, String(manualOpen)); }
+    catch { /* Keep the preference for the current window. */ }
+  }, [manualOpen, manualPreferenceKey]);
+  const [manualQuery, setManualQuery] = useState("");
+  const [categoryToolbar, setCategoryToolbar] = useState<HTMLDivElement | null>(null);
+  const visibleSidebarModes = manualOpen ? [...sidebarModes, { view: "manual" as const, label: "使用手册", Icon: BookMarked }] : sidebarModes;
+  const contentKey = JSON.stringify([state.view, state.view === "dictionary"
+    ? [state.activeSymbolId, state.activeTermId]
+    : state.view === "maps" ? state.theoryMaps?.activeMapId : state.activeNoteId]);
+  const contentSidebarView: SidebarView = state.view === "dictionary" ? state.activeTermId ? "terms" : "symbols" : activeManual && manualOpen ? "manual" : state.view;
+  const [sidebarNavigation, setSidebarNavigation] = useState({ contentKey, view: contentSidebarView });
+  const sidebarView = sidebarNavigation.contentKey === contentKey ? sidebarNavigation.view : contentSidebarView;
+  const manualReturnView = useRef<MainSidebarView>(state.view === "dictionary" ? state.activeTermId ? "terms" : "symbols" : state.view);
+  const browseSidebar = useCallback((view: SidebarView) => {
+    if (view !== "manual") manualReturnView.current = view;
+    setSidebarNavigation({ contentKey, view });
+  }, [contentKey]);
+  const showingNoteSidebar = sidebarView === "notes" || sidebarView === "foundations";
+  const sidebarNoteLibrary: ResearchNoteLibrary = sidebarView === "foundations" ? "foundation" : "research";
+  const manualSidebarState = useMemo(() => sidebarView === "manual" ? ensureMeWikiManual(state) : state, [sidebarView, state]);
+  const integration = useIntegration();
   const confirmDelete = useDeleteConfirmation();
   const latestState = useRef(state);
   useLayoutEffect(() => {
@@ -365,6 +436,7 @@ export default function ResearchNotebook({
     null,
   );
   const [importError, setImportError] = useState("");
+  const [publicationError, setPublicationError] = useState("");
   const [blockConversionError, setBlockConversionError] = useState<{
     noteId: string;
     text: string;
@@ -375,7 +447,6 @@ export default function ResearchNotebook({
     text: string;
   } | null>(null);
   const mediaImportOperation = useRef<AbortController | null>(null);
-  const [storageOpen, setStorageOpen] = useState(false);
   const [noteMapTools, setNoteMapTools] = useState<HTMLDivElement | null>(null);
   const [drawersExiting, setDrawersExiting] = useState(false);
   const [exampleTabs, setExampleTabs] = useState<Record<string, string>>({});
@@ -385,7 +456,7 @@ export default function ResearchNotebook({
   const [sidebarCollapsed, setSidebarCollapsed] =
     useState(loadSidebarCollapsed);
   const [outlineCollapsed, setOutlineCollapsed] =
-    useState(loadOutlineCollapsed);
+    useState(() => aiOpen ? false : loadOutlineCollapsed());
   const [recipeActive, setRecipeActive] = useState(false);
   const [recipeInspection, setRecipeInspection] = useState<
     (VariableRecipeRequest & { key: number; paneId?: string }) | null
@@ -486,15 +557,16 @@ export default function ResearchNotebook({
     state.symbols.find((entry) => entry.id === state.activeSymbolId) ??
     state.symbols[0];
   const symbolBacklinksAvailable =
-    state.view === "dictionary" && !!selectedSymbol;
-  const outlineAvailable =
+    state.view === "dictionary" && !state.activeTermId && !!selectedSymbol;
+  const outlineContentAvailable =
     symbolBacklinksAvailable ||
     (showingNotes &&
       !emptyLibrary &&
       !!primaryPane &&
       !state.theoryMaps?.noteViewOpen);
+  const outlineAvailable = aiOpen || outlineContentAvailable;
   const outlineVisible = outlineAvailable && !outlineCollapsed;
-  const rightPanelLabel = recipeActive
+  const rightPanelLabel = aiOpen ? t('AI 工作区') : recipeActive
     ? t("变量配方")
     : symbolBacklinksAvailable
       ? t("反向链接")
@@ -572,6 +644,19 @@ export default function ResearchNotebook({
       setReading(selectReadingPrimary(synchronizedReading, next.activeNoteId));
     onChange(next);
   };
+  const openManual = () => {
+    if (sidebarView !== "manual") manualReturnView.current = sidebarView;
+    setManualOpen(true);
+    setSidebarCollapsed(false);
+    browseSidebar("manual");
+  };
+  const closeManual = () => {
+    const restoreFocus = document.activeElement?.closest("#research-manual-sidebar");
+    setManualOpen(false);
+    if (sidebarView === "manual") browseSidebar(manualReturnView.current);
+    if (restoreFocus) window.requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.research-notebook-mode-tabs [aria-selected="true"]')?.focus({ preventScroll: true }));
+  };
+  const toggleManual = () => manualOpen ? closeManual() : openManual();
   useLayoutEffect(() => {
     secondaryContentRef.current =
       readingContents.current.get(activeReadingPane?.id ?? "") ?? null;
@@ -641,12 +726,21 @@ export default function ResearchNotebook({
       /* The in-memory toggle remains available. */
     }
   }, [outlineCollapsed]);
+  useEffect(() => {
+    try { localStorage.setItem(aiPanelStorageKey, String(aiOpen && !outlineCollapsed)); }
+    catch { /* The panel remains usable without saved preferences. */ }
+  }, [aiPanelStorageKey, aiOpen, outlineCollapsed]);
 
   useEffect(() => {
     const openDictionaryEntry = (event: Event) => {
-      const entryId = (event as CustomEvent<string>).detail;
-      if (!entryId) return;
-      onChange({ ...state, view: "dictionary", activeSymbolId: entryId });
+      const detail = (event as CustomEvent<{ kind?: "term" | "symbol"; id?: string } | string>).detail;
+      const kind = typeof detail === "string" ? "symbol" : detail?.kind;
+      const entryId = typeof detail === "string" ? detail : detail?.id;
+      if (!entryId || (kind !== "term" && kind !== "symbol")) return;
+      browseSidebar(kind === "term" ? "terms" : "symbols");
+      onChange(kind === "term"
+        ? { ...state, view: "dictionary", activeTermId: entryId, activeSymbolId: "" }
+        : { ...state, view: "dictionary", activeSymbolId: entryId, activeTermId: undefined });
     };
     window.addEventListener("research-dictionary-open", openDictionaryEntry);
     return () =>
@@ -654,7 +748,7 @@ export default function ResearchNotebook({
         "research-dictionary-open",
         openDictionaryEntry,
       );
-  }, [onChange, state]);
+  }, [onChange, state, browseSidebar]);
   useEffect(() => {
     if (
       !contentTarget ||
@@ -759,6 +853,10 @@ export default function ResearchNotebook({
         ? findResearchBlock(targetNote.blocks, ref.blockId)
         : undefined;
     if (!targetNote || (ref.blockId && !location)) return;
+    if (isMeWikiManualNote(targetNote)) {
+      setManualOpen(true);
+      browseSidebar("manual");
+    } else browseSidebar(getNoteLibrary(targetNote) === "foundation" ? "foundations" : "notes");
     setContentTarget(
       ref.blockId
         ? {
@@ -793,6 +891,18 @@ export default function ResearchNotebook({
         ? recipeInspection.target
         : outlineToggleRef.current;
     target?.focus({ preventScroll: true });
+  };
+  const selectAiPanel = (active: boolean) => {
+    setAiOpen(active);
+    if (active) {
+      setAiVisited(true);
+      setRecipeActive(false);
+      setOutlineCollapsed(false);
+    }
+  };
+  const selectRecipePanel = (active: boolean) => {
+    setRecipeActive(active);
+    if (active) setAiOpen(false);
   };
   const navigateOutline = (heading: ResearchOutlineHeading) => {
     if (
@@ -1189,18 +1299,17 @@ export default function ResearchNotebook({
       ),
   });
 
-  const createNote = () => {
+  const createNote = (targetLibrary: ResearchNoteLibrary = currentNoteLibrary(state)) => {
     const next = prepareLibraryNote(
       createResearchNote(""),
-      currentNoteLibrary(state),
+      targetLibrary,
     );
     setReadOnly(false);
     onChange(
-      setLibraryFilters({
+      openLibraryNote({
         ...state,
-        activeNoteId: next.id,
         notes: [...state.notes, next],
-      }),
+      }, next.id),
     );
   };
 
@@ -1388,7 +1497,7 @@ export default function ResearchNotebook({
               removeResearchBlock(latestState.current, note.id, block.id),
             )
           }
-          onOpenStorage={() => setStorageOpen(true)}
+          onOpenStorage={() => openSettings("storage")}
         />
       )}
       {block.type === "bookmark" && (
@@ -1685,7 +1794,7 @@ export default function ResearchNotebook({
         aria-label={sidebarCollapsed ? t("展开笔记左侧面板") : t("收起笔记左侧面板")}
         title={sidebarCollapsed ? t("展开左侧面板") : t("收起左侧面板")}
         aria-expanded={!sidebarCollapsed}
-        aria-controls="research-notebook-sidebar research-dictionary-sidebar research-theory-sidebar"
+        aria-controls="research-notebook-sidebar research-dictionary-sidebar research-term-dictionary-sidebar research-theory-sidebar research-manual-sidebar"
         onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
       >
         {sidebarCollapsed ? (
@@ -1699,7 +1808,7 @@ export default function ResearchNotebook({
 
   const compactActions: ResearchNoteMenuAction[] = compactHeader
     ? [
-        { id: "action-0", label: t("界面语言"), icon: <Languages size={15} />, onSelect: () => setLanguageOpen(true) },
+        { id: "action-0", label: t("界面语言"), icon: <Languages size={15} />, onSelect: () => openSettings("general") },
         {
           id: "action-1", label: t("切换资料库"),
           icon: <BookOpen size={15} />,
@@ -1790,7 +1899,7 @@ export default function ResearchNotebook({
           icon: standalonePage ? <BookOpen size={15} /> : <X size={15} />,
           onSelect: () =>
             standalonePage
-              ? onOpenHelp?.()
+              ? toggleManual()
               : onChange({ ...state, open: false }),
         },
       ]
@@ -1805,7 +1914,7 @@ export default function ResearchNotebook({
     ) ?? menuPanel!.trigger;
   const windowActions = (
     <div className="research-notebook-actions">
-      {!compactHeader && <button type="button" data-ui="icon-action" aria-label={t("界面语言")} title={t("选择界面语言")} onClick={() => setLanguageOpen(true)}><Languages size={15} /></button>}
+      {!compactHeader && <button type="button" data-ui="icon-action" aria-label={t("界面语言")} title={t("选择界面语言")} onClick={() => openSettings("general")}><Languages size={15} /></button>}
       {!compactHeader && (
         <button
           type="button"
@@ -1848,7 +1957,17 @@ export default function ResearchNotebook({
           onExport={exportNote}
           onExportMedia={() => void exportNoteWithMedia()}
           onDelete={deleteNote}
-          extraActions={compactActions}
+          extraActions={[...integration.catalog.filter(plugin => integration.plugins[plugin.id] === 'enabled').flatMap(plugin => (plugin.exporters ?? []).map(exporter => ({
+            id: `export:${plugin.id}:${exporter.id}`, label: t(exporter.label), icon: <ExternalLink size={15} />,
+            onSelect: () => { setPublicationError(''); openPublicationTab(() => {
+              const pages: Record<string, number> = {};
+              for (const reader of pageRef.current?.querySelectorAll<HTMLElement>('.research-pdf-reader[data-page]') ?? []) {
+                const blockId = reader.closest<HTMLElement>('[data-block-id]')?.dataset.blockId;
+                if (blockId) pages[blockId] = Number(reader.dataset.page);
+              }
+              return { plugin, exporter, snapshot: withPublicationPdfPages(latestState.current, note.id, pages), noteId: note.id, selectedTabs: { ...exampleTabs } };
+            }, workspace.profile.id, library.directory, setPublicationError); },
+          }))), ...integration.catalog.filter(plugin => integration.plugins[plugin.id] === 'enabled').flatMap(plugin => (plugin.exporters ?? []).map(exporter => ({ id: `image-create:${plugin.id}:${exporter.id}`, label: t('图片创作'), icon: <ExternalLink size={15} />, onSelect: () => openImageCreation(plugin, exporter, workspace.profile.id, library.directory, setPublicationError, t('图片创作')) }))), ...compactActions, { id: "app-settings", label: t("应用设置"), icon: <Settings2 size={15} />, onSelect: () => openSettings("general") }]}
           onCloseReading={
             primaryPane && !state.theoryMaps?.noteViewOpen && !emptyLibrary
               ? () => closeReading("primary")
@@ -1885,10 +2004,11 @@ export default function ResearchNotebook({
             data-ui="icon-action"
             className="research-notebook-close"
             aria-label={standalonePage ? t("使用手册") : t("关闭笔记")}
-            title={standalonePage ? t("使用手册") : t("关闭")}
+            title={standalonePage ? manualOpen ? t("关闭使用手册") : t("打开使用手册") : t("关闭")}
+            aria-pressed={standalonePage ? manualOpen : undefined}
             onClick={() =>
               standalonePage
-                ? onOpenHelp?.()
+                ? toggleManual()
                 : onChange({ ...state, open: false })
             }
           >
@@ -1925,6 +2045,10 @@ export default function ResearchNotebook({
     </div>
   );
 
+  const aiPanel = aiVisited ? <AiWorkspace key={workspace.profile.id} readOnly={readOnly} reviewHost={aiReviewHost} reviewControls={pageControls}
+    reviewActions={<button type="button" data-ui="icon-action" aria-label={t('收起AI 工作区')} title={t('收起AI 工作区')} onClick={closeOutline}><PanelRightClose size={15} /></button>}
+    onClose={closeOutline} onSettings={() => openSettings('ai')} /> : null;
+
   return (
     <DeviceInspectorModal
       open={state.open}
@@ -1947,11 +2071,13 @@ export default function ResearchNotebook({
             key: (previous?.key ?? 0) + 1,
           }));
           setRecipeActive(true);
+          setAiOpen(false);
           setOutlineCollapsed(false);
         }}
       >
-        <div className="research-notebook-shell">
+        <div className="research-notebook-shell" hidden={settingsSection !== null}>
           <IntegrationNotice />
+          {publicationError && <p className="research-notebook-import-error" role="alert">{localizeError(publicationError)}</p>}
           <input
             ref={importRef}
             hidden
@@ -1981,7 +2107,7 @@ export default function ResearchNotebook({
             <div className="research-library-loading" role="status">
               {t("正在读取本地资料库…")}</div>
           ) : (
-            <>
+            <ResearchTagTreeToolbarContext.Provider value={{ target: categoryToolbar, setTarget: setCategoryToolbar }}>
               <div
                 className={`research-notebook-layout${sidebarCollapsed ? " is-sidebar-collapsed" : ""}${outlineVisible ? " has-outline" : ""}`}
               >
@@ -1989,51 +2115,35 @@ export default function ResearchNotebook({
                   className="research-notebook-mode-tabs"
                   role="tablist"
                   aria-label={t("科研笔记视图")}
+                  onKeyDown={event => {
+                    const index = visibleSidebarModes.findIndex(mode => mode.view === sidebarView);
+                    const next = event.key === "Home" ? 0 : event.key === "End" ? visibleSidebarModes.length - 1
+                      : event.key === "ArrowRight" ? (index + 1) % visibleSidebarModes.length
+                      : event.key === "ArrowLeft" ? (index + visibleSidebarModes.length - 1) % visibleSidebarModes.length : -1;
+                    if (next < 0) return;
+                    event.preventDefault();
+                    browseSidebar(visibleSidebarModes[next].view);
+                    event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+                  }}
                 >
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={state.view === "dictionary"}
-                    title={t("符号词典")}
-                    onClick={() => onChange({ ...state, view: "dictionary" })}
-                  >
-                    <span>{t("符号词典")}</span>
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={state.view === "foundations"}
-                    title={t("基础理论")}
-                    onClick={() =>
-                      onChange(selectNoteLibrary(state, "foundation"))
-                    }
-                  >
-                    <span>{t("基础理论")}</span>
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={state.view === "notes"}
-                    title={t("研究记录")}
-                    onClick={() =>
-                      onChange(selectNoteLibrary(state, "research"))
-                    }
-                  >
-                    <span>{t("研究记录")}</span>
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={state.view === "maps"}
-                    title={t("理论地图")}
-                    onClick={() => onChange({ ...state, view: "maps" })}
-                  >
-                    <span>{t("理论地图")}</span>
-                  </button>
+                  <img className="research-notebook-brand-mark" src="/brand/mewiki-app-icon.svg" alt="" title="MeWiki" width={24} height={24} draggable={false} aria-hidden="true" />
+                  {visibleSidebarModes.map(({ view, label, Icon }) => <button
+                    key={view} type="button" role="tab"
+                    aria-label={t(label)} title={t(label)}
+                    aria-selected={sidebarView === view} tabIndex={sidebarView === view ? 0 : -1}
+                    onClick={() => browseSidebar(view)}
+                  ><Icon size={18} aria-hidden="true" /></button>)}
                 </nav>
                 <ResearchSidebarResize />
+                {sidebarView === "manual" && <ResearchManualSidebar state={manualSidebarState} query={manualQuery} onQuery={setManualQuery}
+                  onClose={closeManual} onOpenNote={id => applyNavigationChange(patchTheoryMapView(openLibraryNote(manualSidebarState, id, false), { open: false }))} />}
                 <ResearchDictionary
                   active={state.view === "dictionary"}
+                  sidebarKind={sidebarView === "symbols" ? "symbol" : sidebarView === "terms" ? "term" : null}
+                  onOpenKind={kind => setSidebarNavigation({
+                    contentKey: JSON.stringify(["dictionary", [state.activeSymbolId, state.activeTermId]]),
+                    view: kind === "term" ? "terms" : "symbols",
+                  })}
                   state={state}
                   onChange={onChange}
                   windowActions={windowActions}
@@ -2041,6 +2151,7 @@ export default function ResearchNotebook({
                 />
                 <ResearchTheoryDocuments
                   active={state.view === "maps"}
+                  sidebarActive={sidebarView === "maps"}
                   state={state}
                   onChange={onChange}
                   readOnly={readOnly}
@@ -2050,23 +2161,25 @@ export default function ResearchNotebook({
                   pageControls={pageControls}
                 />
                 <div
-                  className={`research-notebook-view${showingNotes ? " is-active" : ""}`}
-                  aria-hidden={!showingNotes}
+                  className={`research-notebook-view${showingNotes || showingNoteSidebar ? " is-active" : ""}`}
+                  aria-hidden={!showingNotes && !showingNoteSidebar}
                 >
-                  <aside
+                  {showingNoteSidebar && <aside
                     id="research-notebook-sidebar"
                     className="research-notebook-sidebar"
                     aria-label={t("研究笔记列表")}
                   >
                     <ResearchNoteListTools
-                      key={`tools:${currentNoteLibrary(state)}`}
+                      key={`tools:${sidebarNoteLibrary}`}
                       state={state}
+                      library={sidebarNoteLibrary}
                       onChange={onChange}
-                      onCreateNote={createNote}
+                      onCreateNote={() => createNote(sidebarNoteLibrary)}
                     />
                     <ResearchNoteTree
-                      key={`tree:${currentNoteLibrary(state)}`}
+                      key={`tree:${sidebarNoteLibrary}`}
                       state={state}
+                      library={sidebarNoteLibrary}
                       onChange={applyNavigationChange}
                     />
                     {importError && (
@@ -2077,11 +2190,12 @@ export default function ResearchNotebook({
                         {localizeError(importError)}
                       </p>
                     )}
-                  </aside>
+                  </aside>}
 
                   {emptyLibrary ? (
                     <section
                       className="research-notebook-editor"
+                      hidden={!showingNotes}
                       aria-label={t("研究笔记编辑器")}
                     >
                       <div className="research-notebook-toolbar">
@@ -2102,13 +2216,14 @@ export default function ResearchNotebook({
                             ? t("收录公共理论的标准结论、成立条件和文献出处。")
                             : t("记录场景应用、公式推导与实验观察。")}
                         </p>
-                        <button type="button" onClick={createNote}>
+                        <button type="button" onClick={() => createNote()}>
                           {t("新建笔记")}</button>
                       </div>
                     </section>
                   ) : (
                     <div
                       ref={readingRail}
+                      hidden={!showingNotes}
                       className={`research-reading-rail${extraPanes.length ? " has-splits" : ""}`}
                       aria-label={t("笔记分屏阅读")}
                     >
@@ -2117,6 +2232,7 @@ export default function ResearchNotebook({
                           value={{
                             notes: state.notes,
                             symbols: state.symbols,
+                            terms: state.terms ?? [],
                             state,
                             sourceNoteId: note.id,
                             openNote: (id, blockId, source) =>
@@ -2150,7 +2266,6 @@ export default function ResearchNotebook({
                                   <div className="research-page-tags">
                                     <ResearchNoteOrganizationBar
                                       key={`${note.id}:${readOnly ? "read" : "edit"}`}
-                                      note={note}
                                       activePanel={
                                         menuPanel?.noteId === note.id
                                           ? menuPanel.panel
@@ -2491,16 +2606,19 @@ export default function ResearchNotebook({
                                 note={note}
                                 onChange={onChange}
                               />
-                              <span className="research-note-updated">
-                                {t("最近编辑：")}<time dateTime={note.updatedAt}>
-                                  {new Date(note.updatedAt).toLocaleString(
-                                    interfaceLocale(),
-                                    {
-                                      hour12: false,
-                                    },
-                                  )}
-                                </time>
-                              </span>
+                              <div className="research-note-times">
+                                <ResearchNoteReviewTime note={note} />
+                                <span className="research-note-updated" title={`${t("最近编辑：")}${new Date(note.updatedAt).toLocaleString(interfaceLocale(), { hour12: false })}`}>
+                                  {t("最近编辑：")}<time dateTime={note.updatedAt}>
+                                    {new Date(note.updatedAt).toLocaleString(
+                                      interfaceLocale(),
+                                      {
+                                        hour12: false,
+                                      },
+                                    )}
+                                  </time>
+                                </span>
+                              </div>
                               <span className="research-note-mode-status">
                                 {readOnly ? t("只读查看") : t("编辑模式")}
                               </span>
@@ -2566,6 +2684,7 @@ export default function ResearchNotebook({
                     </div>
                   )}
                 </div>
+                <div ref={setAiReviewHost} className="mewiki-ai-review-host" />
                 {outlineVisible && (
                   <>
                     <ResearchSidebarResize side="right" />
@@ -2577,7 +2696,10 @@ export default function ResearchNotebook({
                         onOpenFormula={openRightPanelFormula}
                         recipe={recipePanel}
                         recipeActive={recipeActive}
-                        onRecipeActiveChange={setRecipeActive}
+                        onRecipeActiveChange={selectRecipePanel}
+                        aiPanel={aiPanel}
+                        aiActive={aiOpen}
+                        onAiActiveChange={selectAiPanel}
                       />
                     ) : (
                       <ResearchOutline
@@ -2601,7 +2723,11 @@ export default function ResearchNotebook({
                         }
                         recipe={recipePanel}
                         recipeActive={recipeActive}
-                        onRecipeActiveChange={setRecipeActive}
+                        onRecipeActiveChange={selectRecipePanel}
+                        aiPanel={aiPanel}
+                        aiActive={aiOpen}
+                        onAiActiveChange={selectAiPanel}
+                        contentAvailable={outlineContentAvailable}
                       />
                     )}
                   </>
@@ -2611,6 +2737,18 @@ export default function ResearchNotebook({
                   role="toolbar"
                   aria-label={t("页面设置")}
                 >
+                  <div className="research-sidebar-account-slot">
+                    <button
+                      type="button"
+                      className="research-sidebar-account"
+                      aria-label={t("用户账户")}
+                      title={t("登录功能即将推出")}
+                      disabled
+                    >
+                      <CircleUserRound size={16} />
+                      <span>{t("登录")}</span>
+                    </button>
+                  </div>
                   <button
                     type="button"
                     className="mewiki-library-switcher"
@@ -2623,14 +2761,23 @@ export default function ResearchNotebook({
                   </button>
                   <button
                     type="button"
+                    data-ui="icon-action"
+                    aria-label={t('AI 工作区')}
+                    title={t('AI 工作区')}
+                    aria-pressed={aiOpen && outlineVisible}
+                    aria-controls="research-note-outline"
+                    onClick={() => selectAiPanel(true)}
+                  ><Bot size={16} /></button>
+                  <button
+                    type="button"
                     className="research-notebook-settings"
-                    aria-label={t("研究笔记设置")}
+                    aria-label={t("应用设置")}
                     title={
-                      library.error || library.cacheError || t("研究笔记设置")
+                      library.error || library.cacheError || t("应用设置")
                     }
                     data-testid="research-library-save-status"
                     data-save-status={library.status}
-                    onClick={() => setStorageOpen(true)}
+                    onClick={() => openSettings(library.error || library.cacheError ? "storage" : "general")}
                   >
                     <Settings2 size={16} />
                     <span>{t("设置")}</span>
@@ -2643,14 +2790,20 @@ export default function ResearchNotebook({
                   </button>
                 </div>
               </div>
-            </>
+            </ResearchTagTreeToolbarContext.Provider>
           )}
         </div>
-        {languageOpen && <LanguageSettings onClose={() => setLanguageOpen(false)} />}
-        {storageOpen && (
-          <ResearchLibraryStorage
+        {(settingsSection || settingsVisited) && (
+          <SettingsPage
+            section={settingsSection}
             library={library}
-            onClose={() => setStorageOpen(false)}
+            readOnly={readOnly}
+            sidebarCollapsed={sidebarCollapsed}
+            outlineCollapsed={outlineCollapsed}
+            onReadOnlyChange={setReadOnly}
+            onSidebarCollapsedChange={setSidebarCollapsed}
+            onOutlineCollapsedChange={setOutlineCollapsed}
+            onOpenHelp={openManual}
           />
         )}
         {noteEmbedInsertion && noteEmbedInsertion.noteId === note.id && !readOnly && <ResearchNoteEmbedPicker state={state} ownerNoteId={note.id} blockId={noteEmbedInsertion.blockId} targetContainer={noteEmbedInsertion.container ?? (noteEmbedInsertion.adjacentBlockId ? findResearchBlock(note.blocks, noteEmbedInsertion.adjacentBlockId)?.container : undefined)} onClose={() => setNoteEmbedInsertion(null)} onSelect={selection => {

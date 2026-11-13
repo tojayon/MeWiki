@@ -1,24 +1,143 @@
-.research-dictionary-sidebar .research-dictionary-toolbar { flex: 0 0 auto; flex-direction: column; align-items: stretch; gap: 5px; padding: 7px; }
-.research-dictionary-search-row, .research-dictionary-tag-filter { display: flex; min-width: 0; align-items: center; gap: 5px; }
-.research-dictionary-sidebar .research-dictionary-search { min-height: 30px; padding-inline: 6px; }
-.research-dictionary-tag-filter > select { width: 100%; min-width: 0; height: 30px; flex: 1; border: 1px solid #bdcadd; border-radius: 4px; padding: 0 5px; background: #fff; color: #263b57; font: inherit; font-size: 12px; text-overflow: ellipsis; }
-.research-dictionary-tag-filter > select:focus-visible { outline: 2px solid #1547c0; outline-offset: -1px; }
-.research-dictionary-tag-filter > button:disabled { opacity: .45; cursor: default; }
+.research-dictionary-sidebar .research-dictionary-toolbar { flex: 0 0 auto; flex-flow: row nowrap; align-items: center; gap: 4px; min-width: 0; padding: 6px; }
+.research-dictionary-sidebar .research-dictionary-search { flex: 1 1 0; height: 30px; min-height: 30px; padding-inline: 6px; }
+.research-dictionary-tag-filter { position: relative; display: grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; margin: 0; border-radius: 4px; color: #172033; }
+.research-dictionary-tag-filter:hover { background: #e6edfa; color: #1547c0; }
+.research-dictionary-tag-filter[data-active="true"] { background: #eaf0ff; color: #1547c0; }
+.research-dictionary-tag-filter > svg { pointer-events: none; }
+.research-dictionary-tag-filter > select { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; border: 0; padding: 0; opacity: 0; cursor: pointer; }
+.research-dictionary-tag-filter:has(> select:focus-visible) { background: #e6edfa; color: #1547c0; }
+.research-dictionary-sidebar :is(.research-symbol-entry-copy, .research-term-item-copy) > strong { font-weight: 700; font-synthesis: weight; }
+.research-dictionary-sidebar :is(.research-symbol-entry-copy, .research-term-item-copy) { flex: 1; margin-inline-start: auto; text-align: right; overflow-wrap: anywhere; }
+.research-dictionary-sidebar .research-classified-list .research-note-tree { min-width: 0; }
+.research-dictionary-sidebar .research-note-tree .research-symbol-entry { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 2px; }
+.research-dictionary-sidebar .research-symbol-entry-copy { flex: 1 1 80px; }
+.research-dictionary-sidebar .research-symbol-entry-formula { box-sizing: border-box; flex: 1 1 auto; max-width: 100%; padding: 3px 2px; overflow-x: auto; overflow-y: hidden; text-align: left; white-space: nowrap; }
+@media (max-width: 720px) {
+  .research-dictionary-sidebar .research-dictionary-toolbar { gap: 2px; padding-inline: 4px; }
+  .research-dictionary-sidebar .research-dictionary-search { gap: 3px; padding-inline: 4px; }
+  .research-dictionary-sidebar .research-dictionary-search > svg { display: none; }
+  .research-dictionary-tag-filter { width: 24px; flex-basis: 24px; }
+  :root .research-dictionary-sidebar .research-dictionary-toolbar > button[data-ui="icon-action"][aria-label] { --action-size: 24px; }
+}
+.research-term-detail { display: grid; width: 100%; min-width: 0; align-content: start; gap: 18px; }
+.research-term-definition h4 { margin: 0; color: #173454; font-size: calc(var(--mewiki-interface-unit, 1px) * 14); }
+.research-term-definition { display: grid; gap: 8px; border-top: 1px solid #dbe3ed; padding-top: 14px; }
+.research-term-definition p { margin: 0; white-space: pre-wrap; line-height: 1.7; }
+.research-term-detail > dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 7px 14px; margin: 0; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); }
+.research-term-detail > dl dt { color: #52627a; font-weight: 700; }
+.research-term-detail > dl dd { margin: 0; color: #263b57; }
+.research-term-use-count { color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+.research-dictionary-consistency { display: grid; gap: 8px; margin: 18px 20px 20px; border: 1px solid #c8d5e6; border-radius: 4px; padding: 10px; background: #f8faff; }
+.research-dictionary-consistency-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #173454; }
+.research-dictionary-consistency-header > div { display: flex; align-items: center; gap: 6px; }
+.research-dictionary-consistency-header > div > span { min-width: 18px; border-radius: 10px; padding: 1px 5px; background: #e1ebfb; color: #1547c0; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); text-align: center; }
+.research-dictionary-consistency-help, .research-dictionary-consistency-empty { margin: 0; color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.55; }
+.research-dictionary-consistency-list { display: grid; gap: 7px; max-height: 300px; margin: 0; padding: 0; overflow: auto; list-style: none; }
+.research-dictionary-consistency-hit { display: grid; gap: 5px; border-top: 1px solid #dbe3ed; padding-top: 7px; }
+.research-dictionary-consistency-context { color: #263b57; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.55; overflow-wrap: anywhere; }
+.research-dictionary-consistency-context mark { border-radius: 2px; padding: 0 2px; background: #ffe7a8; color: inherit; }
+.research-dictionary-consistency-meta { display: flex; min-width: 0; justify-content: space-between; gap: 8px; color: #718096; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); }
+.research-dictionary-consistency-meta > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.research-dictionary-consistency-meta > span:last-child { flex: 0 0 auto; color: #9c4a07; }
+.research-dictionary-consistency-actions { display: flex; flex-wrap: wrap; gap: 5px; }
+.research-dictionary-consistency-actions .research-small-button { display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding-inline: 7px; }
+.research-symbol-detail.research-term-editing { background: #f5f7fa; }
+.research-term-editor {
+  --term-editor-border: #d6deea;
+  --term-editor-ink: #1f334d;
+  --term-editor-muted: #5c6e85;
+  --term-editor-accent: #1547c0;
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  align-content: start;
+  gap: 20px;
+  color: var(--term-editor-ink);
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 13);
+  line-height: 1.5;
+}
+.research-term-editor-columns { display: grid; min-width: 0; gap: 20px; }
+.research-term-editor-section { display: grid; min-width: 0; align-content: start; gap: 18px; border: 1px solid var(--term-editor-border); border-radius: 4px; padding: 20px; background: #fff; }
+.research-term-section-heading { display: flex; min-width: 0; align-items: center; gap: 10px; }
+.research-term-section-heading > svg { color: var(--term-editor-accent); }
+.research-term-section-heading h3 { margin: 0; color: var(--term-editor-ink); font-size: calc(var(--mewiki-interface-unit, 1px) * 15); font-weight: 650; }
+.research-term-section-heading p { margin: 3px 0 0; color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.6; }
+.research-term-field { display: grid; min-width: 0; gap: 7px; color: var(--term-editor-ink); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 600; }
+.research-term-field-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.research-term-field-required { color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 11); font-weight: 400; }
+.research-term-editor :is(input:not([type="checkbox"]), textarea) { box-sizing: border-box; width: 100%; min-width: 0; border: 1px solid #c4cfdd; border-radius: 4px; padding: 8px 10px; background: #fff; color: #172033; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 14); font-weight: 400; line-height: 1.6; }
+.research-term-editor input:not([type="checkbox"]) { min-height: 38px; }
+.research-term-editor input.research-term-name-input { min-height: 42px; font-size: calc(var(--mewiki-interface-unit, 1px) * 16); font-weight: 600; }
+.research-term-editor textarea { min-height: 88px; resize: vertical; }
+.research-term-editor :is(input:not([type="checkbox"]), textarea)::placeholder { color: #758399; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 400; }
+.research-term-editor textarea.research-term-meaning-input { min-height: 164px; }
+.research-term-editor small { color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 400; }
+.research-term-language-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.research-term-english-name { grid-column: 1 / -1; }
+.research-term-reference-preview { display: grid; gap: 7px; border-left: 3px solid #a9c2f4; border-radius: 0 4px 4px 0; padding: 10px 12px; background: #f2f6fd; color: var(--term-editor-ink); }
+.research-term-reference-preview > span { color: #465f82; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); }
+.research-term-reference-preview output { overflow-wrap: anywhere; line-height: 1.7; }
+.research-term-alias-editor { display: grid; gap: 10px; border-top: 1px solid #e7ecf3; padding-top: 16px; }
+.research-term-alias-heading, .research-term-atom-editor-heading { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 10px; }
+.research-term-alias-heading h4 { margin: 0; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); font-weight: 600; }
+.research-term-alias-editor > p { margin: 0; color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.6; }
+.research-term-alias-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 8px 12px; }
+.research-term-alias-row { display: flex; min-width: 0; align-items: center; gap: 4px; }
+.research-term-alias-row input { flex: 1; min-width: 0; }
+.research-term-alias-row button { flex: 0 0 auto; }
+.research-term-editor .research-term-add-button { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; min-height: 30px; border-color: #cddbf1; padding: 4px 8px; color: #21498e; font-weight: 500; }
+:root .research-term-editor button[data-ui="icon-action"][aria-label] { --action-size: 32px; }
+.research-term-editor-empty { margin: 0; border: 1px dashed var(--term-editor-border); border-radius: 4px; padding: 12px; color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.7; }
+.research-term-alias-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.research-term-atom-editor { gap: 14px; }
+.research-term-atom-hint { margin: 0; color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.7; }
+.research-term-atom-fields { display: grid; min-width: 0; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); align-items: start; gap: 14px; }
+.research-term-atom-field { display: grid; min-width: 0; gap: 12px; margin: 0; border: 1px solid #dce4ee; border-radius: 4px; padding: 14px; background: #f9fbfd; }
+.research-term-atom-field-heading { display: flex; min-width: 0; align-items: center; gap: 8px; }
+.research-term-atom-field-heading h4 { flex: 1; margin: 0; color: var(--term-editor-ink); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 600; }
+.research-term-atom-number { display: grid; min-width: 26px; height: 26px; place-items: center; border-radius: 4px; background: #eaf0fc; color: #28519a; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); font-weight: 600; font-variant-numeric: tabular-nums; }
+.research-term-atom-field textarea { min-height: 100px; }
+.research-term-atom-composition { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; border-top: 1px solid #e7ecf3; padding-top: 14px; color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+.research-term-atom-composition output { display: flex; min-width: 0; flex-wrap: wrap; gap: 6px; }
+.research-term-atom-composition output > span { border: 1px solid #dce5f4; border-radius: 4px; padding: 4px 8px; background: #f5f8fe; color: #28519a; overflow-wrap: anywhere; }
+.research-term-editor-footer { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; border-top: 1px solid var(--term-editor-border); padding: 0 2px; padding-top: 18px; }
+.research-term-status { display: flex; min-width: 0; align-items: flex-start; gap: 9px; color: var(--term-editor-ink); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 500; cursor: pointer; }
+.research-term-status input { width: 16px; height: 16px; flex: 0 0 16px; margin: 2px 0 0; accent-color: var(--term-editor-accent); }
+.research-term-status small { display: block; margin-top: 3px; }
+.research-term-editor-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; }
+.research-term-editor-actions > button { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 6px; padding-inline: 16px; }
+.research-term-editor .research-term-save-button { border-color: var(--term-editor-accent); background: var(--term-editor-accent); color: #fff; }
+.research-term-editor .research-term-save-button:hover:not(:disabled) { background: #103992; color: #fff; }
 .research-symbol-position-field { --symbol-position-color: #1547c0; min-width: 0; margin: 0; border: 1px solid var(--symbol-position-color); border-radius: 4px; padding: 10px; }
 .research-symbol-position-field[data-symbol-position="x2"] { --symbol-position-color: #9c4a07; }
 .research-symbol-position-field[data-symbol-position="x3"] { --symbol-position-color: #ad3047; }
-.research-symbol-position-field > legend { padding-inline: 4px; color: var(--symbol-position-color); font-size: 12px; font-weight: 700; }
-.research-symbol-position-field > label { display: flex; min-width: 0; flex-direction: column; gap: 5px; color: #263d5b; font-size: 12px; font-weight: 700; }
+.research-symbol-position-field > legend { padding-inline: 4px; color: var(--symbol-position-color); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 700; }
+.research-symbol-position-field > label { display: flex; min-width: 0; flex-direction: column; gap: 5px; color: #263d5b; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 700; }
 .research-symbol-position-field > label + label { margin-top: 10px; }
 .research-symbol-position-field textarea { min-height: 84px; font-weight: 400; }
 .research-symbol-pane { container: research-symbol-pane / inline-size; }
+@container research-symbol-pane (min-width: 960px) {
+  .research-term-editor-columns { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+}
+@container research-symbol-pane (max-width: 560px) {
+  .research-symbol-detail.research-term-editing { padding: 12px; }
+  .research-term-editor, .research-term-editor-columns { gap: 14px; }
+  .research-term-editor-section { gap: 16px; padding: 14px; }
+  .research-term-editor :is(input:not([type="checkbox"]), textarea) { min-height: 42px; font-size: calc(var(--mewiki-interface-unit, 1px) * 16); }
+  .research-term-editor input.research-term-name-input { font-size: calc(var(--mewiki-interface-unit, 1px) * 17); }
+  .research-term-editor .research-term-add-button { min-height: 38px; }
+  :root .research-term-editor button[data-ui="icon-action"][aria-label] { --action-size: 38px; }
+  .research-term-atom-field { padding: 12px; }
+  .research-term-editor-footer { flex-direction: column; align-items: stretch; gap: 16px; padding-top: 16px; }
+  .research-term-editor-actions > button { min-height: 42px; flex: 1; }
+}
 .research-symbol-pane > .research-symbol-header { display: grid; grid-template-columns: minmax(36px, 1fr) minmax(0, 1.3fr) minmax(min-content, 1fr); }
 .research-symbol-header .research-symbol-title { margin: 0; overflow: hidden; white-space: nowrap; }
 .research-symbol-header > .research-note-header-actions > .research-page-tools { flex: 1 0 auto; width: max-content; min-width: max-content; }
 @container research-symbol-pane (max-width: 639px) {
   .research-symbol-pane > .research-symbol-header { grid-template-columns: auto minmax(32px, 1fr) minmax(0, max-content); }
   .research-symbol-header .research-page-tags { display: none; }
-  .research-symbol-header .research-symbol-title { font-size: 15px; text-align: left; }
+  .research-symbol-header .research-symbol-title { font-size: calc(var(--mewiki-interface-unit, 1px) * 15); text-align: left; }
   .research-symbol-header > .research-note-header-actions { overflow: visible; }
   .research-symbol-header > .research-note-header-actions > .research-page-tools { flex: 1 1 auto; width: max-content; min-width: 0; }
 }

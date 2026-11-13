@@ -51,6 +51,18 @@ describe("browser media storage", () => {
     const store = new BrowserMediaStore(crypto.randomUUID());
     await expect(store.put({ name: "huge.png", type: "image/png", size: 100_000_001 } as File)).rejects.toThrow(/本地资料库/);
   });
+  it("allows font originals up to 100 MiB before checking browser storage quota", async () => {
+    const store = new BrowserMediaStore(crypto.randomUUID());
+    const estimate = vi.fn().mockResolvedValue({ quota: 1, usage: 1 });
+    vi.stubGlobal("navigator", { storage: { estimate } });
+    try {
+      await expect(store.put({ name: "large.ttf", type: "font/ttf", size: 100 * 1024 * 1024 } as File)).rejects.toThrow(/存储空间不足/);
+      expect(estimate).toHaveBeenCalledOnce();
+      estimate.mockClear();
+      await expect(store.put({ name: "oversized.ttf", type: "font/ttf", size: 100 * 1024 * 1024 + 1 } as File)).rejects.toThrow(/100 MiB/);
+      expect(estimate).not.toHaveBeenCalled();
+    } finally { vi.unstubAllGlobals(); }
+  });
   it("migrates a connected library when browser attachment storage is unavailable", async () => {
     const id = "a".repeat(64);
     const asset = { id, sha256: id, name: "local.png", mimeType: "image/png", size: png.length, createdAt: new Date().toISOString() };

@@ -1,7 +1,7 @@
 import { BlobWriter, TextReader, ZipWriter } from "@zip.js/zip.js";
 import { serializeResearchMarkdown, type ResearchNotebookState } from "../domain/researchNotebook.ts";
 import { researchMediaAssetIds, mediaMimeExtensions } from "../domain/researchMedia.ts";
-import { browserMediaStore } from "./researchMediaStorage.ts";
+import { browserMediaStore, browserFontStore } from "./researchMediaStorage.ts";
 import { createResearchLibraryFile } from "./researchLibraryFile.ts";
 import { expandNoteEmbedBlocks } from '../domain/researchNoteEmbed.ts';
 
@@ -57,13 +57,16 @@ async function opfsArchiveSink(): Promise<ArchiveSink | undefined> {
 
 type StoredMedia = NonNullable<Awaited<ReturnType<typeof browserMediaStore.get>>>;
 
-export async function createBrowserMediaArchive(state: ResearchNotebookState, format: "library" | "markdown", noteId?: string, sourceStore: Pick<typeof browserMediaStore, 'get'> = browserMediaStore): Promise<Blob> {
+export async function createBrowserMediaArchive(state: ResearchNotebookState, format: "library" | "markdown", noteId?: string, sourceStore: Pick<typeof browserMediaStore, 'get'> = browserMediaStore, libraryId = 'default'): Promise<Blob> {
   const notes = format === "markdown" && noteId ? state.notes.filter(note => note.id === noteId) : state.notes;
   const ids = researchMediaAssetIds(notes.flatMap(note => format === 'markdown' ? expandNoteEmbedBlocks(state.notes, note.blocks, note.id) : note.blocks));
+  const fontStore = browserFontStore(libraryId);
+  const fonts = format === 'library' && typeof indexedDB !== 'undefined' ? await fontStore.listFonts() : [];
+  ids.push(...fonts.map(font => font.id).filter(id => !ids.includes(id)));
   const resources = new Map<string, StoredMedia>();
   let totalBytes = 0;
   for (const id of ids) {
-    const stored = await sourceStore.get(id);
+    const stored = fonts.some(font => font.id === id) ? await fontStore.get(id) : await sourceStore.get(id);
     if (!stored) throw new Error("部分媒体原件缺失，未生成不完整的附件备份。请先重新关联文件。");
     resources.set(id, stored);
     totalBytes += stored.blob.size;

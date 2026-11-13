@@ -49,7 +49,7 @@ export function researchTextNoteLinks(text: string): string[] {
 export interface ResearchNoteMention { start: number; end: number; query: string }
 export function findResearchNoteMention(text: string, caret: number): ResearchNoteMention | null {
   const before = text.slice(0, caret);
-  const match = /@([^\n@]{0,80})$/.exec(before);
+  const match = /@([^\n@#￥]{0,80})$/.exec(before);
   if (!match || /[\]<>$]/.test(match[1])) return null;
   const start = caret - match[1].length - 1;
   const preceding = before.slice(0, start);

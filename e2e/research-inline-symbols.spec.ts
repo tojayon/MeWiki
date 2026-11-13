@@ -143,7 +143,7 @@ test("keeps mouse and keyboard symbol inspection separate from paragraph and tab
   const popover = page.getByRole("dialog", { name: "符号含义与推导来源", exact: true });
   await variable.focus(); await variable.press("Enter");
   await expect(popover).toBeVisible();
-  await expect(paragraph.locator("textarea")).toHaveCount(0);
+  await expect(paragraph.locator('[contenteditable="true"]')).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(variable).toBeFocused();
   await variable.press("Space");
@@ -155,7 +155,7 @@ test("keeps mouse and keyboard symbol inspection separate from paragraph and tab
   await expect(table.getByRole("textbox", { name: "单元格内容", exact: true })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await paragraph.getByText("，点击变量查看说明。", { exact: false }).click({ position: { x: 2, y: 5 } });
-  await expect(paragraph.locator("textarea")).toBeVisible();
+  await expect(paragraph.locator('[contenteditable="true"]')).toBeVisible();
 });
 
 test("inspects matrix entries while ignoring column formatting arguments", async ({ page }) => {
@@ -224,17 +224,22 @@ test("moves keyboard focus into symbol choices and keeps only one inline inspect
   await expect(popover).toContainText("当前采纳样本年龄的词典说明。");
 });
 
-test("dismisses inline details when switching away from the reading view with the keyboard", async ({ page }) => {
+test("browses the dictionary with the keyboard and opens an entry only after confirmation", async ({ page }) => {
   const { panel, paragraph } = await openInlineSymbols(page);
   await panel.getByRole("button", { name: "展开笔记左侧面板", exact: true }).click();
   await paragraph.getByRole("button", { name: "查看符号 当前采纳样本年龄", exact: true }).click();
   const popover = page.getByRole("dialog", { name: "符号含义与推导来源", exact: true });
   await expect(popover).toBeVisible();
-  const tab = panel.getByRole("tab", { name: "符号词典", exact: true });
+  const tab = panel.getByRole("tab", { name: "符号", exact: true });
   await tab.focus(); await tab.press("Enter");
   await expect(panel.locator(".research-dictionary")).toHaveClass(/is-active/);
+  await expect(paragraph).toBeVisible();
+  const entry = panel.locator("#research-dictionary-sidebar").getByRole("button", { name: "当前采纳样本年龄", exact: true });
+  await entry.focus(); await entry.press("Enter");
+  await expect(panel.getByRole("heading", { name: "当前采纳样本年龄", exact: true })).toBeVisible();
   await expect(popover).toHaveCount(0);
   await panel.getByRole("tab", { name: "研究记录", exact: true }).click();
+  await panel.locator("#research-notebook-sidebar").getByRole("button", { name: "行内符号阅读", exact: true }).click();
   await expect(paragraph).toBeVisible();
   await expect(popover).toHaveCount(0);
 });

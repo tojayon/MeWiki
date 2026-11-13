@@ -3,23 +3,25 @@ import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { resolveSymbolEntry, type ResearchSymbolEntry } from "./researchDictionary.ts";
+import { dictionaryReferenceMarkdown } from "./researchTerms.ts";
 
 export interface ResearchSymbolMention { start: number; end: number; query: string }
 interface TextNode { type: string; position?: { start: { offset?: number }; end: { offset?: number } }; children?: TextNode[] }
 const parser = unified().use(remarkParse).use(remarkGfm).use(remarkMath);
 const literalTypes = new Set(["code", "inlineCode", "link", "linkReference", "image", "html"]);
+const mentionTriggers = new Set(["$", "￥"]);
 const escaped = (text: string, index: number) => {
   let backslashes = 0;
   while (text[--index] === "\\") backslashes++;
   return backslashes % 2 === 1;
 };
 
-/** A single opening dollar in prose; closing dollars and existing literals stay ordinary text. */
+/** A single $ or fullwidth ￥ in prose; closing math delimiters and existing literals stay ordinary text. */
 export function findResearchSymbolMention(text: string, caret: number): ResearchSymbolMention | null {
-  const match = /\$([^$\n@]{0,80})$/.exec(text.slice(0, caret));
+  const match = /[$￥]([^$￥\n@#]{0,80})$/.exec(text.slice(0, caret));
   if (!match) return null;
   const start = caret - match[1].length - 1;
-  if (escaped(text, start) || text[start - 1] === "$" || text[start + 1] === "$") return null;
+  if (escaped(text, start) || mentionTriggers.has(text[start - 1]) || mentionTriggers.has(text[start + 1])) return null;
   const ignored: { start: number; end: number }[] = [];
   let insideLiteral = false;
   const visit = (node: TextNode) => {
@@ -54,8 +56,9 @@ export function findResearchSymbolMention(text: string, caret: number): Research
 
 export function insertResearchSymbolMention(text: string, mention: ResearchSymbolMention, entry: ResearchSymbolEntry) {
   const bindings = Object.fromEntries(entry.slots.map(slot => [slot.key, slot.defaultValue]));
-  const insertion = `$${resolveSymbolEntry(entry, bindings).tex}$`;
-  const end = text[mention.end] === "$" && text[mention.end + 1] !== "$" ? mention.end + 1 : mention.end;
+  const tex = `$${resolveSymbolEntry(entry, bindings).tex}$`;
+  const insertion = dictionaryReferenceMarkdown("symbol", entry, tex, bindings);
+  const end = mentionTriggers.has(text[mention.end]) && !mentionTriggers.has(text[mention.end + 1]) ? mention.end + 1 : mention.end;
   return { text: text.slice(0, mention.start) + insertion + text.slice(end), caret: mention.start + insertion.length, end };
 }
 

@@ -5,7 +5,7 @@ import { BookOpen, Check, Copy, ExternalLink, FileText, Pencil, Plus, RefreshCw,
 import { citationDoiUrl, formatCitation, type ResearchCitationBlock as CitationBlock } from "../domain/researchCitation.ts";
 import { normalizeMediaUrl, type ResearchMediaBlock as MediaBlock } from "../domain/researchMedia.ts";
 import { flattenResearchBlocks } from "../domain/researchBlockTree.ts";
-import { useResearchLibrary } from "../state/useResearchNotebook.ts";
+import { useResearchContentLibrary } from "../state/ResearchContentLibraryContext.ts";
 import ResearchMarkdown from "./ResearchMarkdown.tsx";
 import ResearchMediaBlock from "./ResearchMediaBlock.tsx";
 import { useCitationDoiMetadata } from "./useCitationDoiMetadata.ts";
@@ -15,7 +15,7 @@ export default function ResearchCitationBlock({ block, readOnly = false, onPatch
   block: CitationBlock; readOnly?: boolean; onPatch: (patch: Partial<CitationBlock>) => void;
 }) {
   useLocale();
-  const library = useResearchLibrary();
+  const library = useResearchContentLibrary();
   const [editing, setEditing] = useState(() => !(block.title || block.authors || block.venue || block.year || block.doi || block.url || block.notes));
   const [advanced, setAdvanced] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);

@@ -1,0 +1,17 @@
+{
+  "manifestVersion": 2,
+  "apiVersion": 2,
+  "id": "org.example.publication",
+  "name": "独立发布模板示例",
+  "version": "1.0.0",
+  "description": "演示通过声明式清单向通用导出界面提供视觉模板与画幅。",
+  "capabilities": [],
+  "contentTypes": [],
+  "exporters": [{
+    "id": "cards",
+    "label": "示例知识卡片",
+    "description": "将用户选择的内容排成纵向知识卡片。",
+    "templates": [{ "id": "blue", "name": "蓝色纸张", "background": "#FFFFFF", "textColor": "#263247", "headingColor": "#15253D", "accentColor": "#2563EB", "fontFamily": "sans", "fontSize": 32, "lineHeight": 1.65 }],
+    "presets": [{ "id": "portrait", "name": "纵向画幅", "width": 1080, "height": 1440 }]
+  }]
+}

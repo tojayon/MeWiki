@@ -1,3 +1,4 @@
+import { openSettingsSection, closeSettingsPage } from "./helpers/settings.ts";
 import { createNotebookFixture as createResearchNotebook } from "../src/domain/testUtils/notebook.ts";
 import { expect, test, type Page } from "@playwright/test";
 import { mkdtemp, readdir, rm } from "node:fs/promises";
@@ -6,7 +7,7 @@ import path from "node:path";
 import { createResearchNote } from "../src/domain/researchNotebook.ts";
 import { enableNotebookEditing, runNotebookAction } from "./helpers/researchNotebook.ts";
 
-const settings = path.resolve(".mewiki/media-e2e-settings.json");
+const settings = path.resolve(process.env.MEWIKI_RESEARCH_SETTINGS || ".mewiki/media-e2e-settings.json");
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAACAAAAAYCAYAAACbU/80AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAN0lEQVRIie2WsQ0AAAjC+JqfeLKe4dKB3QSEpoNPxQOqBTOE+IZYRLWK5xjhHCOQVCSbUMpLDg7V2l2IkGDTEwAAAABJRU5ErkJggg==", "base64");
 const wav = Buffer.alloc(44 + 16000 * 4 * 2);
 wav.write("RIFF", 0); wav.writeUInt32LE(wav.length - 8, 4); wav.write("WAVEfmt ", 8); wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22); wav.writeUInt32LE(16000, 24); wav.writeUInt32LE(32000, 28); wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write("data", 36); wav.writeUInt32LE(wav.length - 44, 40);
@@ -32,13 +33,13 @@ async function insert(page: Page, label: "音频" | "视频") {
   return page.locator(`.research-media-block[data-media-kind="${label === "音频" ? "audio" : "video"}"]`).last();
 }
 async function connect(page: Page, directory = path.join(root, "资料库")) {
-  await page.getByRole("button", { name: "研究笔记设置", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "研究笔记设置", exact: true });
+  await openSettingsSection(page, "storage");
+  const dialog = page.getByTestId("research-library-storage");
   await dialog.getByRole("textbox", { name: "本地保存路径", exact: true }).fill(directory);
   await dialog.getByRole("button", { name: "检查路径", exact: true }).click();
   await dialog.getByRole("button", { name: "迁移到此目录", exact: true }).click();
   await expect(dialog.getByText("本地自动保存已启用", { exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await closeSettingsPage(page);
 }
 async function videoBytes(page: Page, mimeType = "video/webm;codecs=vp8") {
   const bytes = await page.evaluate(async mimeType => {
@@ -115,16 +116,18 @@ test("plays a local video, sets a portable poster and restores both from an atta
   const partial = await page.request.get((await player.getAttribute("src"))!, { headers: { Range: "bytes=0-15" } });
   expect(partial.status()).toBe(206);
   expect(partial.headers()["content-disposition"]).toMatch(/^inline;/);
-  await page.getByRole("button", { name: "研究笔记设置", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "研究笔记设置", exact: true });
+  await openSettingsSection(page, "storage");
+  const dialog = page.getByTestId("research-library-storage");
   const downloading = page.waitForEvent("download");
+  await openSettingsSection(page, "backup");
   await dialog.getByRole("button", { name: "导出含附件备份", exact: true }).click();
   const download = await downloading;
+  await openSettingsSection(page, "backup");
   await dialog.getByLabel("选择完整资料库备份").setInputFiles((await download.path())!);
   await expect(dialog.getByLabel("恢复预览")).toBeVisible();
   await dialog.getByRole("button", { name: "确认恢复此版本", exact: true }).click();
   await expect(dialog.getByText("已恢复资料库，原版本已保留。", { exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await closeSettingsPage(page);
   await expect(player).toHaveAttribute("poster", /preview=1/);
   await expect.poll(() => player.evaluate(element => (element as HTMLVideoElement).readyState)).toBeGreaterThan(0);
   expect((await readdir(path.join(root, "资料库", "assets")))).toEqual(expect.arrayContaining([expect.stringMatching(/\.webm$/), expect.stringMatching(/\.png$/)]));

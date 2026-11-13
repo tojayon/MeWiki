@@ -135,16 +135,18 @@ function readBlock(block: ResearchNotebookBlock, symbols?: ResearchSymbolEntry[]
   return <div className="research-markdown"><ResearchMarkdown text={text} /></div>;
 }
 
-export default function ResearchExamples({ block, readOnly, onPatch, renderBlocks, selectedTabId, onSelect, canRemoveTab, dropTabId, symbols }: {
+export default function ResearchExamples({ block, readOnly, onPatch, renderBlocks, renderTabTitle, selectedTabId, onSelect, canRemoveTab, dropTabId, symbols, staticView = false }: {
   block: ResearchExamplesBlock;
   readOnly: boolean;
   onPatch?: (patch: TabsPatch) => void;
   renderBlocks?: (blocks: ResearchNotebookBlock[], container: ResearchExampleContainer) => ReactNode;
+  renderTabTitle?: (tab: ResearchExampleTab) => ReactNode;
   selectedTabId?: string;
   onSelect?: (tabId: string) => void;
   canRemoveTab?: (tab: ResearchExampleTab) => boolean;
   dropTabId?: string;
   symbols?: ResearchSymbolEntry[];
+  staticView?: boolean;
 }) {
   useLocale();
   const id = useId();
@@ -180,7 +182,7 @@ export default function ResearchExamples({ block, readOnly, onPatch, renderBlock
   const select = (tabId: string, focus = false) => {
     setSelectedId(tabId);
     onSelect?.(tabId);
-    try { localStorage.setItem(storageKey, tabId); } catch { /* Selection is still usable when browser storage is unavailable. */ }
+    if (!staticView) try { localStorage.setItem(storageKey, tabId); } catch { /* Selection is still usable when browser storage is unavailable. */ }
     requestAnimationFrame(() => {
       const tab = [...(stripRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? [])].find(element => element.dataset.exampleId === tabId);
       if (focus) tab?.focus({ preventScroll: true });
@@ -200,9 +202,9 @@ export default function ResearchExamples({ block, readOnly, onPatch, renderBlock
     reveal();
     const resize = new ResizeObserver(reveal);
     resize.observe(strip);
-    try { localStorage.setItem(storageKey, active.id); } catch { /* The in-memory selection still works. */ }
+    if (!staticView) try { localStorage.setItem(storageKey, active.id); } catch { /* The in-memory selection still works. */ }
     return () => resize.disconnect();
-  }, [active.id, block.tabs, storageKey]);
+  }, [active.id, block.tabs, storageKey, staticView]);
   const handleKeys = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
     event.preventDefault();
@@ -245,9 +247,10 @@ export default function ResearchExamples({ block, readOnly, onPatch, renderBlock
       <div ref={stripRef} className="research-examples-tabs" role="tablist" aria-label={t("标签切换")} onKeyDown={handleKeys}>
         {block.tabs.map((tab, tabIndex) => <button key={tab.id} id={`${id}-tab-${tabIndex}`} type="button" role="tab" data-example-id={tab.id}
           aria-selected={tab.id === active.id} aria-controls={`${id}-panel`} tabIndex={tab.id === active.id ? 0 : -1}
+          aria-label={renderTabTitle ? tab.title : undefined}
           data-research-example-tab data-research-example-block-id={block.id} data-research-example-tab-id={tab.id}
           data-research-drop-active={dropTabId === tab.id || undefined}
-          title={tab.title} onClick={() => select(tab.id)}><span>{tab.title}</span></button>)}
+          title={tab.title} onClick={() => select(tab.id)}><span>{renderTabTitle ? renderTabTitle(tab) : tab.title}</span></button>)}
       </div>
       {!readOnly && <div className="research-examples-actions">
         <button type="button" data-ui="icon-action" aria-label={t("添加标签")} title={t("添加标签")} onClick={add}><Plus size={14} /></button>

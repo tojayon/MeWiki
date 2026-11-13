@@ -83,6 +83,36 @@ async function upload(
 }
 
 describe("research media storage", () => {
+  it('lists an empty font library without creating assets or accepting an invalid directory', async () => {
+    const { directory, media } = await fixture();
+    const before = (await readdir(directory)).sort();
+    expect(await media.fonts(directory)).toEqual([]);
+    expect((await readdir(directory)).sort()).toEqual(before);
+    await writeFile(path.join(directory, 'assets'), 'not a directory');
+    await expect(media.fonts(directory)).rejects.toThrow(/附件目录/);
+  });
+  it('keeps imported fonts in the library across reopen and complete backup restore', async () => {
+    const { root, directory, library, notebook, media } = await fixture();
+    const data = await readFile('node_modules/katex/dist/fonts/KaTeX_Main-Regular.woff2');
+    const request = { directory, name: '随库字体.woff2', mimeType: 'font/woff2', size: data.length, sha256: hash(data) };
+    const session = await media.startUpload(request);
+    await media.writeChunk(directory, session.uploadId, 0, Readable.from([data]), hash(data));
+    const asset = await media.completeUpload(directory, session.uploadId);
+    expect(await new ResearchMediaStore(library).fonts(directory)).toEqual([asset]);
+    expect((await media.startUpload(request)).asset?.id).toBe(asset.id);
+    const exporting = await media.createExport({ directory, notebook, format: 'library' });
+    const archive = await media.exportArchive(directory, exporting.id);
+    const chunks: Buffer[] = [];
+    for await (const chunk of archive.stream) chunks.push(Buffer.from(chunk));
+    const restoreDirectory = path.join(root, '字体恢复库');
+    const restoreLibrary = new ResearchLibraryStore({ settingsFile: path.join(root, 'restore-settings.json') });
+    await restoreLibrary.connect({ directory: restoreDirectory, mode: 'create', notebook });
+    const restored = new ResearchMediaStore(restoreLibrary);
+    await restored.importArchive(restoreDirectory, Readable.from(chunks));
+    expect(await restored.fonts(restoreDirectory)).toEqual([asset]);
+    expect(await readFile((await restored.content(restoreDirectory, asset.id, false)).filename)).toEqual(data);
+    await expect(restored.fonts(directory)).rejects.toThrow();
+  });
   it.each(["audio/mpeg", "video/mp4"])("does not publish a webpage disguised as %s", async mimeType => {
     const { directory, media } = await fixture();
     const data = Buffer.from("<html>login</html>");

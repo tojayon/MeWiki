@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createSymbolEntry, resolveSymbolEntry, type ResearchSymbolEntry } from "./researchDictionary.ts";
+import { dictionaryReferenceMarkdown } from "./researchTerms.ts";
 import { findResearchSymbolMention, insertResearchSymbolMention, searchResearchSymbols } from "./researchSymbolMentions.ts";
 
 const entry = createSymbolEntry({ name: "当前采纳样本年龄", notation: "\\Delta^{[x1]}_{[x2]}[x3]", meaning: "月球执行器持有的状态样本年龄", category: "state", tags: ["时序/采纳"], slots: [
@@ -15,8 +16,23 @@ describe("正文词典符号输入", () => {
     expect(findResearchSymbolMention(text, 5)).toEqual({ start: 2, end: 5, query: "年龄" });
   });
 
+  it("finds a fullwidth yuan trigger without treating ordinary currency text as math", () => {
+    for (const text of ["￥", "年龄￥", "年龄 ￥采纳", "已有 $x$，再输入 ￥年龄"]) {
+      expect(findResearchSymbolMention(text, text.length)).toEqual({ start: text.lastIndexOf("￥"), end: text.length, query: text.slice(text.lastIndexOf("￥") + 1) });
+    }
+    expect(findResearchSymbolMention("前文￥年龄 后文", 5)).toEqual({ start: 2, end: 5, query: "年龄" });
+    const text = "金额￥100，变量$";
+    expect(findResearchSymbolMention(text, text.length)).toEqual({ start: text.length - 1, end: text.length, query: "" });
+  });
+
+  it("keeps a fullwidth trigger out of escaped text, literals and existing math", () => {
+    for (const text of ["\\￥", "\\￥年龄", "`￥年龄", "```text\n￥年龄", "~~~\n￥年龄", "￥￥", "$￥", "￥$", "$x￥年龄", "$x￥年龄$", "$$\nx+￥年龄", "[链接](https://example.com/￥年龄", "![图 ￥年龄](a.png)"]) {
+      expect(findResearchSymbolMention(text, text.length)).toBeNull();
+    }
+  });
+
   it("leaves code, escapes, closing math delimiters and display math alone", () => {
-    for (const text of ["\\$", "\\$年龄", "`$年龄", "```tex\n$年龄", "~~~\n$年龄", "$$", "$$x", "$$\nx+$", "$x$", "$x$年龄", "[链接](https://example.com/$年龄", "![图 $年龄](a.png)"]) expect(findResearchSymbolMention(text, text.length)).toBeNull();
+    for (const text of ["\\$", "\\$年龄", "`$年龄", "```tex\n$年龄", "~~~\n$年龄", "$$", "$$x", "$$\nx+$", "$x$", "$x$年龄", "[链接](https://example.com/$年龄", "![图 $年龄](a.png)", "$年龄#术语"]) expect(findResearchSymbolMention(text, text.length)).toBeNull();
     expect(findResearchSymbolMention("代码 `价格 $` 后输入$", "代码 `价格 $` 后输入$".length)).not.toBeNull();
   });
 
@@ -25,10 +41,22 @@ describe("正文词典符号输入", () => {
     const mention = findResearchSymbolMention(text, 5)!;
     const tex = resolveSymbolEntry(entry, Object.fromEntries(entry.slots.map(slot => [slot.key, slot.defaultValue]))).tex;
     const result = insertResearchSymbolMention(text, mention, entry);
-    expect(result.text).toBe(`前文$${tex}$ 后文`);
+    expect(result.text).toBe(`前文${dictionaryReferenceMarkdown("symbol", entry, `$${tex}$`, { x1: "", x2: "", x3: "(t)" })} 后文`);
     expect(result.text.slice(result.caret)).toBe(" 后文");
     const paired = "前文$年龄$ 后文";
     expect(insertResearchSymbolMention(paired, findResearchSymbolMention(paired, 5)!, entry).text).toBe(result.text);
+  });
+
+  it("replaces a fullwidth trigger and its query with a stable inline symbol reference", () => {
+    const expected = insertResearchSymbolMention("前文$年龄 后文", { start: 2, end: 5, query: "年龄" }, entry);
+    for (const text of ["前文￥年龄 后文", "前文￥年龄￥ 后文"]) {
+      const mention = findResearchSymbolMention(text, 5);
+      expect(mention).not.toBeNull();
+      const result = insertResearchSymbolMention(text, mention!, entry);
+      expect(result.text).toBe(expected.text);
+      expect(result.caret).toBe(expected.caret);
+      expect(result.text.slice(result.caret)).toBe(" 后文");
+    }
   });
 
   it("searches the entire dictionary by name, notation, meaning and tags", () => {

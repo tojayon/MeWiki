@@ -1,5 +1,7 @@
 import { sha256 } from "@noble/hashes/sha2.js";
-import { MEDIA_CHUNK_BYTES, normalizeMediaUrl, validateMediaFile, type ResearchMediaAsset } from "../domain/researchMedia.ts";
+import { MEDIA_CHUNK_BYTES, normalizeMediaUrl, researchMediaAssetIds, validateMediaFile, type ResearchMediaAsset } from "../domain/researchMedia.ts";
+import { meWikiManualAsset, readMeWikiManualAsset } from "../domain/meWikiManualAssets.ts";
+import { expandNoteEmbedBlocks } from "../domain/researchNoteEmbed.ts";
 import type { ResearchNotebookState } from "../domain/researchNotebook.ts";
 import type { ResearchWebMetadata } from "../domain/researchBookmark.ts";
 import { normalizeCitationDoi, type ResearchCitationMetadata } from "../domain/researchCitation.ts";
@@ -73,8 +75,19 @@ export class ResearchMediaClient {
     if (asset.sha256 !== digest || asset.id !== digest || asset.size !== size) throw new Error("附件回读校验失败，原笔记内容已保留。");
     return asset;
   }
-  metadata(directory: string, id: string, signal?: AbortSignal) {
-    return this.request<ResearchMediaAsset>(`/assets/${encodeURIComponent(id)}?${new URLSearchParams({ directory })}`, { signal });
+  async metadata(directory: string, id: string, signal?: AbortSignal): Promise<ResearchMediaAsset> {
+    try {
+      return await this.request<ResearchMediaAsset>(`/assets/${encodeURIComponent(id)}?${new URLSearchParams({ directory })}`, { signal });
+    } catch (cause) {
+      // Missing handbook originals can be restored from the application bundle.
+      // Other missing assets and service errors keep their existing behaviour.
+      if (!(cause instanceof MediaRequestError) || cause.status !== 404 || !meWikiManualAsset(id)) throw cause;
+      const bundled = await readMeWikiManualAsset(id, this.fetcher, signal);
+      return this.upload(directory, new File([bundled!.blob], bundled!.asset.name, { type: bundled!.asset.mimeType }), undefined, signal);
+    }
+  }
+  fonts(directory: string, signal?: AbortSignal): Promise<ResearchMediaAsset[]> {
+    return this.request(`/fonts?${new URLSearchParams({ directory })}`, { signal });
   }
   contentUrl(directory: string, id: string, preview = false, inline = false) {
     return `/api/research-library/media/assets/${encodeURIComponent(id)}/content?${new URLSearchParams({ directory, ...(preview ? { preview: "1" } : {}), ...(inline ? { inline: "1" } : {}) })}`;
@@ -86,6 +99,9 @@ export class ResearchMediaClient {
   pauseRemote(directory: string, id: string) { return this.json<RemoteMediaJob>(`/remote/${encodeURIComponent(id)}/pause`, { directory }); }
   staging(directory: string) { return this.json<{ id: string }>("/staging", { directory }); }
   async export(directory: string, notebook: ResearchNotebookState, format: "library" | "markdown", noteId?: string) {
+    const notes = format === "markdown" && noteId ? notebook.notes.filter(note => note.id === noteId) : notebook.notes;
+    const ids = researchMediaAssetIds(notes.flatMap(note => format === "markdown" ? expandNoteEmbedBlocks(notebook.notes, note.blocks, note.id) : note.blocks));
+    for (const id of ids) if (meWikiManualAsset(id)) await this.metadata(directory, id);
     const { id } = await this.json<{ id: string }>("/exports", { directory, notebook, format, noteId });
     return `/api/research-library/media/exports/${encodeURIComponent(id)}?${new URLSearchParams({ directory })}`;
   }

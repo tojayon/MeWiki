@@ -28,15 +28,15 @@
   color: #253b54;
   overflow-wrap: anywhere;
 }
-.symbol-diagram-callout[data-active="true"] { border-color: var(--symbol-part-color); box-shadow: 0 0 0 1px var(--symbol-part-color); }
-.symbol-diagram-callout h3 { margin: 0; color: var(--symbol-part-color); font-size: 13px; line-height: 1.5; font-weight: 700; }
+.symbol-diagram-callout[data-active="true"] { border-color: var(--symbol-part-color); }
+.symbol-diagram-callout h3 { margin: 0; color: var(--symbol-part-color); font-size: calc(var(--mewiki-interface-unit, 1px) * 13); line-height: 1.5; font-weight: 700; }
 .symbol-diagram-body { grid-column: 1; grid-row: 1 / -1; align-self: center; }
 .symbol-diagram-x1 { --symbol-part-color: #1547c0; grid-column: 2; grid-row: 1; }
 .symbol-diagram-x2 { --symbol-part-color: #9c4a07; grid-column: 2; grid-row: 3; }
 .symbol-diagram-x3 { --symbol-part-color: #ad3047; grid-column: 3; grid-row: 1 / -1; align-self: center; }
-.symbol-diagram-body .research-symbol-meaning { margin: 8px 0 0; font-size: 14px; line-height: 1.65; }
-.symbol-diagram-body .research-symbol-meta { margin: 10px 0 0; font-size: 12px; }
-.symbol-diagram-description { margin: 7px 0 9px; color: #4a6079; font-size: 12px; line-height: 1.6; }
+.symbol-diagram-body .research-symbol-meaning { margin: 8px 0 0; font-size: calc(var(--mewiki-interface-unit, 1px) * 14); line-height: 1.65; }
+.symbol-diagram-body .research-symbol-meta { margin: 10px 0 0; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+.symbol-diagram-description { margin: 7px 0 9px; color: #4a6079; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.6; }
 .symbol-diagram-missing-description { color: #61738a; }
 .symbol-diagram-callout input {
   display: block;
@@ -50,11 +50,10 @@
   background: #f9fbfe;
   color: #17334f;
   font: inherit;
-  font-size: 14px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 14);
 }
-.symbol-diagram-callout input:focus-visible { border-color: var(--symbol-part-color); outline: 2px solid var(--symbol-part-color); outline-offset: 2px; }
-.symbol-diagram-empty { margin: 7px 0 0; color: #536981; font-size: 12px; line-height: 1.5; }
-.symbol-diagram-reference { margin-top: 10px; border-top: 1px solid #e3eaf3; padding-top: 9px; color: #314b68; font-size: 12px; line-height: 1.65; }
+.symbol-diagram-empty { margin: 7px 0 0; color: #536981; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.5; }
+.symbol-diagram-reference { margin-top: 10px; border-top: 1px solid #e3eaf3; padding-top: 9px; color: #314b68; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.65; }
 .symbol-diagram-reference > strong { font-weight: 650; }
 .symbol-diagram-reference > p { margin: 3px 0 0; }
 .research-symbol-diagram .research-symbol-hero {
@@ -77,10 +76,10 @@
 .research-symbol-diagram .research-symbol-hero .symbol-diagram-formula { display: inline-block; width: max-content; max-width: none; white-space: nowrap; font-size: 132px; line-height: 1.2; }
 .research-symbol-diagram .research-symbol-hero .katex-display { margin: 0; }
 .symbol-diagram-part { border-radius: 3px; }
-.research-symbol-diagram[data-active-part="body"] .symbol-diagram-part-body { outline: 1px solid #c4d5e9; background: #edf3fa; }
-.research-symbol-diagram[data-active-part="x1"] .symbol-diagram-part-x1 { outline: 1px solid #a9bfea; background: #edf2ff; color: #1547c0; }
-.research-symbol-diagram[data-active-part="x2"] .symbol-diagram-part-x2 { outline: 1px solid #e5bd96; background: #fff3e7; color: #9c4a07; }
-.research-symbol-diagram[data-active-part="x3"] .symbol-diagram-part-x3 { outline: 1px solid #e6adba; background: #fff0f3; color: #ad3047; }
+.research-symbol-diagram[data-active-part="body"] .symbol-diagram-part-body { background: #edf3fa; }
+.research-symbol-diagram[data-active-part="x1"] .symbol-diagram-part-x1 { background: #edf2ff; color: #1547c0; }
+.research-symbol-diagram[data-active-part="x2"] .symbol-diagram-part-x2 { background: #fff3e7; color: #9c4a07; }
+.research-symbol-diagram[data-active-part="x3"] .symbol-diagram-part-x3 { background: #fff0f3; color: #ad3047; }
 .symbol-diagram-connections { position: absolute; z-index: 1; inset: 0; overflow: visible; pointer-events: none; }
 .symbol-diagram-connections g { color: #244c78; }
 .symbol-diagram-connections [data-symbol-connection="x1"] { color: #1547c0; }
@@ -92,7 +91,7 @@
 .symbol-diagram-connections [data-empty="true"] circle { fill: #fff; stroke: currentColor; stroke-dasharray: 2 2; }
 .symbol-diagram-connections [data-active="true"] path { opacity: 1; stroke-width: 2px; }
 .symbol-diagram-connections text { fill: currentColor; font-family: inherit; font-size: 11px; }
-.symbol-diagram-hint { margin: 0; border-top: 1px solid #e5ebf3; padding: 9px 16px; color: #536981; font-size: 12px; line-height: 1.5; }
+.symbol-diagram-hint { margin: 0; border-top: 1px solid #e5ebf3; padding: 9px 16px; color: #536981; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.5; }
 @container symbol-diagram (max-width: 760px) {
   .symbol-diagram-canvas { grid-template-columns: minmax(0, 1.8fr) minmax(180px, 1fr); grid-template-rows: auto auto minmax(200px, auto) auto; padding: 16px; }
   .symbol-diagram-body { grid-column: 1 / -1; grid-row: 1; align-self: start; }
@@ -101,7 +100,7 @@
   .symbol-diagram-x2 { grid-column: 1; grid-row: 4; }
   .symbol-diagram-x3 { grid-column: 2; grid-row: 2 / 5; }
   .symbol-diagram-callout { padding: 10px; }
-  .symbol-diagram-callout input { font-size: 16px; min-height: 40px; }
+  .symbol-diagram-callout input { font-size: calc(var(--mewiki-interface-unit, 1px) * 16); min-height: 40px; }
 }
 @container symbol-diagram (max-width: 580px) {
   .symbol-diagram-canvas { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(180px, auto) auto auto; }

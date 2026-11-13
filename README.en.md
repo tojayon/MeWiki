@@ -1,46 +1,61 @@
 <div align="center">
 
-<img src="docs/assets/hero.svg" alt="MeWiki — Connect your knowledge" width="1100" />
+<img src="public/mewiki.svg" alt="MeWiki circular logo: a blue and white M on black" width="104" height="104" />
 
-**Bring pages, symbols, formulas, and references together. Keep reused content connected to its source.**
+<h1>MeWiki</h1>
+<h3>Knowledge, connected.</h3>
 
-[简体中文](README.md) · [English](README.en.md)
+A local-first personal wiki that connects pages, terms, formulas, and their sources.
 
 <p>
   <a href="LICENSE"><img src="docs/assets/badges/license.svg" alt="License: MIT" /></a>
   <a href="https://nodejs.org/"><img src="docs/assets/badges/node.svg" alt="Node.js: 22.13 or newer" /></a>
-  <a href="https://react.dev/"><img src="docs/assets/badges/react.svg" alt="Built with React" /></a>
-  <a href="https://www.typescriptlang.org/"><img src="docs/assets/badges/typescript.svg" alt="Written in TypeScript" /></a>
   <a href="#your-files-your-storage"><img src="docs/assets/badges/local-first.svg" alt="Local-first" /></a>
   <a href="#chinese-and-english-interface"><img src="docs/assets/badges/languages.svg" alt="Interface: 简体中文 / English" /></a>
 </p>
 
-[Quick start](#quick-start) · [Gallery](#gallery) · [User manual](docs/wiki/README.md) · [Integration API](docs/integrations/README.md) · [Feedback](https://github.com/tojayon/MeWiki/issues)
+[Philosophy](#philosophy) · [Gallery](#gallery) · [Quick start](#quick-start) · [User manual](docs/wiki/README.md)
+
+[简体中文](README.md) · [English](README.en.md) · [Logos and app icons](docs/BRANDING.md)
 
 </div>
 
-MeWiki is a local-first wiki for writing and managing connected knowledge. Organize pages with hierarchical tags, explain notation in a symbol dictionary, and keep formulas, PDFs, citations, media, and datasets in the same note. Live references, backlinks, and knowledge maps make their relationships visible.
+MeWiki is an open-source local wiki for personal knowledge bases, technical documentation, study notes, and research records. Maintain definitions in foundation notes and use them in research notes. Explain terms and symbols in dictionaries, then connect ideas to their sources with live references and knowledge maps.
 
-Use it for a personal knowledge base, technical documentation, study notes, or research records. New workspaces include a complete Chinese manual and a small set of general examples you can read, edit, or remove.
+New workspaces include a complete Chinese manual and general examples. Start with a single note.
 
 ![MeWiki English workspace with tagged notes, page content, and a side panel](docs/assets/workspace-en.png)
 
-## Highlights
+## Philosophy
+
+**Knowledge, connected — with context you can follow.** Four ideas guide MeWiki:
+
+- **Keep knowledge connected.** Page links, backlinks, and knowledge maps place a definition alongside the notes, formulas, and conditions that use it.
+- **Maintain the source. Reuse it wherever it helps.** Reference an explanation or a group of formulas in several notes. Each reference displays the current source content, while your commentary stays in its own page.
+- **Let expression follow thought.** Write text, mathematical notation, charts, and supporting material together. Open a term or symbol to read its meaning; follow a derivation back to its foundations.
+- **Keep your work in your hands.** Choose a local library directory, use version history, export JSON or Markdown, and back up your notes with their attachments as your library grows.
+
+A typical workflow is **collect → explain → connect → reuse and share**. Save a PDF, take reading notes, define the terms and symbols, reference key passages in a research note, then export the part you want to share.
+
+## Features
 
 | What you want to do | How MeWiki helps |
 | --- | --- |
 | Edit once and update related pages | Reference selected blocks from another note and display the latest source content in place |
-| Explain every variable in a formula | Symbol dictionary, per-position descriptions, visual scripts, formula sources, and variable dependencies |
+| Explain concepts and mathematical notation | Separate term and symbol dictionaries, alias and abbreviation references, position descriptions, visual scripts, and formula sources |
 | Keep writing and supporting material together | Images, audio, video, PDFs, attachments, web cards, and DOI metadata |
 | Work through data and derivations | CSV/Excel, charts, Mermaid, freehand drawing, and knowledge maps |
 | Separate personal and project material | Multiple local libraries, independent windows, history, and backups with attachments |
-| Bring context from other applications | A versioned host SDK and optional plugins with links back to the original source |
+| Turn a note into images to share | PNG/JPEG export, multiple pages or a long image, covers, personal presets, and accompanying text |
+| Bring context from other applications | A versioned host SDK and locally installable declarative plugins with links back to the original source |
 
 ## Gallery
 
-### Editable formulas, meaningful symbols
+### Defined concepts, meaningful formulas
 
-Choose a dictionary symbol and edit its scripts on the left; insert operators from a keyboard-like palette on the right. Keep inserting without closing the editor, copy and paste formula items, drag to reorder, or preview LaTeX as you type. Variables in inline formulas can also open their definitions.
+Give a term its canonical name, English name, abbreviations, and aliases. Type `#` in your writing to choose a reference form. Describe the base, scripts, and variables of a symbol. While reading, click a reference to open its explanation without leaving the page.
+
+The formula editor provides dictionary symbols, visual scripts, an operator keyboard, continuous insertion, copy and paste, drag ordering, and live LaTeX previews.
 
 <table>
   <tr>
@@ -82,6 +97,14 @@ Knowledge maps connect pages, formulas, and conditions. Multiple libraries keep 
   </tr>
 </table>
 
+### From your notes to images you can share
+
+Install and enable the bundled Social image export plugin, then open its workspace in a separate browser tab from the note menu. Choose the content, canvas, and preset, preview the result, and download PNG, JPEG, or an image ZIP with accompanying text. Save, import, and export personal presets to use with your next note. See the [image export guide](docs/wiki/20-social-export.md).
+
+### Connect other tools when you need them
+
+Manage bundled plugins in Settings → Plugins and integrations, or install declarative content plugins and export presets from a local JSON, ZIP, or `.mewiki-plugin` file. External cards retain their source locations, and disabling a plugin preserves existing note content. Developers can start with the [plugin guide](docs/plugins/README.md) and [host SDK](docs/integrations/README.md).
+
 All screenshots use general examples and fictional data. They contain no personal research notes or attachments.
 
 ## Quick start
@@ -104,9 +127,9 @@ The first installation and dependency updates require network access. After inst
 
 ## Chinese and English interface
 
-MeWiki supports **简体中文 / English**. Switch languages using the interface language control without reloading; your preference is saved. Menus, action hints, and date formatting follow the selected language.
+MeWiki supports **简体中文 / English**. Switch in Settings → General without reloading; your preference is saved. Menus, action hints, and date formatting follow the selected language.
 
-Note content, page titles, symbol names, tags, and attachments remain as authored. Changing the interface language does not translate or rewrite them. The complete 20-page user manual is currently in Chinese; this English README provides the installation and feature overview.
+Note content, page titles, dictionary names, tags, and attachments remain as authored. The complete user manual is currently in Chinese; this English README provides the installation and feature overview.
 
 ## Your files, your storage
 
@@ -119,7 +142,15 @@ Importing a local file creates a copy and preserves the original. Storage limits
 
 Before migrating or updating, export a **ZIP backup with attachments** or back up the complete library directory. Plain JSON and Markdown do not include original attachment bytes. Local library registration lives in `.mewiki/`; keep these machine settings and user files out of source control.
 
-MeWiki currently runs as a local single-user application and binds to `127.0.0.1` by default. The complete app requires its local Node service; static GitHub Pages cannot replace the library and media APIs. Cloud sync, accounts, and real-time collaboration are not currently included.
+## FAQ
+
+**Does it work offline?** After installation, you can edit notes, formulas, and local attachments offline. Web content, online media, and DOI metadata lookup need a connection.
+
+**Do I need an account or a cloud service?** MeWiki is currently a local single-user application that binds to `127.0.0.1` by default and uses local data directly. Cloud sync, accounts, and real-time collaboration are not yet available.
+
+**Can I deploy it to GitHub Pages?** The complete app depends on a local Node service for library, attachment, and export APIs. Static hosting cannot provide those services.
+
+**What do plugins support?** Locally installed declarative content and export presets are available now. Executable scripts, general editor extensions, and an online community directory are covered in the [future design](docs/plugins/ARCHITECTURE.md). Daily use does not require WebBench; its services are only needed for the replay plugin's source operations.
 
 ## Documentation
 
@@ -127,13 +158,16 @@ The linked guides are currently in Chinese.
 
 | Guide | What it covers |
 | --- | --- |
-| [Complete user manual](docs/wiki/README.md) | 20 manual pages, from your first note to backups and plugins |
-| [Symbol dictionary](docs/wiki/05-symbol-dictionary.md) / [Formula editing](docs/wiki/06-formulas.md) | Notation, scripts, copy and paste, and sources |
+| [Complete user manual](docs/wiki/README.md) | From your first note to content examples, backups, and plugins |
+| [Term and symbol dictionaries](docs/wiki/05-symbol-dictionary.md) / [Formula editing](docs/wiki/06-formulas.md) | Canonical names, abbreviations, notation, scripts, and sources |
 | [Links and references](docs/wiki/07-links-and-references.md) | Live block references, backlinks, and split reading |
 | [Storage and backups](docs/wiki/15-storage-and-backup.md) | Storage locations, history, conflicts, and attachment recovery |
-| [Plugins and external applications](docs/wiki/19-plugins-and-integrations.md) | Optional WebBench replay plugin and source navigation |
+| [Plugins and external applications](docs/wiki/19-plugins-and-integrations.md) / [Image export](docs/wiki/20-social-export.md) | Local installation, source navigation, images, and personal presets |
 | [Development guide](docs/DEVELOPMENT.md) | Project structure, shared components, and conventions |
+| [AI handoff guide](docs/AI_HANDOFF.md) | Continuation workflow, data boundaries, isolated checks, and next steps |
+| [Plugin development](docs/plugins/README.md) / [Ecosystem proposal](docs/plugins/ARCHITECTURE.md) | Declarative API v1, local installation, examples, and future community plans |
 | [Integration API](docs/integrations/README.md) | External content format, host SDK, and plugins |
+| [Logos and app icons](docs/BRANDING.md) | Circular mark, square app icons, SVG, and high-resolution PNG |
 | [Changelog](CHANGELOG.md) / [Roadmap](docs/ROADMAP.md) | Current capabilities and planned work |
 
 ## Contributing
@@ -144,7 +178,7 @@ npm run check      # Translation checks, lint, unit tests, and build
 npm run test:e2e   # Edge browser checks
 ```
 
-Tests use isolated data. Do not connect real libraries during development. Daily use does not require WebBench; starting its services is only necessary for the replay plugin’s source operations.
+The application uses React and TypeScript, with fonts, PDF resources, and graphics rendering resources bundled locally. Tests use isolated data; do not connect real libraries during development. See the [development guide](docs/DEVELOPMENT.md) for environment setup and full validation steps.
 
 Report reproducible bugs and feature ideas through [Issues](https://github.com/tojayon/MeWiki/issues), and read the [contribution guide](CONTRIBUTING.md) before proposing changes. For security issues, use the enabled [private vulnerability report](https://github.com/tojayon/MeWiki/security/advisories/new); see [SECURITY.md](SECURITY.md).
 

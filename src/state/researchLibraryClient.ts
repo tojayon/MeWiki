@@ -77,6 +77,7 @@ export class ResearchLibraryClient implements ResearchLibraryTransport {
     route = "",
     method = "GET",
     value?: unknown,
+    signal?: AbortSignal,
   ): Promise<T> {
     let response: Response;
     try {
@@ -94,10 +95,11 @@ export class ResearchLibraryClient implements ResearchLibraryTransport {
           },
           ...(value === undefined ? {} : { body: JSON.stringify(value) }),
           cache: "no-store",
-          signal: AbortSignal.timeout(30000),
+          signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
         },
       );
     } catch {
+      signal?.throwIfAborted();
       throw new ResearchLibraryHttpError(
         "无法连接本地资料库服务。修改尚未写入本地文件，请启动或重启 MeWiki 本地服务后重试。",
         0,
@@ -125,8 +127,8 @@ export class ResearchLibraryClient implements ResearchLibraryTransport {
   read() {
     return this.location(this.request<LibraryLocation>());
   }
-  catalog() {
-    return this.request<LibraryCatalog>("/catalog");
+  catalog(signal?: AbortSignal) {
+    return this.request<LibraryCatalog>("/catalog", "GET", undefined, signal);
   }
   registerLibrary(request: {
     name: string;

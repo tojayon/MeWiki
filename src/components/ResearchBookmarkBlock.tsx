@@ -5,12 +5,12 @@ import { ExternalLink, Globe, Link, RefreshCw, Settings2 } from "lucide-react";
 import { normalizeMediaUrl } from "../domain/researchMedia.ts";
 import type { ResearchBookmarkBlock as BookmarkBlock } from "../domain/researchBookmark.ts";
 import { researchMediaClient } from "../state/researchMediaClient.ts";
-import { useResearchLibrary } from "../state/useResearchNotebook.ts";
+import { useResearchContentLibrary } from "../state/ResearchContentLibraryContext.ts";
 import "./ResearchBookmarkBlock.css";
 
 export default function ResearchBookmarkBlock({ block, readOnly = false, onPatch }: { block: BookmarkBlock; readOnly?: boolean; onPatch: (patch: Partial<BookmarkBlock>) => void }) {
   useLocale();
-  const library = useResearchLibrary();
+  const library = useResearchContentLibrary();
   const [draftState, setDraft] = useState({ url: block.url, value: block.url ?? "" });
   const draft = draftState.url === block.url ? draftState.value : block.url ?? "";
   const [settings, setSettings] = useState(false);

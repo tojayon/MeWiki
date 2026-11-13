@@ -40,7 +40,7 @@
   position: relative;
   display: grid;
   grid-template-columns: var(--research-left-column, var(--research-sidebar-width, 300px)) minmax(0, 1fr) var(--research-right-column, 0px);
-  grid-template-rows: 42px minmax(0, 1fr) 42px;
+  grid-template-rows: 44px minmax(0, 1fr) 42px;
   flex: 1 1 auto;
   width: 100%;
   min-width: 0;
@@ -85,7 +85,6 @@
   flex: 0 0 auto;
   gap: 4px;
 }
-.research-page-tags .research-note-review-time { max-width: 90px; }
 .research-page-tags > .research-note-tag {
   overflow: hidden;
   white-space: nowrap;
@@ -122,14 +121,41 @@
   grid-column: 1;
   grid-row: 3;
   align-items: center;
+  gap: 4px;
   min-width: 0;
   padding: 4px 8px;
   border-top: 1px solid #d3ddea;
   background: #f7f9fc;
 }
+.research-sidebar-account-slot {
+  flex: 1 0 40px;
+  min-width: 40px;
+  align-self: stretch;
+}
+.research-sidebar-account {
+  display: inline-flex;
+  width: auto;
+  max-width: 100%;
+  height: 32px;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: transparent;
+  color: #61738a;
+  font: inherit;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
+  white-space: nowrap;
+}
+.research-sidebar-account > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .research-notebook-settings {
   display: flex;
-  width: 100%;
+  flex: 0 0 auto;
+  margin-left: auto;
   height: 32px;
   align-items: center;
   gap: 8px;
@@ -139,7 +165,8 @@
   background: transparent;
   color: #354a64;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
+  white-space: nowrap;
   cursor: pointer;
 }
 .research-notebook-settings > svg {
@@ -150,14 +177,10 @@
   background: #eaf0f8;
   color: #123c9b;
 }
-.research-notebook-settings:focus-visible {
-  outline: 2px solid #1547c0;
-  outline-offset: -2px;
-}
 .research-settings-warning {
   margin-left: auto;
   color: #a12035;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 .research-page-map-tools:empty {
   display: none;
@@ -191,11 +214,22 @@
   min-height: 0;
   background: #f7f9fc;
 }
-.research-notebook-sidebar nav {
-  flex: 1 1 auto;
+.research-notebook-sidebar > nav,
+.research-notebook-sidebar > .research-classified-list {
+  flex: 1 1 0;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 5px;
+}
+.research-notebook-sidebar > .research-classified-list {
+  padding: 0;
+}
+.research-notebook-sidebar .research-note-tree,
+.research-dictionary-sidebar .research-note-tree {
+  min-width: 0;
+  border-width: 0 0 1px;
+  border-radius: 0;
 }
 .research-notebook-file-actions {
   display: contents;
@@ -213,13 +247,12 @@
   background: #fff;
   color: #203652;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   font-weight: 650;
   cursor: pointer;
 }
 .research-small-button:hover:not(:disabled),
 .research-delete-note:hover:not(:disabled) {
-  border-color: #1547c0;
   background: #f0f5ff;
   color: #123c9b;
 }
@@ -239,8 +272,8 @@
   justify-content: space-between;
   gap: 8px;
   box-sizing: border-box;
-  flex: 0 0 42px;
-  height: 42px;
+  flex: 0 0 44px;
+  height: 44px;
   min-width: 0;
   padding: 5px 8px;
   border-bottom: 1px solid #d3ddea;
@@ -318,13 +351,13 @@
 .research-delete-confirm-dialog h2 {
   margin: 0 0 12px;
   color: #172033;
-  font-size: 15px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 15);
   line-height: 1.4;
 }
 .research-delete-confirm-copy {
   margin: 0;
   color: #26384f;
-  font-size: 13px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 13);
   line-height: 1.7;
   overflow-wrap: anywhere;
 }
@@ -334,7 +367,7 @@
 .research-delete-confirm-hint {
   margin: 8px 0 0;
   color: #61738a;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-delete-confirm-actions {
   display: flex;
@@ -345,7 +378,7 @@
 .research-delete-confirm-actions .research-small-button {
   justify-content: center;
   min-width: 64px;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-delete-confirm-actions .research-confirm-delete {
   border-color: #b42338;
@@ -353,7 +386,6 @@
   color: #fff;
 }
 .research-delete-confirm-actions .research-confirm-delete:hover {
-  border-color: #951d2f;
   background: #951d2f;
   color: #fff;
 }
@@ -390,14 +422,12 @@
   border-radius: 0;
   padding: 0;
   background: transparent;
-  color: #172033;
-  font: inherit;
-  font-size: 20px;
-  line-height: 28px;
-  font-weight: 800;
-  font-synthesis: weight;
-  text-align: center;
   text-overflow: ellipsis;
+}
+.research-note-header .research-note-title {
+  height: 32px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 20);
+  line-height: 1.1;
 }
 .research-note-title:focus {
   outline: none;
@@ -405,7 +435,8 @@
 .research-note-footer {
   display: flex;
   box-sizing: border-box;
-  flex: 0 0 42px;
+  flex: 0 0 auto;
+  min-height: 42px;
   min-width: 0;
   align-items: center;
   gap: 12px;
@@ -413,12 +444,22 @@
   padding: 5px 8px;
   background: #fbfcfe;
 }
-.research-note-updated {
+.research-note-times {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 12px;
+}
+.research-note-updated,
+.research-note-review-time {
+  max-width: 100%;
   min-width: 0;
   margin: 0;
   overflow: hidden;
   color: #52627a;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -428,12 +469,12 @@
   margin-left: auto;
   padding-left: 8px;
   color: #263b58;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   white-space: nowrap;
 }
 .research-library-empty {
   color: #53657c;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 .research-library-links {
   display: flex;
@@ -444,7 +485,7 @@
 .research-library-links > strong {
   flex: 0 0 auto;
   font-weight: 600;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 .research-library-link-list {
   display: flex;
@@ -471,7 +512,7 @@
   color: #1753a4;
   text-align: left;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   cursor: pointer;
 }
 .research-library-link button > span {
@@ -486,7 +527,7 @@
 .research-library-link small {
   flex: 0 0 auto;
   color: #53657c;
-  font-size: 10px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 10);
 }
 .research-library-link button:disabled {
   color: #9b394a;
@@ -503,10 +544,10 @@
   color: #314c70;
 }
 .research-library-empty-page h2 {
-  font-size: 16px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 16);
 }
 .research-library-empty-page p {
-  font-size: 13px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 13);
 }
 .research-library-empty-page > button {
   border: 1px solid #a6bcdc;
@@ -546,7 +587,7 @@
   margin: 0;
   padding: 4px 6px 4px 22px;
   color: #25364d;
-  font-size: 15px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 15);
   line-height: 1.72;
 }
 .research-note-read-list li {
@@ -556,24 +597,34 @@
 .research-evidence-note {
   margin: 0;
   color: #25364d;
-  font-size: 13px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 13);
   line-height: 1.6;
 }
 .research-note-blocks {
   display: flex;
+  font-size: var(--mewiki-document-font-size, 15px);
   min-width: 0;
   flex-direction: column;
   gap: 5px;
   margin-left: 27px;
 }
+/* Reading and static output have no insertion handles to reserve space for. */
+.research-note-blocks:not(:has(> .research-note-block > .research-block-insert, > .research-note-insert-tail > .research-block-insert)) {
+  margin-left: 0;
+}
 .research-note-block {
   position: relative;
   min-width: 0;
   border-radius: 4px;
-  padding: 5px 28px 5px 8px;
+  padding: 5px 8px;
+}
+.research-note-block:has(> .research-block-insert) {
+  padding-right: 28px;
 }
 .research-note-block.is-formula {
   min-height: 88px;
+}
+.research-note-block.is-formula:has(> .research-block-insert) {
   padding-right: 40px;
 }
 .research-note-block.is-formula:has(> .research-remove-block) {
@@ -606,13 +657,13 @@
 .research-note-block.is-heading h2 {
   margin: 11px 0 1px;
   color: #153b6d;
-  font-size: 17px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 17);
   font-weight: 740;
 }
 .research-note-block.is-heading h3 {
   margin: 8px 0 0;
   color: #244568;
-  font-size: 14px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 14);
   font-weight: 720;
 }
 .research-note-block.is-heading :is(h1, h4, h5, h6) {
@@ -622,22 +673,22 @@
   font-weight: 720;
 }
 .research-note-block.is-heading h1 {
-  font-size: 24px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 24);
 }
 .research-note-block.is-heading h4 {
-  font-size: 15px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 15);
 }
 .research-note-block.is-heading h5 {
-  font-size: 14px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 14);
 }
 .research-note-block.is-heading h6 {
-  font-size: 13px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 13);
   color: #45566e;
 }
 .research-note-block.is-paragraph p {
   margin: 1px 0;
   color: #25364d;
-  font-size: 15px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 15);
   line-height: 1.72;
 }
 .research-list-edit-wrap {
@@ -660,7 +711,7 @@
   background: transparent;
   color: #25364d;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   line-height: 1.6;
   resize: vertical;
 }
@@ -668,8 +719,6 @@
 .research-formula-editor textarea:focus,
 .research-formula-editor input:focus,
 .research-evidence-block input:focus {
-  border-color: #9cb5dd;
-  outline: none;
   background: #fff;
 }
 .research-formula-editor {
@@ -682,7 +731,7 @@
   background: #fbfcfe;
   color: #394a62;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-formula-preview {
   overflow-x: auto;
@@ -696,7 +745,7 @@
   min-height: 26px;
   padding-block: 2px;
   color: #596a81;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-evidence-block {
   display: flex;
@@ -712,7 +761,7 @@
   align-items: center;
   justify-content: space-between;
   color: #17488f;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 12);
   font-weight: 750;
 }
 .research-evidence-heading > span {
@@ -722,17 +771,17 @@
 }
 .research-evidence-block > strong {
   color: #19375e;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 12);
 }
 .research-evidence-context {
   color: #364c67;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 12);
   font-variant-numeric: tabular-nums;
 }
 .research-evidence-block > code {
   overflow-wrap: anywhere;
   color: #52627a;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 11);
 }
 .research-evidence-block input {
   border-color: #d5e0ed;
@@ -758,7 +807,7 @@
 .research-empty-note {
   padding: 20px 8px;
   color: #52627a;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   text-align: center;
 }
 @media (max-width: 720px) {
@@ -768,8 +817,8 @@
     height: calc(100dvh - 16px);
     max-height: calc(100dvh - 16px);
   }
-  .research-note-title {
-    font-size: 18px;
+  .research-note-header .research-note-title {
+    font-size: calc(var(--mewiki-interface-unit, 1px) * 18);
   }
   .research-note-header-leading,
   .research-note-header-actions {
@@ -793,8 +842,12 @@
     gap: 8px;
     padding-inline: 6px;
   }
-  .research-note-updated {
-    font-size: 11px;
+  .research-note-times {
+    column-gap: 8px;
+  }
+  .research-note-updated,
+  .research-note-review-time {
+    font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   }
   .research-delete-note {
     width: 28px;
@@ -824,7 +877,7 @@
   .research-note-item {
     gap: 4px;
     padding-inline: 4px;
-    font-size: 11px;
+    font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   }
   .research-notebook-toolbar {
     gap: 3px;
@@ -840,9 +893,16 @@
   min-width: 0;
   min-height: 0;
 }
+.research-category-tools {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+.research-category-tools:empty {
+  display: none;
+}
 .research-notebook-mode-tabs {
   display: flex;
-  container-type: inline-size;
   grid-column: 1;
   grid-row: 1;
   align-items: stretch;
@@ -851,6 +911,13 @@
   padding: 0 4px;
   border-bottom: 1px solid #d3ddea;
   background: #f7f9fc;
+}
+.research-notebook-brand-mark {
+  display: block;
+  flex: 0 0 24px;
+  align-self: center;
+  margin-inline: 3px;
+  border-radius: 4px;
 }
 .research-notebook-mode-tabs button {
   display: inline-flex;
@@ -865,7 +932,7 @@
   background: transparent;
   color: #354a64;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   font-weight: 650;
   white-space: nowrap;
   cursor: pointer;
@@ -874,23 +941,13 @@
   background: #eaf0f8;
   color: #123c9b;
 }
-.research-notebook-mode-tabs button:focus-visible,
-.research-notebook-close:focus-visible {
-  outline: 2px solid #1547c0;
-  outline-offset: -2px;
-}
 .research-notebook-mode-tabs button[aria-selected="true"] {
   border-bottom-color: #1547c0;
+  background: #eaf0ff;
   color: #123c9b;
 }
-@container (max-width: 200px) {
-  .research-notebook-mode-tabs button {
-    white-space: normal;
-    line-height: 1.25;
-  }
-  .research-notebook-mode-tabs button > span {
-    max-width: 2em;
-  }
+.research-notebook-mode-tabs button > svg {
+  flex: 0 0 auto;
 }
 .research-notebook-divider {
   position: absolute;
@@ -974,10 +1031,6 @@
   background: #eaf0f8;
   color: #123c9b;
 }
-.research-notebook-action:focus-visible {
-  outline: 2px solid #1547c0;
-  outline-offset: -2px;
-}
 .research-notebook-standalone-page {
   position: fixed;
   inset: 0;
@@ -993,6 +1046,9 @@
 }
 .research-notebook-view.is-active {
   display: contents;
+}
+.research-notebook-view > [hidden] {
+  display: none;
 }
 .research-dictionary {
   display: none;
@@ -1046,13 +1102,21 @@
   background: transparent;
   color: #1b2e48;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-dictionary-list {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
   padding: 5px;
+}
+.research-dictionary-sidebar > .research-dictionary-list {
+  display: flex;
+  overflow: hidden;
+  padding: 0;
+}
+.research-dictionary-sidebar > .research-dictionary-list > .research-classified-list {
+  flex: 1 1 auto;
 }
 .research-dictionary-add {
   display: inline-flex;
@@ -1066,7 +1130,7 @@
   background: #1547c0;
   color: #fff;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   font-weight: 700;
   cursor: pointer;
 }
@@ -1102,7 +1166,7 @@
 .research-symbol-meaning {
   margin: 16px 0 12px;
   color: #26384f;
-  font-size: 15px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 15);
   line-height: 1.7;
   white-space: pre-wrap;
 }
@@ -1111,7 +1175,7 @@
   gap: 12px;
   margin: 8px 0;
   color: #344963;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-symbol-slots {
   margin-top: 18px;
@@ -1121,7 +1185,7 @@
 .research-symbol-slots h3 {
   margin: 0 0 9px;
   color: #173b65;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-symbol-slot-row {
   display: grid;
@@ -1138,11 +1202,11 @@
 }
 .research-symbol-slot-row strong {
   color: #263d5b;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-symbol-slot-row small {
   color: #61738a;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 .research-symbol-slot-row input,
 .research-symbol-edit input,
@@ -1156,14 +1220,7 @@
   background: #fff;
   color: #203652;
   font: inherit;
-  font-size: 12px;
-}
-.research-symbol-slot-row input:focus,
-.research-symbol-edit input:focus,
-.research-symbol-edit select:focus,
-.research-symbol-edit textarea:focus {
-  border-color: #517fc5;
-  outline: 2px solid #dce8fa;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-symbol-instance {
   display: flex;
@@ -1172,13 +1229,13 @@
   min-height: 32px;
   margin: 8px 0 0;
   color: #344963;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-symbol-unreferenced,
 .research-dictionary-empty {
   margin: 12px 4px;
   color: #61738a;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-symbol-edit {
   display: flex;
@@ -1194,12 +1251,12 @@
   flex-direction: column;
   gap: 5px;
   color: #263d5b;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   font-weight: 700;
 }
 .research-symbol-edit > label small {
   color: #61738a;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   font-weight: 400;
 }
 .research-symbol-edit textarea {
@@ -1219,7 +1276,7 @@
   padding-top: 7px;
   border-top: 1px solid #dce4ee;
   color: #173b65;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-symbol-slot-edit {
   display: grid;
@@ -1236,7 +1293,7 @@
   flex-direction: column;
   gap: 4px;
   color: #526780;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 .research-symbol-slot-edit .research-symbol-slot-optional {
   flex-direction: row;
@@ -1257,7 +1314,7 @@
 .research-symbol-slot-hint {
   margin: 0;
   color: #536780;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   line-height: 1.5;
 }
 .research-symbol-position-fields {
@@ -1269,13 +1326,13 @@
   display: inline-flex;
   margin-left: 6px;
   color: #1547c0;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   font-weight: 650;
 }
 .research-symbol-error {
   margin: 0;
   color: #a51d32;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-symbol-save {
   display: inline-flex;
@@ -1289,7 +1346,7 @@
   background: #1547c0;
   color: #fff;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   font-weight: 700;
   cursor: pointer;
 }
@@ -1326,7 +1383,7 @@
   right: 32px;
   max-width: calc(100% - 64px);
   color: #a32236;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   line-height: 22px;
 }
 .research-formula-edit-button {
@@ -1362,11 +1419,6 @@
 .research-note-block.is-formula .research-remove-block:hover {
   background: transparent;
 }
-.research-formula-edit-button:focus-visible,
-.research-formula-settings-button:focus-visible {
-  outline: 2px solid #7ea4db;
-  outline-offset: 1px;
-}
 .research-formula-composer .research-formula-preview {
   display: flex;
   min-width: 0;
@@ -1380,7 +1432,7 @@
   border-radius: 0;
   padding: 12px 0;
   background: transparent;
-  font-size: 22px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 22);
 }
 .research-formula-inline-expression {
   position: relative;
@@ -1393,7 +1445,7 @@
   gap: 2px;
   padding: 12px 0;
   color: #173454;
-  font-size: 22px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 22);
 }
 .research-formula-interactive-expression {
   position: relative;
@@ -1416,7 +1468,7 @@
   width: 100%;
   min-width: 0;
   color: #344c69;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-formula-tex-editor > label {
   display: flex;
@@ -1433,11 +1485,7 @@
   resize: vertical;
   background: #fff;
   color: #172033;
-  font: 13px/1.6 Consolas, "Cascadia Code", monospace;
-}
-.research-formula-tex-editor textarea:focus-visible {
-  outline: 2px solid #1547c0;
-  outline-offset: 1px;
+  font: calc(var(--mewiki-interface-unit, 1px) * 13)/1.6 Consolas, "Cascadia Code", monospace;
 }
 .research-formula-layout-toolbar {
   display: flex;
@@ -1504,7 +1552,7 @@
 .research-formula-caret-hint {
   margin: 0;
   color: #526780;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   line-height: 1.45;
 }
 @keyframes research-formula-caret-blink {
@@ -1552,7 +1600,7 @@
   background: transparent;
   color: #526780;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   font-weight: 700;
   cursor: pointer;
 }
@@ -1578,11 +1626,11 @@
   flex-direction: column;
   gap: 3px;
   color: #526780;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 .research-formula-slot-hint {
   color: #61738a;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   font-weight: 400;
   line-height: 1.4;
 }
@@ -1598,17 +1646,11 @@
   background: #fff;
   color: #263b57;
   font: inherit;
-  font-size: 12px;
-}
-.research-formula-inline-editor select:focus,
-.research-formula-inline-editor input:focus,
-.research-formula-inline-editor textarea:focus {
-  border-color: #517fc5;
-  outline: 2px solid #dce8fa;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-formula-settings-heading {
   color: #243a56;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-formula-settings-popover textarea {
   line-height: 1.6;
@@ -1617,7 +1659,7 @@
 .research-formula-settings-hint {
   margin: 0;
   color: #526780;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   line-height: 1.5;
 }
 .research-formula-settings-popover,
@@ -1657,13 +1699,8 @@
   color: #1547c0;
   background: #edf3fd;
 }
-.research-formula-read-expression [data-formula-index]:focus-visible {
-  outline: 1px solid #729cdb;
-  outline-offset: 2px;
-}
 .research-note-block.is-formula-target {
-  outline: 1px solid #9bb7e2;
-  outline-offset: 1px;
+  background: #f1f5f9;
   scroll-margin-block: 32px;
 }
 .research-formula-source-picker {
@@ -1685,7 +1722,7 @@
   min-width: 0;
   overflow-x: auto;
   color: #173454;
-  font-size: 14px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 14);
   text-align: center;
 }
 .research-formula-source-equation > .formula {
@@ -1701,7 +1738,7 @@
   flex-wrap: wrap;
   gap: 5px 12px;
   color: #526780;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-formula-source-metadata > span {
   display: inline-flex;
@@ -1720,7 +1757,7 @@
 .research-formula-source-conditions {
   margin: 0;
   color: #344963;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 12);
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -1728,14 +1765,14 @@
 .research-formula-source-conditions > strong {
   display: block;
   color: #526780;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 12);
 }
 .research-formula-index-mapping {
   display: flex;
   flex-direction: column;
   gap: 5px;
   margin: 0;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-formula-index-mapping > div {
   display: flex;
@@ -1756,7 +1793,7 @@
 .research-formula-relation-hint {
   margin: 0;
   color: #526780;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   line-height: 1.55;
   overflow-wrap: anywhere;
 }
@@ -1767,7 +1804,7 @@
   border-top: 1px solid #dce4ee;
   padding-top: 8px;
   color: #173b65;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   font-weight: 700;
 }
 .research-formula-symbol-heading {
@@ -1802,10 +1839,6 @@
 .research-formula-dictionary-button:active {
   transform: scale(0.97);
 }
-.research-formula-dictionary-button:focus-visible {
-  outline: 2px solid #7ea4db;
-  outline-offset: 1px;
-}
 .research-formula-symbol-popover .research-formula-relation-heading {
   border-top-style: dashed;
 }
@@ -1814,7 +1847,7 @@
   overflow-x: auto;
   color: #173454;
   text-align: center;
-  font-size: 22px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 22);
 }
 .research-formula-symbol-instance > .formula {
   display: block;
@@ -1827,10 +1860,82 @@
 .research-formula-symbol-meaning {
   margin: 0;
   color: #26384f;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.research-term-popover {
+  width: min(440px, calc(100vw - 24px));
+}
+.research-term-popover-heading {
+  align-items: flex-start;
+}
+.research-term-popover-title {
+  min-width: 0;
+  margin: 0;
+  color: #243a56;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 16);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.research-term-popover-meaning {
+  margin: 0;
+  color: #26384f;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.research-term-popover-atoms {
+  display: grid;
+  gap: 7px;
+  border-top: 1px solid #dce4ee;
+  padding-top: 8px;
+}
+.research-term-popover-atoms h3 {
+  margin: 0;
+  color: #173b65;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
+}
+.research-term-popover-atom {
+  display: grid;
+  gap: 3px;
+  border-left: 2px solid #7f98ba;
+  padding-left: 8px;
+}
+.research-term-popover-atom h4 {
+  margin: 0;
+  color: #244c78;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
+}
+.research-term-popover-atom p {
+  margin: 0;
+  color: #344963;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.research-term-popover-meta {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 10px;
+  margin: 0;
+  border-top: 1px solid #dce4ee;
+  padding-top: 8px;
+  color: #526780;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
+}
+.research-term-popover-meta dd {
+  margin: 0;
+  color: #344963;
+  overflow-wrap: anywhere;
+}
+.research-term-scope {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
 }
 .research-formula-result-settings {
   display: flex;
@@ -1846,7 +1951,7 @@
   justify-content: space-between;
   gap: 6px;
   color: #173b65;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-formula-result-row {
   display: flex;
@@ -1875,14 +1980,14 @@
 }
 .research-formula-result-preview {
   color: #173454;
-  font-size: 16px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 16);
 }
 .research-formula-consumers {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   color: #173b65;
 }
 .research-formula-consumers button {
@@ -1923,11 +2028,10 @@
   background: #fff;
   color: #334c6b;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   cursor: pointer;
 }
 .research-formula-inline-editor-actions > button:hover {
-  border-color: #7697c8;
   background: #eef4fd;
 }
 .research-formula-inline-editor-actions .research-formula-inline-delete {
@@ -1952,7 +2056,7 @@
   border-radius: 4px;
   padding: 10px 12px;
   background: #fff;
-  font-size: 22px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 22);
 }
 .research-formula-preview > .formula {
   display: block;
@@ -1968,7 +2072,7 @@
 }
 .research-formula-placeholder {
   color: #61738a;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-formula-references {
   display: flex;
@@ -1981,7 +2085,7 @@
 .research-formula-references > span {
   margin-right: 2px;
   color: #697b91;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 11);
 }
 .research-formula-references .research-formula-symbol {
   min-height: 24px;
@@ -1991,7 +2095,7 @@
   margin: 0;
   color: #536780;
   text-align: right;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 12);
   line-height: 1.45;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -2008,7 +2112,7 @@
   flex-direction: column;
   gap: 4px;
   color: #455a75;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 12);
   font-weight: 650;
 }
 .research-formula-caption-field input {
@@ -2067,7 +2171,6 @@
 }
 .research-formula-symbol:hover,
 .research-formula-symbol[aria-expanded="true"] {
-  border-color: #7ca2dc;
   background: #edf3fd;
 }
 .research-formula-definition {
@@ -2104,11 +2207,11 @@
 .research-formula-definition > strong {
   padding-right: 24px;
   color: #14385f;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 12);
 }
 .research-formula-definition > small {
   color: #435770;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 11);
   line-height: 1.5;
 }
 .research-definition-open {
@@ -2119,7 +2222,7 @@
   background: #f7f9fc;
   color: #1547c0;
   font: inherit;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   font-weight: 700;
   cursor: pointer;
 }
@@ -2136,7 +2239,7 @@
   flex-direction: column;
   gap: 3px;
   color: #455a75;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 .research-formula-insert-group select,
 .research-formula-part select,
@@ -2149,7 +2252,7 @@
   background: #fff;
   color: #263b57;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-formula-insert-group .research-small-button {
   min-height: 29px;
@@ -2169,11 +2272,11 @@
   max-width: none;
   margin-top: 4px;
   color: #274363;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-formula-parts-heading > span {
   color: #64758b;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   font-variant-numeric: tabular-nums;
 }
 .research-formula-parts {
@@ -2194,7 +2297,7 @@
   border-bottom: 1px solid #dce4ee;
   padding: 0 4px;
   color: #65768c;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   font-weight: 650;
 }
 .research-formula-parts-header > :last-child {
@@ -2213,7 +2316,7 @@
 }
 .research-formula-part-index {
   color: #8290a3;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
@@ -2242,7 +2345,7 @@
   flex-direction: column;
   gap: 2px;
   color: #536780;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 .research-formula-part label input {
   width: 100%;
@@ -2268,21 +2371,16 @@
   cursor: pointer;
 }
 .research-formula-part-actions > button:hover:not(:disabled) {
-  border-color: #7697c8;
   background: #eef4fd;
 }
 .research-formula-part-actions > button:disabled {
   opacity: 0.4;
   cursor: default;
 }
-.research-formula-part-actions > button:focus-visible {
-  outline: 2px solid #7ea4db;
-  outline-offset: 1px;
-}
 .research-formula-error {
   margin: 0;
   color: #a51d32;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-legacy-formula {
   display: flex;
@@ -2293,16 +2391,16 @@
 .research-legacy-formula p {
   margin: 0;
   color: #536780;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 12);
 }
 .research-missing-symbol {
   color: #a51d32;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-symbol-hero {
   min-height: 120px;
   padding: 20px;
-  font-size: 22px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 22);
 }
 .research-symbol-hero .formula {
   font-size: 1.3em;
@@ -2311,15 +2409,15 @@
   margin: 0;
 }
 .research-symbol-instance .formula {
-  font-size: 20px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 20);
 }
 .research-formula-composer .research-formula-preview {
   min-height: 72px;
   padding: 14px;
-  font-size: 22px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 22);
 }
 .research-formula-definition > span .formula {
-  font-size: 18px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 18);
 }
 @media (max-width: 720px) {
   .research-dictionary-toolbar {
@@ -2340,32 +2438,32 @@
   .research-symbol-hero {
     min-height: 92px;
     padding: 12px;
-    font-size: 18px;
+    font-size: calc(var(--mewiki-interface-unit, 1px) * 18);
   }
   .research-symbol-hero .formula {
     font-size: 1.25em;
   }
   .research-symbol-instance .formula {
-    font-size: 18px;
+    font-size: calc(var(--mewiki-interface-unit, 1px) * 18);
   }
   .research-formula-composer .research-formula-preview {
     min-height: 60px;
     padding: 10px 0;
-    font-size: 16px;
+    font-size: calc(var(--mewiki-document-unit, 1px) * 16);
   }
   .research-formula-inline-expression {
     min-height: 60px;
     justify-content: flex-start;
     padding: 10px 0;
-    font-size: 16px;
+    font-size: calc(var(--mewiki-document-unit, 1px) * 16);
   }
   .research-formula-edit-dialog .research-formula-preview {
     min-height: 60px;
     padding: 10px;
-    font-size: 16px;
+    font-size: calc(var(--mewiki-interface-unit, 1px) * 16);
   }
   .research-formula-definition > span .formula {
-    font-size: 16px;
+    font-size: calc(var(--mewiki-document-unit, 1px) * 16);
   }
   .research-symbol-slot-edit {
     grid-template-columns: 1fr 1fr;
@@ -2417,7 +2515,6 @@
     flex-basis: 26px;
   }
   .research-notebook-mode-tabs {
-    container-type: inline-size;
     gap: 2px;
     padding-inline: 4px;
   }
@@ -2427,7 +2524,7 @@
   .research-notebook-mode-tabs button {
     flex: 1 1 0;
     padding-inline: 0;
-    font-size: 12px;
+    font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   }
   .research-notebook-toolbar {
     gap: 4px;
@@ -2466,7 +2563,7 @@
     padding-inline: 5px;
   }
   .research-dictionary-search input {
-    font-size: 11px;
+    font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   }
   .research-notebook-close {
     flex-basis: 36px;
@@ -2488,17 +2585,17 @@
 
 /* Reading text uses the local UI font; mathematical glyphs retain KaTeX fonts. */
 .research-list-edit-wrap textarea {
-  font-size: 15px;
+  font-size: calc(var(--mewiki-document-unit, 1px) * 15);
 }
 .research-note-item {
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   line-height: 1.55;
 }
 .research-note-item-copy > span:first-child {
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-symbol-entry-copy strong {
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-symbol-slot-row small,
 .research-symbol-slot-hint,
@@ -2509,23 +2606,6 @@
 @media (max-width: 720px) {
   .research-note-block.is-paragraph p,
   .research-list-edit-wrap textarea {
-    font-size: 14px;
+    font-size: var(--mewiki-document-font-size, 15px);
   }
 }
-
-/* English labels wrap at word boundaries within the same 44px navigation row. */
-html:lang(en) .research-notebook-mode-tabs button {
-  padding-inline: 2px;
-  white-space: normal;
-  font-size: 11px;
-  line-height: 1.15;
-  overflow: hidden;
-}
-html:lang(en) .research-notebook-mode-tabs button > span {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-html:lang(en) .research-notebook-mode-tabs button:nth-child(2) { flex-grow: 1.2; }

@@ -1,6 +1,6 @@
 import { useLocale } from "../i18n/react.ts";
 import { t } from "../i18n/locale.ts";
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AlignCenter, AlignLeft, AlignRight, Code2, Columns3, Plus, Redo2, Rows3, TableProperties, Trash2, Undo2, X } from "lucide-react";
 import { deleteTableColumn, deleteTableRow, insertTableColumn, insertTableRow, parseResearchTable, parseTableClipboard, pasteTableCells, serializeResearchTable, setTableAlignment, setTableCell, type ResearchTable } from "../domain/researchTable.ts";
@@ -10,6 +10,7 @@ import { useDeleteConfirmation } from "./useDeleteConfirmation.ts";
 import "./ResearchTableBlock.css";
 import type { ResearchOutlineHeading } from "../domain/researchOutline.ts";
 import ResearchMentionTextarea from "./ResearchMentionTextarea.tsx";
+import ResearchReferenceEditor, { type ResearchReferenceEditorHandle } from "./ResearchReferenceEditor.tsx";
 
 type Position = { row: number; column: number };
 type CellEditor = Position & { id: number; cell: HTMLTableCellElement; host: HTMLDivElement; style: CSSProperties; initial: string };
@@ -73,7 +74,8 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
 }) {
   useLocale();
   const rootRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<ResearchReferenceEditorHandle>(null);
+  const pendingReference = useRef<{ href: string; occurrence: number } | null>(null);
   const sourceRef = useRef<HTMLTextAreaElement>(null);
   const valueRef = useRef(value);
   const modelRef = useRef<ResearchTable | null>(model);
@@ -135,12 +137,16 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
     if (!active) return;
     inputRef.current?.focus({ preventScroll: true });
     inputRef.current?.setSelectionRange(active.initial.length, active.initial.length);
+    if (pendingReference.current) {
+      inputRef.current?.inspectReference(pendingReference.current.href, pendingReference.current.occurrence);
+      pendingReference.current = null;
+    }
   }, [active]);
   useLayoutEffect(() => {
     if (!active) return;
     const place = () => {
       if (activeRef.current?.id !== active.id) return;
-      Object.assign(inputRef.current?.style ?? {}, Object.fromEntries(Object.entries(editorStyle(active.cell, active.host)).map(([key, entry]) => [key, typeof entry === "number" ? `${entry}px` : entry])));
+      Object.assign(inputRef.current?.element.parentElement?.style ?? {}, Object.fromEntries(Object.entries(editorStyle(active.cell, active.host)).map(([key, entry]) => [key, typeof entry === "number" ? `${entry}px` : entry])));
     };
     place();
     const observer = new ResizeObserver(place);
@@ -177,10 +183,10 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
     setTrigger(null);
     rootRef.current?.focus({ preventScroll: true });
   };
-  const handleKeys = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeys = (event: globalThis.KeyboardEvent) => {
     if (!["Escape", "Tab", "Enter"].includes(event.key)) return;
     event.stopPropagation();
-    if (event.nativeEvent.isComposing || event.keyCode === 229) { if (event.key === "Escape") event.preventDefault(); return; }
+    if (event.isComposing || event.keyCode === 229) { if (event.key === "Escape") event.preventDefault(); return; }
     if (event.key === "Enter" && event.shiftKey) return;
     const current = activeRef.current;
     if (!current) return;
@@ -210,6 +216,15 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
 
   return <div ref={rootRef} className="research-table-editor research-editable-text research-markdown" role="group" aria-label={label} tabIndex={0}
     aria-description={t("点击单元格编辑，Tab 切换单元格，Enter 保存，Ctrl/Cmd+Enter 完成本块并选择下一内容块，Shift+Enter 换行，Esc 放弃当前输入。聚焦表格后按 Enter 开始编辑。")}
+    onClickCapture={event => {
+      if (!(event.target instanceof Element) || event.target.closest(".research-reference-editor")) return;
+      const reference = event.target.closest<HTMLElement>("[data-reference-href]"), cell = reference?.closest<HTMLTableCellElement>("td, th");
+      if (!reference?.dataset.referenceHref || !cell) return;
+      event.preventDefault(); event.stopPropagation();
+      const matching = [...cell.querySelectorAll<HTMLElement>("[data-reference-href]")].filter(element => element.dataset.referenceHref === reference.dataset.referenceHref);
+      pendingReference.current = { href: reference.dataset.referenceHref, occurrence: matching.indexOf(reference) };
+      activate({ row: (cell.parentElement as HTMLTableRowElement).rowIndex, column: cell.cellIndex });
+    }}
     onKeyDown={event => {
       if (event.target !== event.currentTarget) return;
       if (event.nativeEvent.isComposing || event.keyCode === 229) return;
@@ -218,7 +233,7 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
       else if (["Enter", "F2"].includes(event.key)) { event.preventDefault(); activate(selected, true); }
     }}
     onPointerDown={event => {
-      if (event.button !== 0 || event.ctrlKey || event.metaKey || !(event.target instanceof Element) || event.target.closest("textarea, button, a.research-note-link")) return;
+      if (event.button !== 0 || event.ctrlKey || event.metaKey || !(event.target instanceof Element) || event.target.closest("textarea, button, a.research-note-link, .research-reference-editor")) return;
       const cell = event.target.closest<HTMLTableCellElement>("td, th");
       if (!cell) {
         if (event.target.closest("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, img") && !event.target.closest("a, input, select")) { event.preventDefault(); openSource(); }
@@ -243,11 +258,10 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
           }
         }} />
     </div> : <ResearchMarkdown text={value} headings={headings} />}
-    {active && createPortal(<ResearchMentionTextarea key={active.id} ref={inputRef} className="research-table-cell-editor" aria-label={t("单元格内容")}
-      aria-description={t("支持文字、行内 Markdown 和公式。Enter 保存，Esc 取消，Tab 切换，Shift+Enter 换行。")} spellCheck={false}
-      style={active.style} rows={1} defaultValue={active.initial} onBlur={() => closeCell(true)} onKeyDown={handleKeys}
-      onPaste={event => {
-        const text = event.clipboardData.getData("text/plain");
+    {active && createPortal(<ResearchReferenceEditor key={active.id} ref={inputRef} className="research-table-cell-editor" aria-label={t("单元格内容")}
+      aria-description={t("支持文字、行内 Markdown 和公式。Enter 保存，Esc 取消，Tab 切换，Shift+Enter 换行。")} aria-keyshortcuts="F2" spellCheck={false}
+      style={active.style} defaultValue={active.initial} onBlur={() => closeCell(true)} onKeyDown={handleKeys}
+      onPaste={(event, text) => {
         if (!/[\t\r\n]/.test(text) || !modelRef.current) return;
         event.preventDefault();
         const position = { row: active.row, column: active.column };

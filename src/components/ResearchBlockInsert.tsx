@@ -120,7 +120,7 @@ function InsertPopover({ trigger, mode, position, currentType, canInsertEvidence
         </button>)}
       </div>}
     </div> : <>
-      <label className="research-block-insert-search"><Search size={14} /><input aria-label={mode === "change" ? t("搜索内容类型") : t("搜索插入内容")} placeholder={t("搜索内容类型…")} value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+      <label className="research-block-insert-search"><Search size={14} /><input data-ui="search-input" aria-label={mode === "change" ? t("搜索内容类型") : t("搜索插入内容")} placeholder={t("搜索内容类型…")} value={query} onChange={(event) => setQuery(event.target.value)} /></label>
       <div className="research-block-insert-options">
         {groups.map((group, index) => <div role="group" aria-labelledby={`${id}-${index}`} key={group.id}>
           <strong id={`${id}-${index}`} className="research-block-insert-category">{group.name}</strong>

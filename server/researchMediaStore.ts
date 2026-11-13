@@ -17,6 +17,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { expandNoteEmbedBlocks } from '../src/domain/researchNoteEmbed.ts';
+import { isUserFontMime, MAX_USER_FONT_BYTES } from '../src/domain/researchFonts.ts';
 import { Readable } from "node:stream";
 import { setTimeout as delay } from "node:timers/promises";
 import sharp from "sharp";
@@ -194,6 +195,7 @@ function assertAsset(value: unknown): asserts value is ResearchMediaAsset {
   checkId(item.id);
   checkSize(item.size);
   checkMime(item.mimeType);
+  if (isUserFontMime(item.mimeType) && item.size > MAX_USER_FONT_BYTES) fail('单个字体最大 100 MiB，请选择较小的字体文件。', 413);
   checkName(item.name);
   if (
     item.sha256 !== item.id ||
@@ -376,6 +378,27 @@ export class ResearchMediaStore {
   async asset(expected: string, id: string): Promise<ResearchMediaAsset> {
     return await this.assetAt(await this.directory(expected), id);
   }
+  async fonts(expected: string): Promise<ResearchMediaAsset[]> {
+    const directory = await this.directory(expected);
+    const base = path.join(directory, 'assets');
+    let entries: string[];
+    try {
+      // Reading interface settings must not initialize attachment storage.
+      const info = await lstat(base);
+      if (!info.isDirectory() || info.isSymbolicLink()) fail('附件目录无效，不能使用符号链接。', 400);
+      entries = await readdir(base);
+    } catch (error) {
+      if (missing(error)) return [];
+      throw error;
+    }
+    const fonts: ResearchMediaAsset[] = [];
+    for (const name of entries) {
+      if (!/^[a-f0-9]{64}\.json$/.test(name)) continue;
+      const asset = await this.assetAt(directory, name.slice(0, -5));
+      if (isUserFontMime(asset.mimeType)) fonts.push(asset);
+    }
+    return fonts.sort((a, b) => a.name.localeCompare(b.name));
+  }
   private async optionalAsset(directory: string, id: string) {
     try {
       return await this.assetAt(directory, id);
@@ -518,6 +541,7 @@ export class ResearchMediaStore {
     const id = checkId(request.sha256);
     const name = checkName(request.name);
     const mimeType = checkMime(request.mimeType);
+    if (isUserFontMime(mimeType) && request.size > MAX_USER_FONT_BYTES) fail('单个字体最大 100 MiB，请选择较小的字体文件。', 413);
     checkSize(request.size);
     return await this.serial(directory + id, async () => {
       const asset = await this.optionalAsset(directory, id);
@@ -633,7 +657,7 @@ export class ResearchMediaStore {
     const bytes = Buffer.alloc(1024 * 1024);
     try {
       const { bytesRead } = await handle.read(bytes, 0, bytes.length, 0);
-      const info = mediaHeaderInfo(bytes.subarray(0, bytesRead), mimeType);
+      const info = mediaHeaderInfo(bytes.subarray(0, bytesRead), mimeType, (await handle.stat()).size);
       if (info.mimeType !== mimeType)
         fail("文件内容不是声明格式的媒体，请选择原始文件。");
     } finally {

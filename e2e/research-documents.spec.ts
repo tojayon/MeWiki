@@ -1,3 +1,4 @@
+import { openSettingsSection, closeSettingsPage } from "./helpers/settings.ts";
 import { createNotebookFixture as createResearchNotebook } from "../src/domain/testUtils/notebook.ts";
 import { expect, test, type Page } from "@playwright/test";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -8,7 +9,7 @@ import { enableNotebookEditing, runNotebookAction } from "./helpers/researchNote
 import { researchPdfFixture } from "./fixtures/researchPdf.ts";
 import { ResearchMediaClient } from "../src/state/researchMediaClient.ts";
 
-const settings = path.resolve(".mewiki/media-e2e-settings.json");
+const settings = path.resolve(process.env.MEWIKI_RESEARCH_SETTINGS || ".mewiki/media-e2e-settings.json");
 let root: string;
 test.beforeEach(async ({ page }) => {
   await rm(settings, { force: true });
@@ -28,13 +29,13 @@ async function insert(page: Page, label: string) {
   await page.getByRole("dialog", { name: "插入笔记内容" }).getByRole("button", { name: label, exact: true }).click();
 }
 async function connect(page: Page) {
-  await page.getByRole("button", { name: "研究笔记设置", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "研究笔记设置", exact: true });
+  await openSettingsSection(page, "storage");
+  const dialog = page.getByTestId("research-library-storage");
   await dialog.getByRole("textbox", { name: "本地保存路径", exact: true }).fill(path.join(root, "资料库"));
   await dialog.getByRole("button", { name: "检查路径", exact: true }).click();
   await dialog.getByRole("button", { name: "迁移到此目录", exact: true }).click();
   await expect(dialog.getByText("本地自动保存已启用", { exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await closeSettingsPage(page);
 }
 test("reads, searches and cites real PDF pages and retains the page after reload", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -84,20 +85,22 @@ test("renders a local PDF with range support and restores documents from an atta
   expect(partial.status()).toBe(206);
   expect(partial.headers()["content-disposition"]).toMatch(/^inline;/);
   await block.getByRole("button", { name: "PDF 下一页", exact: true }).click();
-  await page.getByRole("button", { name: "研究笔记设置", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "研究笔记设置", exact: true });
+  await openSettingsSection(page, "storage");
+  const dialog = page.getByTestId("research-library-storage");
   const downloading = page.waitForEvent("download");
+  await openSettingsSection(page, "backup");
   await dialog.getByRole("button", { name: "导出含附件备份", exact: true }).click();
   const download = await downloading;
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await closeSettingsPage(page);
   await block.getByRole("button", { name: "PDF 上一页", exact: true }).click();
   await expect(block.getByLabel("PDF 页码", { exact: true })).toHaveValue("1");
-  await page.getByRole("button", { name: "研究笔记设置", exact: true }).click();
+  await openSettingsSection(page, "storage");
+  await openSettingsSection(page, "backup");
   await dialog.getByLabel("选择完整资料库备份").setInputFiles((await download.path())!);
   await expect(dialog.getByLabel("恢复预览")).toBeVisible();
   await dialog.getByRole("button", { name: "确认恢复此版本", exact: true }).click();
   await expect(dialog.getByText("已恢复资料库，原版本已保留。", { exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await closeSettingsPage(page);
   await expect(block.getByLabel("PDF 页码", { exact: true })).toHaveValue("2");
   await expect(block.locator("canvas")).toBeVisible();
 });
@@ -135,15 +138,18 @@ test("keeps an inline PDF citation open while selecting text in editing mode", a
   await insert(page, "段落");
   const paragraph = page.locator('.research-note-block.is-paragraph').last();
   await paragraph.getByRole("textbox").click();
-  await paragraph.locator("textarea").fill(reference);
-  await paragraph.locator("textarea").press("Escape");
+  await paragraph.locator('[contenteditable="true"]').fill(reference);
+  await paragraph.locator('[contenteditable="true"]').press("Escape");
   await paragraph.getByRole("link", { name: "引用测试.pdf · 第 2 页", exact: true }).click();
+  const referencePanel = page.getByRole("dialog", { name: "编辑引用", exact: true });
+  await expect(referencePanel).toBeVisible();
+  await referencePanel.getByRole("link", { name: "打开引用来源", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "引用测试.pdf", exact: true });
   await expect(dialog.getByLabel("PDF 页码", { exact: true })).toHaveValue("2");
   await expect(dialog.locator("canvas")).toBeVisible();
   await dialog.locator(".research-pdf-text").click({ position: { x: 25, y: 25 } });
   await expect(dialog).toBeVisible();
-  await expect(paragraph.locator("textarea")).toHaveCount(0);
+  await expect(paragraph.locator('[contenteditable="true"]')).toHaveCount(1);
 });
 test("shows nested PDF, files and webpage cards in reading mode with no page overflow", async ({ page }) => {
   await insert(page, "标签页");

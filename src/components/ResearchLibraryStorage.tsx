@@ -9,7 +9,7 @@ import {
   RefreshCw,
   Upload,
 } from "lucide-react";
-import DeviceInspectorModal from "./DeviceInspectorModal.tsx";
+import type { SettingsSection } from "../state/settingsNavigation.ts";
 import {
   parseResearchLibraryFile,
   RESEARCH_LIBRARY_FILENAME,
@@ -24,11 +24,11 @@ import type { useResearchLibrary } from "../state/useResearchNotebook.ts";
 import { librarySaveLabel } from "./researchLibraryStatus.ts";
 import "./ResearchLibraryStorage.css";
 import { researchMediaClient } from "../state/researchMediaClient.ts";
+import { useLibraryWorkspace } from '../state/LibraryWorkspaceContext.ts';
 import {
   createBrowserMediaArchive,
   releaseBrowserMediaArchive,
 } from "../state/researchMediaArchive.ts";
-import { useLibraryWorkspace } from "../state/LibraryWorkspaceContext.ts";
 
 type Library = ReturnType<typeof useResearchLibrary>;
 const date = (value: string) =>
@@ -52,14 +52,16 @@ type Preview =
 
 export default function ResearchLibraryStorage({
   library,
-  onClose,
+  section,
+  onBusyChange,
 }: {
   library: Library;
-  onClose: () => void;
+  section: SettingsSection;
+  onBusyChange: (busy: boolean) => void;
 }) {
   useLocale();
   const { controller } = library;
-  const workspace = useLibraryWorkspace();
+  const { profile } = useLibraryWorkspace();
   const [directory, setDirectory] = useState(library.directory ?? "");
   const [inspection, setInspection] = useState<LibraryInspection | null>(null);
   const [history, setHistory] = useState<LibraryHistoryEntry[]>([]);
@@ -69,6 +71,10 @@ export default function ResearchLibraryStorage({
   const [working, setWorking] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const busy = working || library.busy;
+  useEffect(() => {
+    onBusyChange(busy);
+    return () => onBusyChange(false);
+  }, [busy, onBusyChange]);
   const loadHistory = async () => setHistory(await controller.client.history());
   useEffect(() => {
     let current = true;
@@ -124,6 +130,9 @@ export default function ResearchLibraryStorage({
       : ((archive = await createBrowserMediaArchive(
           current.notebook,
           "library",
+          undefined,
+          undefined,
+          profile.id,
         )),
         URL.createObjectURL(archive));
     const anchor = document.createElement("a");
@@ -138,26 +147,23 @@ export default function ResearchLibraryStorage({
     setNotice("已开始导出含附件备份，请等待下载完成。");
   };
   return (
-    <DeviceInspectorModal
-      open
-      title={t("研究笔记设置")}
-      className="research-library-dialog"
-      testId="research-library-storage"
-      onClose={() => {
-        if (!busy) onClose();
-      }}
+    <div
+      className="research-library-dialog mewiki-storage-content"
+      data-testid="research-library-storage"
     >
-      <section className="research-storage-section">
+      <section className="research-storage-section" hidden={section !== "storage"} id="setting-storage" tabIndex={-1}>
         <div className="research-storage-heading">
           <FolderOpen size={17} />
-          <h3>{t("本地资料库 ·")} {workspace.profile.name}</h3>
+          <h3>{library.directory ? t("本地资料库") : t("浏览器保存")}</h3>
         </div>
         <p>
-          {t("基础理论、研究记录、符号词典、标签、公式关联与理论地图统一保存。编辑后自动写入本地文件。")}</p>
+          {library.directory
+            ? t("基础理论、研究记录、符号词典、标签、公式关联与理论地图统一保存。编辑后自动写入本地文件。")
+            : t("当前资料暂存于此浏览器。设置本地目录后，笔记与附件可迁移到资料库文件夹。")}</p>
         <small>
           {library.directory
-            ? t("图片原件保存在此资料库的 assets 文件夹中，单文件不超过 1 GB。")
-            : t("当前图片保存在浏览器中，单文件不超过 100 MB；更大附件请设置本地资料库。")}
+            ? t("附件原件保存在当前资料库的 assets 文件夹中，单文件不超过 1 GB。")
+            : t("附件暂存于当前浏览器，单文件不超过 100 MB。")}
         </small>
         {library.directory && (
           <div className="research-storage-location">
@@ -264,7 +270,7 @@ export default function ResearchLibraryStorage({
           </div>
         )}
       </section>
-      <section className="research-storage-section">
+      <section className="research-storage-section" hidden={section !== "backup"} id="setting-backup" tabIndex={-1}>
         <div className="research-storage-heading">
           <Download size={17} />
           <h3>{t("完整备份与恢复")}</h3>
@@ -343,7 +349,7 @@ export default function ResearchLibraryStorage({
           }}
         />
       </section>
-      <section className="research-storage-section">
+      <section className="research-storage-section" hidden={section !== "history"} id="setting-history" tabIndex={-1}>
         <div className="research-storage-heading">
           <History size={17} />
           <h3>{t("历史版本")}</h3>
@@ -390,7 +396,7 @@ export default function ResearchLibraryStorage({
           </small>
         )}
       </section>
-      {preview && (
+      {preview && (section === "backup" || section === "history") && (
         <section
           className="research-storage-restore-preview"
           aria-label={t("恢复预览")}
@@ -443,6 +449,6 @@ export default function ResearchLibraryStorage({
           {localizeError(notice)}
         </p>
       )}
-    </DeviceInspectorModal>
+    </div>
   );
 }

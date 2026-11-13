@@ -63,6 +63,47 @@ describe("complete research library files", () => {
     expect(restored.notebook).toEqual(notebook);
   });
 
+  it("round trips optional term entries and keeps their stable IDs", async () => {
+    const notebook = createResearchNotebook();
+    notebook.terms = [{ id: "term-orbit", name: "轨道面", aliases: ["轨道平面"], meaning: "几何定义", atoms: [{ id: "atom-orbit", text: "轨道", meaning: "路径" }, { id: "atom-plane", text: "面", meaning: "几何对象" }], status: "active" }];
+    const file = await createResearchLibraryFile(notebook);
+    const restored = await parseResearchLibraryFile(JSON.stringify(file));
+    expect(restored.notebook.terms).toEqual(notebook.terms);
+    expect(researchLibrarySummary(restored)).toMatchObject({ terms: 1 });
+    const malformed = structuredClone(notebook);
+    (malformed.terms![0].atoms![0] as unknown as { meaning: number }).meaning = 7;
+    await expect(createResearchLibraryFile(malformed)).rejects.toThrow("格式");
+  });
+
+  it("round trips bilingual term names, alias identities and reference display choices", async () => {
+    const notebook = createResearchNotebook();
+    notebook.terms = [{ id: "term-bilingual", name: "均方误差", englishName: "Mean squared error", englishAbbreviation: "MSE", chineseAbbreviation: "均误",
+      aliases: ["平方误差均值"], aliasEntries: [{ id: "alias-mse", name: "平方误差均值" }], meaning: "误差平方的均值。", status: "active" }];
+    notebook.notes[0].blocks.push({ id: "bilingual-link", type: "paragraph", text: "[均方误差](mewiki-term:term-bilingual?display=full) 和 [MSE](mewiki-term:term-bilingual?display=english-abbreviation)" });
+    const file = await createResearchLibraryFile(notebook);
+    const restored = await parseResearchLibraryFile(JSON.stringify(file));
+    expect(restored.notebook.terms).toEqual(notebook.terms);
+    expect(restored.notebook.notes[0].blocks.at(-1)).toEqual(notebook.notes[0].blocks.at(-1));
+    const malformed = structuredClone(notebook);
+    (malformed.terms![0] as unknown as { englishAbbreviation: number }).englishAbbreviation = 1;
+    await expect(createResearchLibraryFile(malformed)).rejects.toThrow("格式");
+  });
+
+  it("rejects inconsistent or repeated alias identities instead of dropping aliases on import", async () => {
+    const notebook = createResearchNotebook();
+    notebook.terms = [{ id: "term-aliases", name: "术语", aliases: ["别名一", "别名二"], aliasEntries: [
+      { id: "alias-1", name: "别名一" }, { id: "alias-2", name: "别名二" },
+    ], meaning: "定义" }];
+    for (const records of [[], [{ id: "alias-1", name: "别名一" }, { id: "alias-1", name: "别名二" }],
+      [{ id: "alias-1", name: "错位别名" }, { id: "alias-2", name: "别名二" }]]) {
+      const invalid = structuredClone(notebook);
+      invalid.terms![0].aliasEntries = records;
+      await expect(createResearchLibraryFile(invalid)).rejects.toThrow(/重复标识|格式/);
+    }
+    delete notebook.terms[0].aliasEntries;
+    await expect(createResearchLibraryFile(notebook)).resolves.toBeDefined();
+  });
+
   it("round trips all position descriptions and drops retired filters from older library files", async () => {
     const notebook = createResearchNotebook();
     notebook.symbols[0].meaning = "本体说明 $h$。";

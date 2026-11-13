@@ -1,18 +1,6 @@
-.device-record-modal.mewiki-library-manager {
-  width: min(760px, calc(100vw - 24px));
-  color: #1b2d43;
-}
-.mewiki-library-manager > .device-record-modal-header {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-.mewiki-library-manager .device-record-modal-content {
-  display: grid;
-  gap: 16px;
-  padding: 16px;
-}
 .mewiki-library-manager p {
   margin: 0;
-  font-size: 13px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 13);
   line-height: 1.7;
   color: #43546a;
 }
@@ -37,7 +25,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   color: #1547c0;
 }
 .mewiki-library-actions {
@@ -55,7 +43,7 @@
   border-radius: 4px;
   background: #f6f9fd;
   color: #213d66;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .mewiki-library-manager button:disabled {
   opacity: 0.5;
@@ -64,9 +52,10 @@
   display: grid;
   gap: 6px;
   color: #293e59;
-  font-size: 13px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 13);
 }
-.mewiki-library-manager input {
+.mewiki-library-entry-select { margin: 16px 0; }
+.mewiki-library-manager input, .mewiki-library-manager select {
   width: 100%;
   box-sizing: border-box;
   min-width: 0;
@@ -85,7 +74,7 @@
   border-top: 1px solid #d4deeb;
 }
 .mewiki-library-add-form h3 {
-  font-size: 14px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 14);
   margin: 0;
 }
 .mewiki-library-manager [role="alert"] {
@@ -116,12 +105,14 @@
   white-space: nowrap;
 }
 .research-sidebar-footer .mewiki-library-switcher {
-  flex: 1;
+  flex: 0 1 auto;
+  max-width: 120px;
+  height: 32px;
   justify-content: flex-start;
-  padding: 9px;
+  padding: 4px 6px;
   background: transparent;
   border: 0;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 @media (max-width: 540px) {
   .mewiki-library-row {

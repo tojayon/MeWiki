@@ -63,7 +63,7 @@ export default function ResearchNoteEmbedPicker({ state, ownerNoteId, blockId, i
   const renderBlocks = (blocks: ResearchNotebookBlock[]) => <div className="research-note-blocks research-note-embed-document">{blocks.map(render)}</div>;
   return <DeviceInspectorModal open hideHeader title={initial ? t('调整引用内容') : t('引用笔记内容')} testId="research-note-embed-picker" className="research-note-embed-picker" onClose={onClose}>
     <div className="research-note-embed-picker-toolbar" role="toolbar" aria-label={t("引用内容操作")}>
-      <label className="research-note-embed-search"><Search size={16} aria-hidden="true" /><input aria-label={t("搜索来源笔记")} placeholder={t("搜索笔记标题或标签…")} value={query} onChange={event => setQuery(event.target.value)} autoFocus /></label>
+      <label className="research-note-embed-search"><Search size={16} aria-hidden="true" /><input data-ui="search-input" aria-label={t("搜索来源笔记")} placeholder={t("搜索笔记标题或标签…")} value={query} onChange={event => setQuery(event.target.value)} autoFocus /></label>
       <span className="research-note-embed-count" role="status" title={t("勾选的内容会随来源更新；新增的其他内容不会自动加入")}>{t("已选择")} {selection.blockIds.length}  {t("项")}</span>
       <button type="button" onClick={onClose}>{t("取消")}</button>
       <button type="button" disabled={!selected.length || !!issue} onClick={() => { if (issue) { setError(issue); return; } onSelect(selection); }}>{initial ? t('保存引用范围') : t('插入引用')}</button>
@@ -72,7 +72,7 @@ export default function ResearchNoteEmbedPicker({ state, ownerNoteId, blockId, i
       <ResearchClassifiedList className="research-note-embed-notes" choices={choices} selectedId={sourceId} activeTags={source?.tags} query={query} label={t("来源笔记")} storageKey="mewiki:note-embed-source-folds"
         onSelect={note => { if (sourceId !== note.id) { setSourceId(note.id); setSelected([]); setError(''); } }} empty={t("没有匹配的笔记。")} />
       <div className="research-note-embed-choices is-readonly" role="group" aria-label={t("来源内容")} key={sourceId}>
-        {source ? <ResearchNoteLinkContext.Provider value={{ notes: state.notes, symbols: state.symbols, state, sourceNoteId: source.id, openNote: () => {} }}>
+        {source ? <ResearchNoteLinkContext.Provider value={{ notes: state.notes, symbols: state.symbols, terms: state.terms ?? [], state, sourceNoteId: source.id, openNote: () => {} }}>
           <h2 className="research-note-embed-selection-title">{source.title || t('未命名笔记')}</h2>
           {renderBlocks(source.blocks)}
           {selected.filter(id => !findResearchBlock(source.blocks, id)).map(id => <label key={id} className="research-note-embed-missing"><input type="checkbox" checked aria-label={t`移除失效内容 ${id}`} onChange={() => toggle(id)} /><span>{t("所选内容已删除，取消勾选后可保存新范围。")}</span></label>)}

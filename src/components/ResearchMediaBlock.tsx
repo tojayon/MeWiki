@@ -1,11 +1,12 @@
 import { useLocale } from "../i18n/react.ts";
 import { t, localizeError } from "../i18n/locale.ts";
 import { localizeMediaError } from "../i18n/mediaError.ts";
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AlignCenter, AlignLeft, AlignRight, AudioLines, Download, File, FileText, Film, ImagePlus, Link, Maximize2, RefreshCw, Settings2, Upload, X } from "lucide-react";
 import { mediaFileAccept, mediaFileKind, mediaKindFromMime, mediaKindLabels, normalizeMediaUrl, validateMediaFile, type ResearchMediaBlock as MediaBlock } from "../domain/researchMedia.ts";
 import { researchMediaClient, type MediaProgress, type RemoteMediaJob } from "../state/researchMediaClient.ts";
 import { browserMediaStore } from "../state/researchMediaStorage.ts";
+import { ResearchContentLibraryContext } from "../state/ResearchContentLibraryContext.ts";
 import DeviceInspectorModal from "./DeviceInspectorModal.tsx";
 import ResearchMarkdown from "./ResearchMarkdown.tsx";
 import ResearchMediaPlayer from "./ResearchMediaPlayer.tsx";
@@ -21,6 +22,7 @@ export default function ResearchMediaBlock({ block, readOnly = false, onPatch, o
   onInsertAfter?: (blocks: MediaBlock[]) => void; onCancelEmpty?: () => void; onOpenStorage?: () => void;
 }) {
   useLocale();
+  const reading = useContext(ResearchContentLibraryContext);
   const view = useResearchMediaSource(block.source);
   const posterView = useResearchMediaSource(block.kind === "video" ? block.poster : undefined);
   const sourceLabel = mediaKindLabels[block.kind];
@@ -151,7 +153,7 @@ export default function ResearchMediaBlock({ block, readOnly = false, onPatch, o
   const playable = (block.kind === "audio" || block.kind === "video") && view.playbackUrl && (!view.asset || mediaKindFromMime(view.asset.mimeType) === block.kind);
   const pdfSource = block.kind === "pdf" && view.playbackUrl && (!view.asset || view.asset.mimeType === "application/pdf");
   const name = block.alt || view.asset?.name || label;
-  return <figure className="research-media-block" data-media-kind={block.kind} data-media-source={block.source?.type} aria-busy={Boolean(progress)}
+  return <figure className="research-media-block" data-media-kind={block.kind} data-media-source={block.source?.type} aria-busy={Boolean(progress || view.loading || posterView.loading)}
     onPasteCapture={event => { const target = event.target instanceof HTMLElement ? event.target : null; if (!canEdit || target?.closest("input, textarea")) return; const files = [...event.clipboardData.files].filter(file => block.kind === "file" || mediaFileKind(file) === block.kind); if (files.length) { event.preventDefault(); event.stopPropagation(); void acceptFiles(files); } }}
     onDragOver={event => { if (canEdit && event.dataTransfer.types.includes("Files")) { event.preventDefault(); event.stopPropagation(); } }}
     onDrop={event => { if (canEdit && event.dataTransfer.files.length) { event.preventDefault(); event.stopPropagation(); void acceptFiles([...event.dataTransfer.files]); } }}>
@@ -170,7 +172,7 @@ export default function ResearchMediaBlock({ block, readOnly = false, onPatch, o
       </div>
       <div className="research-media-visual" data-align={block.display?.align ?? "left"}>
         <div className="research-media-picture" style={{ width: `${block.display?.widthPercent ?? 100}%` }}>
-          {pdfSource ? <><div className="research-media-document-title"><FileText size={16} /><strong>{name}</strong></div><Suspense fallback={<p className="research-media-unavailable">{t("正在打开 PDF…")}</p>}><ResearchPdfReader key={view.playbackUrl} src={view.playbackUrl!} name={name} size={view.asset?.size} referenceUrl={block.source?.type === "asset" ? `webbench-asset:${block.source.assetId}` : block.source?.url ?? ""} page={block.document?.page} onPageChange={canEdit ? page => onPatch({ document: { ...block.document, page } }) : undefined} /></Suspense></>
+          {pdfSource ? <><div className="research-media-document-title"><FileText size={16} /><strong>{name}</strong></div><Suspense fallback={<p className="research-media-unavailable">{t("正在打开 PDF…")}</p>}><ResearchPdfReader key={view.playbackUrl} src={view.playbackUrl!} name={name} size={view.asset?.size} referenceUrl={block.source?.type === "asset" ? `webbench-asset:${block.source.assetId}` : block.source?.url ?? ""} page={reading?.pdfPages?.[block.id] ?? block.document?.page} onPageChange={canEdit ? page => onPatch({ document: { ...block.document, page } }) : reading?.onSelectPdfPage ? page => reading.onSelectPdfPage!(block.id, page) : undefined} /></Suspense></>
             : block.kind === "file" && view.originalUrl ? <a className="research-attachment-card" href={view.originalUrl} download={block.source?.type === "asset" ? view.asset?.name || name : undefined} target={block.source?.type === "url" ? "_blank" : undefined} rel="noopener noreferrer" aria-label={block.source?.type === "url" ? t("打开来源附件") : t("下载附件原件")}><File size={28} aria-hidden="true" /><span><strong>{name}</strong><small>{view.asset ? `${view.asset.name.split(".").at(-1)?.toUpperCase() || "FILE"} · ${sizeLabel(view.asset.size)}` : t("网络附件")}</small></span><Download size={17} aria-hidden="true" /></a>
             : playable ? <ResearchMediaPlayer key={view.playbackUrl} kind={block.kind as "audio" | "video"} src={view.playbackUrl!} name={name} poster={posterUrl} playback={block.playback} onPlaybackChange={canEdit ? playback => onPatch({ playback }) : undefined} />
             : isImage && previewUrl && !failed ? <button type="button" className="research-media-open" aria-label={t("查看图片预览")} onClick={() => setExpanded(true)}><img src={previewUrl} alt={block.alt || t("图片")} loading="lazy" decoding="async" onError={() => setImageError(previewUrl)} /></button>

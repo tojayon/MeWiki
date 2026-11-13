@@ -22,6 +22,7 @@ export interface SymbolIndexSlot {
 export interface ResearchSymbolEntry {
   id: string;
   name: string;
+  aliases?: string[];
   notation: string;
   meaning: string;
   category: SymbolCategory;
@@ -140,7 +141,8 @@ export function createDefaultSymbolEntries(): ResearchSymbolEntry[] {
 }
 
 export function createSymbolEntry(entry: Omit<ResearchSymbolEntry, "id">, id = `symbol-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`): ResearchSymbolEntry {
-  return toPositionalSymbol({ ...entry, id, tags: entry.tags === undefined ? initialSymbolTags(entry.category) : normalizeResearchTags(entry.tags) });
+  const aliases = [...new Set((entry.aliases ?? []).map(alias => alias.trim()).filter(Boolean))];
+  return toPositionalSymbol({ ...entry, id, ...(aliases.length ? { aliases } : {}), tags: entry.tags === undefined ? initialSymbolTags(entry.category) : normalizeResearchTags(entry.tags) });
 }
 
 export function resolveSymbolEntry(entry: ResearchSymbolEntry, bindings: Record<string, string>) {
@@ -158,6 +160,10 @@ export function symbolEntryError(entry: ResearchSymbolEntry, existing: ResearchS
   if (entry.slots.length !== 3 || entry.slots.some((slot, index) => slot.key !== ["x1", "x2", "x3"][index])) return "只保留右上角、右下角、右侧三个固定槽位";
   const signature = (value: ResearchSymbolEntry) => JSON.stringify([value.notation.replace(/\s+/g, ""), value.slots.map((slot) => slot.defaultValue)]);
   if (existing.some((value) => value.id !== entry.id && signature(value) === signature(entry))) return "已存在相同的符号模板和默认位置取值，请编辑原词条或补充该符号的含义差异";
+  const labels = [entry.name, ...(entry.aliases ?? [])].map(value => value.trim().toLocaleLowerCase()).filter(Boolean);
+  if (new Set(labels).size !== labels.length) return "符号名称和别名不能重复";
+  const occupied = new Set(existing.filter(value => value.id !== entry.id).flatMap(value => [value.name, ...(value.aliases ?? [])]).map(value => value.trim().toLocaleLowerCase()).filter(Boolean));
+  if (labels.some(label => occupied.has(label))) return "符号名称或别名已存在";
   return null;
 }
 
@@ -209,11 +215,16 @@ export function addSymbolEntry(state: ResearchNotebookState, entry: ResearchSymb
 }
 
 export function updateSymbolEntry(state: ResearchNotebookState, entry: ResearchSymbolEntry): ResearchNotebookState {
-  if (!state.symbols.some((value) => value.id === entry.id) || symbolEntryError(entry, state.symbols)) return state;
-  if (JSON.stringify(state.symbols.find((value) => value.id === entry.id)) === JSON.stringify(entry)) return state;
-  const { tags: _oldTags, ...oldDefinition } = state.symbols.find(value => value.id === entry.id)!;
-  const { tags: _newTags, ...newDefinition } = entry;
-  return { ...state, symbols: state.symbols.map((value) => value.id === entry.id ? entry : value),
+  const current = state.symbols.find((value) => value.id === entry.id);
+  if (!current) return state;
+  const aliases = new Set((entry.aliases ?? []).map(value => value.trim()).filter(Boolean));
+  if (current.name.trim() && current.name.trim() !== entry.name.trim()) aliases.add(current.name.trim());
+  const nextEntry = { ...entry, ...(aliases.size ? { aliases: [...aliases] } : {}) };
+  if (symbolEntryError(nextEntry, state.symbols)) return state;
+  if (JSON.stringify(current) === JSON.stringify(nextEntry)) return state;
+  const { tags: _oldTags, ...oldDefinition } = current;
+  const { tags: _newTags, ...newDefinition } = nextEntry;
+  return { ...state, symbols: state.symbols.map((value) => value.id === entry.id ? nextEntry : value),
     notes: JSON.stringify(oldDefinition) === JSON.stringify(newDefinition) ? state.notes : invalidateResearchReviews(state.notes, listSymbolUses(state.notes, entry.id).map((use) => use.noteId)) };
 }
 
@@ -237,6 +248,7 @@ export function normalizeSymbolEntries(value: unknown): ResearchSymbolEntry[] {
     });
     const candidate = toPositionalSymbol({
       id: entry.id, name: entry.name, notation: entry.notation, meaning: entry.meaning,
+      ...(Array.isArray(entry.aliases) ? { aliases: [...new Set(entry.aliases.filter((value): value is string => typeof value === "string").map(value => value.trim()).filter(Boolean))] } : {}),
       category: ["time", "index", "state", "control", "communication", "scheduler", "evaluation", "custom"].includes(String(entry.category)) ? entry.category as SymbolCategory : "custom",
       tags: entry.tags === undefined ? initialSymbolTags(entry.category as SymbolCategory) : normalizeResearchTags(entry.tags),
       ...(typeof entry.unit === "string" ? { unit: entry.unit } : {}), ...(typeof entry.scope === "string" ? { scope: entry.scope } : {}), slots,

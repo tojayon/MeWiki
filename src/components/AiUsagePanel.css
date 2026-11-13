@@ -1,0 +1,15 @@
+.mewiki-ai-usage-control { display: flex; flex: 0 0 auto; align-items: center; }
+.mewiki-ai-usage-panel { --ai-usage-row-height: calc(var(--mewiki-interface-unit, 1px) * 60); position: absolute; z-index: 4; right: 10px; bottom: calc(100% + 8px); left: 10px; min-width: 0; overflow: hidden; border: 1px solid #dce1e8; border-radius: 4px; background: #fff; color: #38485f; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.5; }
+.mewiki-ai-usage-panel > header, .mewiki-ai-usage-list > li { display: grid; grid-template-columns: minmax(0, 1fr) 52px 52px; align-items: center; gap: 8px; box-sizing: border-box; padding: 0 10px; }
+.mewiki-ai-usage-panel > header { min-height: 34px; border-bottom: 1px solid #dce1e8; background: #f8f9fb; }
+.mewiki-ai-usage-panel > header > strong { min-width: 0; font-weight: 500; }
+.mewiki-ai-usage-panel > header > span { color: #718094; text-align: right; }
+.mewiki-ai-usage-panel .mewiki-ai-usage-list { max-height: min(calc(var(--ai-usage-row-height) * 5), var(--ai-usage-max-height, 300px)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; margin: 0; padding: 0; list-style: none; }
+.mewiki-ai-usage-list > li { height: var(--ai-usage-row-height); border-bottom: 1px solid #edf0f4; }
+.mewiki-ai-usage-list > li:last-child { border-bottom: 0; }
+.mewiki-ai-usage-task { display: grid; min-width: 0; gap: 4px; }
+.mewiki-ai-usage-task > span, .mewiki-ai-usage-task small > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-ai-usage-task > small { display: flex; min-width: 0; align-items: baseline; gap: 6px; color: #718094; font-size: calc(var(--mewiki-interface-unit, 1px) * 10); }
+.mewiki-ai-usage-task time { flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.mewiki-ai-usage-input, .mewiki-ai-usage-output { min-width: 0; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mewiki-ai-usage-empty { margin: 0; padding: 20px 10px; color: #718094; text-align: center; }

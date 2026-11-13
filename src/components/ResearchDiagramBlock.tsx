@@ -1,10 +1,11 @@
 import { useLocale } from "../i18n/react.ts";
 import { t, localizeError } from "../i18n/locale.ts";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from "react";
-import { ArrowUpRight, Braces, Circle, Download, Minus, Pencil, Redo2, Settings2, Square, Type, Undo2 } from "lucide-react";
+import { ArrowUpRight, Braces, Circle, Download, Maximize2, Minus, Pencil, Redo2, Settings2, Square, Type, Undo2 } from "lucide-react";
 import { DRAWING_HEIGHT, DRAWING_WIDTH, MAX_DIAGRAM_CODE, MAX_DRAWING_STROKES, MAX_STROKE_POINTS, drawingSvg, mermaidSourceError, normalizeDiagramBlock, researchDiagramTemplates, type ResearchDiagramBlock as DiagramBlock, type ResearchDrawingPoint, type ResearchDrawingStroke, type ResearchDrawingTool } from "../domain/researchDiagram.ts";
-import { useResearchLibrary } from "../state/useResearchNotebook.ts";
+import { useResearchContentLibrary } from "../state/ResearchContentLibraryContext.ts";
 import { fitDiagramSvgViewport, sanitizeDiagramSvg } from "./researchDiagramSvg.ts";
+import DeviceInspectorModal from "./DeviceInspectorModal.tsx";
 import "./ResearchDiagramBlock.css";
 
 let mermaidLoader: Promise<typeof import("mermaid")["default"]> | undefined;
@@ -41,7 +42,7 @@ const tools = [
 
 export default function ResearchDiagramBlock({ block, readOnly = false, onPatch }: { block: DiagramBlock; readOnly?: boolean; onPatch: (patch: Partial<DiagramBlock>) => void }) {
   useLocale();
-  const library = useResearchLibrary();
+  const library = useResearchContentLibrary();
   const canEdit = !readOnly && !library.busy && library.status !== "loading";
   const [settings, setSettings] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(true);
@@ -53,8 +54,9 @@ export default function ResearchDiagramBlock({ block, readOnly = false, onPatch 
   const [textEntry, setTextEntry] = useState<{ at: ResearchDrawingPoint; value: string; source: string }>();
   const [drawingError, setDrawingError] = useState("");
   const [history, setHistory] = useState<{ key: string; redo: ResearchDrawingStroke[] }>({ key: "", redo: [] });
+  const [expanded, setExpanded] = useState<string>();
   const svgRef = useRef<SVGSVGElement>(null);
-  const previewRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLButtonElement>(null);
   const drawing = useRef<{ pointer: number; stroke: ResearchDrawingStroke; source: string } | undefined>(undefined);
   const latest = useRef({ block, canEdit, onPatch });
   const operation = useRef(0);
@@ -63,6 +65,9 @@ export default function ResearchDiagramBlock({ block, readOnly = false, onPatch 
   const visiblePreview = preview?.key === previewKey ? preview : undefined;
   const sourceError = mermaidSourceError(block.code);
   const historyKey = useMemo(() => JSON.stringify(block.strokes), [block.strokes]);
+  const previewContextKey = JSON.stringify([block.id, block.mode, library.directory, block.mode === "mermaid" ? block.code : historyKey]);
+  const [observedPreviewContext, setObservedPreviewContext] = useState(previewContextKey);
+  if (observedPreviewContext !== previewContextKey) { setObservedPreviewContext(previewContextKey); setExpanded(undefined); }
   const contextKey = JSON.stringify([block.id, block.mode, canEdit, library.directory]);
   const [observedContext, setObservedContext] = useState(contextKey);
   if (observedContext !== contextKey) { setObservedContext(contextKey); setDraft(undefined); setTextEntry(undefined); }
@@ -161,8 +166,15 @@ export default function ResearchDiagramBlock({ block, readOnly = false, onPatch 
       if (svg) downloadSvg(svg.outerHTML, block.title || t("流程图"));
     }
   };
+  const canPreview = block.mode === "drawing" || Boolean(visiblePreview?.svg && !sourceError);
+  const previewTitle = block.mode === "drawing" ? t("草图预览") : t("流程图预览");
+  const openPreview = () => {
+    if (!canPreview) return;
+    const svg = block.mode === "drawing" ? drawingSvg(block.strokes, block.title || t("草图")) : previewRef.current?.querySelector("svg")?.outerHTML;
+    if (svg) setExpanded(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
+  };
   const changeMode = (mode: DiagramBlock["mode"]) => { drawing.current = undefined; setDraft(undefined); setTextEntry(undefined); onPatch({ mode }); };
-  return <div className="research-diagram-block" data-diagram-mode={block.mode}>
+  return <div className="research-diagram-block" data-diagram-mode={block.mode} onKeyDown={event => { if (expanded && event.key === "Escape") event.stopPropagation(); }}>
     <div className="research-diagram-toolbar" role="toolbar" aria-label={t("绘图工具")}>
       {canEdit ? <div className="research-diagram-mode">
         <button type="button" aria-label={t("流程图模式")} title={t("通过 Mermaid 源码编辑流程、时序和结构图")} aria-pressed={block.mode === "mermaid"} onClick={() => changeMode("mermaid")}><Braces size={14} />{t("流程图")}</button>
@@ -170,6 +182,7 @@ export default function ResearchDiagramBlock({ block, readOnly = false, onPatch 
       </div> : <strong>{block.title || (block.mode === "drawing" ? t("草图") : t("流程图"))}</strong>}
       <span className="research-diagram-toolbar-space" />
       {canEdit && block.mode === "mermaid" && <button type="button" data-ui="icon-action" aria-label={sourceOpen ? t("收起流程图源码") : t("编辑流程图源码")} title={t("显示或收起源码")} aria-expanded={sourceOpen} onClick={() => setSourceOpen(value => !value)}><Braces size={15} /></button>}
+      <button type="button" data-ui="icon-action" aria-label={block.mode === "drawing" ? t("放大草图") : t("放大流程图")} title={t("放大预览")} aria-haspopup="dialog" disabled={!canPreview} onClick={openPreview}><Maximize2 size={15} /></button>
       <button type="button" data-ui="icon-action" aria-label={t("导出绘图 SVG")} title={t("导出可缩放的矢量图")} disabled={block.mode === "mermaid" && (!visiblePreview?.svg || Boolean(sourceError))} onClick={exportSvg}><Download size={15} /></button>
       {canEdit && <button type="button" data-ui="icon-action" aria-label={t("绘图设置")} title={t("编辑图名")} aria-expanded={settings} onClick={() => setSettings(value => !value)}><Settings2 size={15} /></button>}
     </div>
@@ -179,7 +192,7 @@ export default function ResearchDiagramBlock({ block, readOnly = false, onPatch 
         <div className="research-diagram-templates"><select aria-label={t("流程图模板")} title={t("选择模板替换当前源码")} value="" onChange={event => { const key = event.target.value as keyof typeof researchDiagramTemplates; if (researchDiagramTemplates[key]) onPatch({ code: researchDiagramTemplates[key].code }); }}><option value="" disabled>{t("选择模板…")}</option>{Object.entries(researchDiagramTemplates).map(([key, template]) => <option key={key} value={key}>{t(template.label)}</option>)}</select></div>
         <textarea aria-label={t("流程图源码")} spellCheck={false} maxLength={MAX_DIAGRAM_CODE} rows={6} value={block.code} placeholder={t("flowchart LR&#10;  A[开始] --> B[完成]")} onChange={event => onPatch({ code: event.target.value })} />
       </div>}
-      {(sourceError || visiblePreview?.error) ? <pre className="research-diagram-error" role="alert">{sourceError || visiblePreview?.error}</pre> : visiblePreview?.svg ? <div ref={previewRef} className="research-diagram-preview" aria-label={block.title || t("流程图预览")} dangerouslySetInnerHTML={{ __html: visiblePreview.svg }} /> : <div className="research-diagram-placeholder" role="status">{block.code.trim() ? t("正在生成图形…") : t("填写源码或选择模板")}</div>}
+      {(sourceError || visiblePreview?.error) ? <pre className="research-diagram-error" role="alert">{sourceError || visiblePreview?.error}</pre> : visiblePreview?.svg ? <button ref={previewRef} type="button" data-ui="diagram-preview" className="research-diagram-preview" aria-label={t("查看流程图预览")} title={t("放大预览")} aria-haspopup="dialog" onClick={openPreview} dangerouslySetInnerHTML={{ __html: visiblePreview.svg }} /> : <div className="research-diagram-placeholder" role="status">{block.code.trim() ? t("正在生成图形…") : t("填写源码或选择模板")}</div>}
     </> : <>
       {canEdit && <div className="research-drawing-tools" role="toolbar" aria-label={t("草图工具")}>
         {tools.map(item => <button type="button" key={item.kind} data-ui="icon-action" aria-label={t`草图${item.label}`} title={t(item.label)} aria-pressed={tool === item.kind} onClick={() => { setTool(item.kind); setTextEntry(undefined); }}><item.icon size={15} /></button>)}
@@ -196,5 +209,6 @@ export default function ResearchDiagramBlock({ block, readOnly = false, onPatch 
       {canEdit && textEntry?.source === historyKey && <form className="research-drawing-text-entry" onSubmit={event => { event.preventDefault(); if (!textEntry.value.trim()) return; commit({ id: crypto.randomUUID(), kind: "text", points: [textEntry.at], color, width, text: textEntry.value }); setTextEntry(undefined); }}><input autoFocus aria-label={t("草图文字内容")} maxLength={2000} placeholder={t("输入文字…")} value={textEntry.value} onChange={event => setTextEntry({ ...textEntry, value: event.target.value })} /><button type="submit" disabled={!textEntry.value.trim()}>{t("添加文字")}</button><button type="button" onClick={() => setTextEntry(undefined)}>{t("取消")}</button></form>}
       {drawingError && <p className="research-diagram-error" role="alert">{localizeError(drawingError)}</p>}
     </>}
+    <DeviceInspectorModal open={Boolean(expanded)} title={previewTitle} testId={`research-diagram-preview-${componentId}`} className="research-diagram-preview-dialog" onClose={() => setExpanded(undefined)}>{expanded && <img src={expanded} alt={block.title || previewTitle} />}</DeviceInspectorModal>
   </div>;
 }

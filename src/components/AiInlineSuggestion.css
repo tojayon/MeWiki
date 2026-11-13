@@ -1,0 +1,30 @@
+.mewiki-ai-inline-suggestion { position: relative; z-index: 1; min-width: 0; margin: 0 0 5px; }
+.mewiki-ai-inline-actions { display: flex; align-items: center; justify-content: flex-end; gap: 2px; width: fit-content; max-width: 100%; margin-left: auto; border: 1px solid #d8dde4; border-radius: 4px; background: #fff; }
+.mewiki-ai-inline-actions > button { width: 27px; height: 27px; min-height: 27px; color: #536176; }
+.mewiki-ai-inline-actions > button:first-child { color: #27633c; }
+.mewiki-ai-inline-actions > button:nth-child(2) { color: #9b3641; }
+.mewiki-ai-adjustment { margin: 6px 0 12px; border: 1px solid #d8dde4; border-radius: 4px; padding: 10px 12px; background: #fff; color: #192436; }
+.mewiki-ai-adjustment-toolbar { display: flex; justify-content: flex-end; gap: 3px; margin-bottom: 8px; }
+.mewiki-ai-adjustment fieldset { display: flex; min-width: 0; flex-direction: column; gap: 10px; margin: 0; border: 1px solid #e1e5eb; border-radius: 4px; padding: 9px; }
+.mewiki-ai-adjustment > .mewiki-ai-adjustment-fields { border: 0; padding: 0; }
+.mewiki-ai-adjustment :is(label, .mewiki-ai-adjust-field) { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.mewiki-ai-adjustment :is(legend, label, .mewiki-ai-adjust-field > span) { font-size: calc(var(--mewiki-interface-unit, 1px) * 12); color: #536176; }
+.mewiki-ai-adjustment :is(input, select) { box-sizing: border-box; max-width: 100%; min-width: 0; padding: 5px 7px; font: inherit; color: #192436; }
+.mewiki-ai-adjustment .mewiki-ai-adjust-checkbox { flex-direction: row; align-items: center; }
+.mewiki-ai-adjustment .mewiki-ai-adjust-text { min-height: 2.3em; border: 1px solid #d8dde4; border-radius: 4px; padding: 7px 9px; color: #192436; }
+.mewiki-ai-adjust-rendered-text { min-height: 1.8em; cursor: text; }
+.mewiki-ai-adjust-rendered-text > :first-child { margin-top: 0; }
+.mewiki-ai-adjust-rendered-text > :last-child { margin-bottom: 0; }
+.mewiki-ai-adjust-list-item { display: flex; min-width: 0; align-items: flex-start; gap: 6px; }
+.mewiki-ai-adjust-list-item > :first-child { flex: 1 1 auto; min-width: 0; }
+.mewiki-ai-adjust-list-item > button { flex: 0 0 auto; }
+.mewiki-ai-adjustment p[role=alert] { margin: 8px 0 0; color: #9b3641; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+@media (hover: hover) {
+  .mewiki-ai-inline-actions { opacity: .6; }
+  :is(.mewiki-ai-review-block, .mewiki-ai-native-tab-body, .mewiki-ai-review-term-field):hover > .mewiki-ai-inline-suggestion > .mewiki-ai-inline-actions,
+  .mewiki-ai-inline-suggestion:is(:hover, :focus-within, [data-editing]) > .mewiki-ai-inline-actions { opacity: 1; }
+}
+@container research-notebook (max-width: 599px) {
+  .mewiki-ai-inline-actions > button { width: 32px; height: 32px; min-height: 32px; }
+  .mewiki-ai-adjustment { padding: 8px; }
+}

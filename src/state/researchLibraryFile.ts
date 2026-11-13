@@ -21,6 +21,7 @@ export interface ResearchLibrarySummary {
   foundations: number;
   notes: number;
   symbols: number;
+  terms: number;
   maps: number;
   savedAt: string;
 }
@@ -59,6 +60,7 @@ const schema = {
     view: { enum: ["dictionary", "foundations", "notes", "maps"] },
     activeNoteId: string,
     activeSymbolId: string,
+    activeTermId: string,
     notes: {
       type: "array",
       items: {
@@ -264,6 +266,7 @@ const schema = {
         properties: {
           id: identifier,
           name: string,
+          aliases: strings,
           notation: string,
           meaning: string,
           category: string,
@@ -282,6 +285,37 @@ const schema = {
               },
             },
           },
+        },
+      },
+    },
+    terms: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["id", "name", "aliases", "meaning"],
+        properties: {
+          id: identifier,
+          name: string,
+          englishName: string,
+          englishAbbreviation: string,
+          chineseAbbreviation: string,
+          aliases: strings,
+          aliasEntries: {
+            type: "array",
+            items: { type: "object", required: ["id", "name"], properties: { id: identifier, name: string } },
+          },
+          meaning: string,
+          atoms: {
+            type: "array",
+            items: {
+              type: "object",
+              required: ["id", "text", "meaning"],
+              properties: { id: identifier, text: string, meaning: string },
+            },
+          },
+          tags: strings,
+          scope: string,
+          status: { enum: ["active", "deprecated"] },
         },
       },
     },
@@ -363,6 +397,15 @@ export function assertResearchLibraryNotebook(
   };
   uniqueIds(state.notes);
   uniqueIds(state.symbols);
+  if (state.terms) uniqueIds(state.terms);
+  state.terms?.forEach(term => {
+    if (!term.aliasEntries) return;
+    uniqueIds(term.aliasEntries);
+    const names = term.aliasEntries.map(alias => alias.name.trim());
+    if (names.some(name => !name) || new Set(names).size !== names.length || names.length !== term.aliases.length ||
+      names.some((name, index) => name !== term.aliases[index].trim()))
+      throw new Error("资料库内容格式错误：术语别名记录与别名数组不一致。");
+  });
   state.notes.forEach((note) => {
     const blocks = flattenResearchBlocks(note.blocks);
     uniqueIds(blocks);
@@ -540,6 +583,7 @@ export function researchLibrarySummary(
     notes: file.notebook.notes.filter((note) => note.library !== "foundation")
       .length,
     symbols: file.notebook.symbols.length,
+    terms: file.notebook.terms?.length ?? 0,
     maps: file.notebook.theoryMaps?.documents.length ?? 0,
     savedAt: file.savedAt,
   };

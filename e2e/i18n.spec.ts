@@ -1,23 +1,26 @@
+import { closeSettingsPage } from "./helpers/settings.ts";
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 test.use({ locale: 'en-US' });
 
 test('detects English and localizes navigation without translating saved manual content', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await expect(page.getByRole('tab', { name: 'Symbol dictionary', exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Symbol', exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Term', exact: true })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Foundations', exact: true })).toBeVisible();
   expect(await page.locator('.research-notebook-mode-tabs button').evaluateAll(buttons => buttons.every(button => {
-    const box = button.getBoundingClientRect(), text = button.querySelector('span')!.getBoundingClientRect();
-    return text.left >= box.left - 1 && text.right <= box.right + 1;
+    const box = button.getBoundingClientRect(), icon = button.querySelector('svg')!.getBoundingClientRect();
+    return !button.textContent?.trim() && button.getAttribute('aria-label') === button.getAttribute('title') && icon.left >= box.left && icon.right <= box.right;
   }))).toBe(true);
   await expect(page.getByLabel('Note title', { exact: true })).toHaveValue('MeWiki 使用手册');
   await page.getByRole('button', { name: 'Interface language', exact: true }).click();
   const dialog = page.getByTestId('mewiki-language-settings');
   await dialog.getByRole('radio', { name: /简体中文/ }).check();
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
-  await dialog.getByRole('button', { name: '关闭', exact: true }).click();
-  await expect(page.getByRole('tab', { name: '符号词典', exact: true })).toBeVisible();
+  await closeSettingsPage(page);
+  await expect(page.getByRole('tab', { name: '符号', exact: true })).toBeVisible();
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
   await expect(page.getByLabel('笔记标题', { exact: true })).toHaveValue('MeWiki 使用手册');
@@ -67,19 +70,20 @@ test('switches language for this session when saving its preference is denied', 
   await page.getByRole('button', { name: 'Interface language', exact: true }).click();
   await page.getByRole('radio', { name: /简体中文/ }).check();
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
-  await page.getByRole('button', { name: '关闭', exact: true }).click();
-  await expect(page.getByRole('tab', { name: '符号词典', exact: true })).toBeVisible();
+  await closeSettingsPage(page);
+  await expect(page.getByRole('tab', { name: '符号', exact: true })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('mewiki:locale'))).toBeNull();
 });
 
 test('localizes built-in plugin details and the insertion entry without changing the provider id', async ({ page }) => {
+  const webbenchManifest = JSON.parse(await readFile('plugins/webbench/manifest.json', 'utf8'));
   await page.goto('/');
   await page.getByRole('button', { name: 'Plugin manager', exact: true }).click();
   const manager = page.getByTestId('mewiki-plugin-manager');
-  await expect(manager.getByRole('heading', { name: 'WebBench simulation replay 1.0.0', exact: true })).toBeVisible();
+  await expect(manager.getByRole('heading', { name: `WebBench simulation replay ${webbenchManifest.version}`, exact: true })).toBeVisible();
   await expect(manager).toContainText('Save a real experiment');
-  await manager.getByRole('button', { name: 'Install and enable', exact: true }).click();
-  await manager.getByRole('button', { name: 'Close Plugin manager', exact: true }).click();
+  await manager.locator('.mewiki-plugin-row').filter({ hasText: 'org.mewiki.webbench' }).getByRole('button', { name: 'Install and enable', exact: true }).click();
+  await closeSettingsPage(page);
   await page.getByRole('button', { name: 'Switch to edit mode', exact: true }).click();
   await page.getByRole('button', { name: 'Insert at end of note', exact: true }).click();
   const picker = page.getByRole('dialog', { name: 'Insert note content', exact: true });

@@ -28,7 +28,7 @@
   flex-direction: column;
   gap: 4px;
   color: #526780;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 
 .research-formula-symbol-search-row {
@@ -50,11 +50,6 @@
   border: 1px solid #c7d3e2;
   border-radius: 4px;
   padding: 0 5px;
-}
-
-.research-formula-symbol-search:focus-within {
-  border-color: #517fc5;
-  outline: 2px solid #dce8fa;
 }
 
 .research-formula-item-editor .research-formula-symbol-search > input {
@@ -113,7 +108,7 @@
   margin: 0;
   padding: 5px;
   color: #61738a;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 
 .research-formula-symbol-preview-heading,
@@ -124,7 +119,7 @@
   justify-content: space-between;
   gap: 4px;
   color: #243a56;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 
 .research-formula-input-columns {
@@ -154,7 +149,7 @@
   align-items: center;
   justify-content: flex-start;
   background: #fff;
-  font-size: 36px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 36);
 }
 
 .research-formula-symbol-preview > .formula {
@@ -205,7 +200,7 @@
   background: #f3f7fdcc;
   color: #526780;
   font: inherit;
-  font-size: 13px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 13);
   cursor: pointer;
 }
 
@@ -216,10 +211,8 @@
 
 .research-formula-symbol-position-hit:hover,
 .research-formula-symbol-position-hit:focus-visible {
-  border-color: #1547c0;
   background: #e5efff;
   color: #1547c0;
-  outline: 2px solid #dce8fa;
 }
 
 .research-formula-symbol-position-hit.has-value:hover,
@@ -248,7 +241,7 @@
   background: #1547c0;
   color: #fff;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   cursor: pointer;
 }
 
@@ -269,14 +262,13 @@
 }
 
 .research-formula-symbol-insert-actions > .research-symbol-delete:hover {
-  border-color: #ab2e36;
   background: #ab2e36;
 }
 
 .research-formula-symbol-advanced {
   margin-top: 0;
   color: #526780;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 
 .research-formula-symbol-advanced .research-formula-source-preview {
@@ -329,7 +321,7 @@
   min-height: 26px;
   flex: 1;
   padding: 2px 4px;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 
 .research-formula-latex-actions > button {
@@ -356,13 +348,13 @@
   max-height: 100px;
   overflow: auto;
   padding: 3px;
-  font-size: 15px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 15);
 }
 
 .research-formula-latex-error {
   margin: 0;
   color: #ad3047;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 
 .research-formula-operator-group {
@@ -376,7 +368,7 @@
   flex: 0 0 14px;
   margin: 3px 0 0;
   color: #526780;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   font-weight: 500;
   line-height: 1.15;
   writing-mode: vertical-rl;
@@ -406,21 +398,15 @@
   background: #f6f8fc;
   color: #243a56;
   font: inherit;
-  font-size: 14px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 14);
   white-space: nowrap;
   cursor: pointer;
 }
 
 .research-formula-operator-keys > button:hover,
 .research-formula-operator-keys > button.is-current {
-  border-color: #83a2d2;
   background: #eaf1fc;
   color: #1547c0;
-}
-
-.research-formula-item-editor button:focus-visible {
-  outline: 2px solid #517fc5;
-  outline-offset: 1px;
 }
 
 .research-formula-symbol-slot-popover {
@@ -443,7 +429,7 @@
   flex-direction: column;
   gap: 3px;
   color: #526780;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
 }
 
 .research-formula-symbol-slot-popover input {
@@ -454,12 +440,7 @@
   padding: 3px 5px;
   color: #263b57;
   font: inherit;
-  font-size: 12px;
-}
-
-.research-formula-symbol-slot-popover input:focus {
-  border-color: #517fc5;
-  outline: 2px solid #dce8fa;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 
 .research-formula-symbol-slot-actions {
@@ -481,7 +462,6 @@
 }
 
 .research-formula-symbol-slot-actions button:hover {
-  border-color: #517fc5;
   color: #1547c0;
 }
 

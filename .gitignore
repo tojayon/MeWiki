@@ -40,6 +40,7 @@ research-library.webbench.json
 *.7z
 *.tar
 *.tgz
+*.mewiki-plugin
 
 # Internal browser verification screenshots
 /docs/evidence/

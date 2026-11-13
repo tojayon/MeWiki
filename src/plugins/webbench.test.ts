@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { webbenchPlugin, parseReplayReference, replayDeepLink } from './webbench.ts';
 import { availablePlugins, pluginStatus, updatePluginState } from './registry.ts';
+import manifest from '../../plugins/webbench/manifest.json';
+import { parsePluginManifest } from './sdk/manifest.ts';
+import { parsePluginContent, buildPluginSourceUrl } from './sdk/runtime.ts';
+const webbenchPlugin = parsePluginManifest(manifest);
+const parseReplayReference = (value: unknown) => parsePluginContent(webbenchPlugin, value);
 const data = { runId: 'experiment-1', replayId: 'replay-1', recordDigest: 'abc123', serviceBase: 'http://127.0.0.1:8766', webbenchOrigin: 'http://127.0.0.1:4173', time: 5.125, loopId: 'loop-1', packetId: 'packet-42' };
 const content = { provider: 'org.mewiki.webbench', contentType: 'replay-position', schemaVersion: 1, title: '实验一', summary: 't = 5.125 s', data };
 describe('WebBench plugin contract', () => {
   it('is available for installation but does not enable itself on an external message', () => {
-    expect(availablePlugins[0].id).toBe(webbenchPlugin.id);
+    expect(availablePlugins.find(plugin => plugin.id === webbenchPlugin.id)).toEqual(webbenchPlugin);
     expect(pluginStatus({}, webbenchPlugin.id)).toBe('available');
     const installed = updatePluginState({}, webbenchPlugin.id, 'enabled');
     expect(pluginStatus(installed, webbenchPlugin.id)).toBe('enabled');
@@ -19,7 +23,7 @@ describe('WebBench plugin contract', () => {
     expect(() => parseReplayReference({ ...content, schemaVersion: 2 })).toThrow(/版本/);
   });
   it('builds a portable link with the full experiment address and time', () => {
-    const url = new URL(replayDeepLink(parseReplayReference(content)));
+    const url = new URL(buildPluginSourceUrl(webbenchPlugin, content));
     const address = JSON.parse(url.searchParams.get('mewikiReplay')!);
     expect(address).toEqual(data);
     expect(url.origin).toBe(data.webbenchOrigin);

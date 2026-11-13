@@ -1,0 +1,95 @@
+{
+  "manifestVersion": 1,
+  "apiVersion": 1,
+  "id": "org.mewiki.webbench",
+  "name": "WebBench 仿真回放",
+  "version": "1.1.0",
+  "description": "将真实实验的回放位置保存为笔记卡片，点击返回对应时间、环路和数据包。",
+  "capabilities": ["context.read", "content.open"],
+  "workspace": { "name": "WebBench" },
+  "contentTypes": [{
+    "id": "replay-position",
+    "schemaVersion": 1,
+    "insertionLabel": "插入回放位置",
+    "schema": {
+      "type": "object",
+      "required": ["runId", "replayId", "recordDigest", "serviceBase", "webbenchOrigin", "time"],
+      "properties": {
+        "runId": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "replayId": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "recordDigest": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "serviceBase": { "type": "string", "format": "local-origin" },
+        "webbenchOrigin": { "type": "string", "format": "local-origin" },
+        "time": { "type": "number", "minimum": 0 },
+        "loopId": { "type": "string", "maxLength": 2000 },
+        "packetId": { "type": "string", "maxLength": 2000 },
+        "eventLabel": { "type": "string", "maxLength": 2000 }
+      }
+    },
+    "view": [
+      { "label": "物理时间", "path": "data.time", "digits": 6, "unit": "s" },
+      { "label": "环路", "path": "data.loopId" },
+      { "label": "数据包", "path": "data.packetId" },
+      { "label": "事件", "path": "data.eventLabel" }
+    ],
+    "source": {
+      "origin": { "path": "data.webbenchOrigin" },
+      "pathname": "/",
+      "query": { "mewikiReplay": { "path": "data", "json": true } }
+    },
+    "picker": {
+      "title": "插入回放位置",
+      "connectionStorageKey": "mewiki:plugins:webbench:connection:v1",
+      "connection": [
+        { "key": "serviceBase", "label": "回放查询服务", "default": "http://127.0.0.1:8766" },
+        { "key": "webbenchOrigin", "label": "WebBench 地址", "default": "http://127.0.0.1:4173" }
+      ],
+      "catalog": {
+        "connection": "serviceBase", "pathname": "/api/replays", "label": "实验回放",
+        "refreshLabel": "刷新实验列表", "loadingText": "正在读取实验…",
+        "emptyText": "还没有可用的实验回放。请先通过 WebBench 准备实验记录，再刷新列表。",
+        "itemsPath": "items", "idPath": "id", "labelPath": "manifest.run.title",
+        "itemSchema": {
+          "type": "object", "required": ["id", "file", "manifest"],
+          "properties": {
+            "id": { "type": "string", "minLength": 1, "maxLength": 512 },
+            "file": { "type": "string", "minLength": 1, "maxLength": 4000 },
+            "manifest": {
+              "type": "object", "required": ["format", "sealed", "run", "recordDigest", "timeBase", "loopIds"],
+              "properties": {
+                "format": { "type": "string", "const": "cislunar-replay-sqlite/v2" },
+                "sealed": { "type": "boolean", "const": true },
+                "run": { "type": "object", "required": ["id", "title"], "properties": {
+                  "id": { "type": "string", "minLength": 1, "maxLength": 512 },
+                  "title": { "type": "string", "minLength": 1, "maxLength": 1000 }
+                } },
+                "recordDigest": { "type": "string", "minLength": 1, "maxLength": 512 },
+                "timeBase": { "type": "object", "required": ["unit", "origin", "start", "end"], "properties": {
+                  "unit": { "type": "string", "const": "s" }, "origin": { "type": "string", "const": "scenario" },
+                  "start": { "type": "number", "minimum": 0 }, "end": { "type": "number", "minimum": 0 }
+                } },
+                "loopIds": { "type": "array", "maxItems": 1000, "items": { "type": "string", "minLength": 1, "maxLength": 2000 } }
+              }
+            }
+          }
+        }
+      },
+      "fields": [
+        { "key": "time", "label": "物理时间（秒）", "type": "number", "required": true,
+          "min": { "path": "selected.manifest.timeBase.start" }, "max": { "path": "selected.manifest.timeBase.end" },
+          "initial": { "path": "selected.manifest.timeBase.start" } },
+        { "key": "loopId", "label": "环路", "type": "select", "emptyLabel": "全部环路", "options": { "path": "selected.manifest.loopIds" } }
+      ],
+      "content": {
+        "title": { "path": "selected.manifest.run.title" },
+        "summary": { "path": "fields.time", "prefix": "t = ", "suffix": " s" },
+        "data": {
+          "runId": { "path": "selected.manifest.run.id" }, "replayId": { "path": "selected.id" },
+          "recordDigest": { "path": "selected.manifest.recordDigest" }, "serviceBase": { "path": "connection.serviceBase" },
+          "webbenchOrigin": { "path": "connection.webbenchOrigin" }, "time": { "path": "fields.time" },
+          "loopId": { "path": "fields.loopId", "optional": true }
+        }
+      }
+    }
+  }]
+}

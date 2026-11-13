@@ -1,7 +1,9 @@
+import { fontHeaderInfo, isUserFontMime, userFontMimes } from './researchFonts.ts';
 export type ResearchMediaKind = "image" | "audio" | "video" | "pdf" | "file";
 
 export const mediaKindLabels = { image: "图片", audio: "音频", video: "视频", pdf: "PDF 文档", file: "附件" } as const;
 export const mediaMimeExtensions: Record<string, string> = {
+  ...Object.fromEntries(Object.entries(userFontMimes).map(([extension, mime]) => [mime, extension])),
   "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif",
   "audio/mpeg": "mp3", "audio/wav": "wav", "audio/ogg": "ogg", "audio/mp4": "m4a", "audio/webm": "weba",
   "video/mp4": "mp4", "video/webm": "webm",
@@ -74,8 +76,12 @@ export function imageHeaderInfo(bytes: Uint8Array): MediaHeaderInfo {
 }
 
 /** Checks bounded container headers; codec support is determined by the player. */
-export function mediaHeaderInfo(bytes: Uint8Array, declaredMime: string): MediaHeaderInfo {
+export function mediaHeaderInfo(bytes: Uint8Array, declaredMime: string, totalBytes = bytes.length): MediaHeaderInfo {
   const mime = canonicalMediaMime(declaredMime);
+  if (isUserFontMime(mime)) {
+    if (fontHeaderInfo(bytes, totalBytes) !== mime) throw new Error('字体文件内容与声明格式不匹配，请选择原始字体。');
+    return { mimeType: mime };
+  }
   const kind = mediaKindFromMime(mime);
   const text = (start: number, length: number) => String.fromCharCode(...bytes.subarray(start, start + length));
   if (kind === "image") return imageHeaderInfo(bytes);

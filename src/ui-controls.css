@@ -1,3 +1,50 @@
+/* Search fields keep their existing border; focus is shown by the text caret. */
+:root input[data-ui="search-input"]:is(:focus, :focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Controls use browser focus feedback; searches keep the caret-only convention above. */
+:root button[data-ui="menu-action"] {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 34px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  border-radius: 4px;
+  padding: 7px 10px;
+  background: transparent;
+  color: #172033;
+  font: inherit;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+:root button[data-ui="menu-action"] > svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+:root button[data-ui="menu-action"] > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+:root button[data-ui="menu-action"]:is(:hover, :focus-visible):not(:disabled) {
+  background: #eaf0ff;
+  color: #123c9b;
+}
+:root button[data-ui="menu-action"][data-tone="danger"] {
+  color: #a32236;
+}
+:root button[data-ui="menu-action"][data-tone="danger"]:is(:hover, :focus-visible):not(:disabled) {
+  background: #fff0f2;
+  color: #a32236;
+}
+
 /* Explicit opt-in: tabs, packet cards, scene labels and mode choices keep their semantics. */
 :root button[data-ui="icon-action"][aria-label] {
   --action-size: 28px;
@@ -48,13 +95,6 @@
   background: var(--action-hover);
   color: var(--action-accent);
   box-shadow: none;
-}
-:root button[data-ui="icon-action"][aria-label]:hover:not(:focus-visible) {
-  outline: 0;
-}
-:root button[data-ui="icon-action"][aria-label]:focus-visible {
-  outline: 2px solid var(--action-accent);
-  outline-offset: 1px;
 }
 :root button[data-ui="icon-action"][aria-label]:active:not(:disabled) {
   background: var(--action-hover);
@@ -139,7 +179,7 @@
   min-width: 14px;
   height: 14px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 10);
   pointer-events: none;
 }
 /* Keep the single-row player usable without enlarging its mobile controls. */

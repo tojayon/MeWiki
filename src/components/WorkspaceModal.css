@@ -1,8 +1,8 @@
 .device-record-modal {
   width: min(860px, calc(100vw - 32px)); max-width: calc(100vw - 32px);
   max-height: min(84dvh, calc(100dvh - 32px)); padding: 0; overflow: hidden;
-  border: 1px solid #7592bb; border-top: 3px solid #1547c0; border-radius: 4px;
-  background: #fff; color: #172033; font-size: 12px; box-shadow: 0 14px 44px #071f3d50;
+  border: 1px solid #c8d3e1; border-radius: 4px;
+  background: #fff; color: #172033; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); box-shadow: 0 14px 44px #071f3d50;
 }
 .device-record-modal::backdrop { background: #07132170; }
 .device-record-modal-header {
@@ -10,8 +10,8 @@
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center;
   min-height: 42px; padding: 4px 8px 4px 12px; border-bottom: 1px solid #d3ddea; background: #f8fafc;
 }
-.device-record-modal-header > strong { justify-self: start; color: #102b55; font-size: 13px; }
+.device-record-modal-header > strong { justify-self: start; color: #102b55; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); }
 .device-modal-header-center { justify-self: center; min-width: 0; max-width: min(52vw, 520px); overflow: hidden; color: #102b55; text-overflow: ellipsis; white-space: nowrap; }
 .device-record-modal-header > .icon-button { justify-self: end; }
 .device-record-modal-content { max-height: calc(min(84dvh, 100dvh - 32px) - 45px); overflow: auto; padding: 8px 10px 12px; overscroll-behavior: contain; }
-.device-record-modal small { color: #33465f; font-size: 12px; overflow-wrap: anywhere; }
+.device-record-modal small { color: #33465f; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); overflow-wrap: anywhere; }

@@ -1,0 +1,35 @@
+import { afterEach, expect, it } from 'vitest';
+import { mkdtemp, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import sharp from 'sharp';
+import { ImageWorkspaceStore } from './imageWorkspaceStore.ts';
+import { defaultComposition } from '../src/domain/publicationComposition.ts';
+import { defaultPublicationOptions } from '../src/domain/publicationTypes.ts';
+const roots: string[] = [];
+afterEach(async () => { await Promise.all(roots.splice(0).map(root => rm(root, { force: true, recursive: true }))); });
+it('persists designs and sticker resources by stable library and plugin, without replacing a stale revision', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'mewiki-composition-')); roots.push(root);
+  const store = new ImageWorkspaceStore(root);
+  const bytes = await sharp({ create: { width: 10, height: 10, channels: 4, background: '#aa1122' } }).png().toBuffer();
+  const dataUrl = 'data:image/png;base64,' + bytes.toString('base64');
+  const assetId = await store.putAsset('library-a', 'test.plugin', dataUrl);
+  expect(await store.asset('library-a', 'test.plugin', assetId)).toBe(dataUrl);
+  await expect(store.asset('library-b', 'test.plugin', assetId)).rejects.toThrow();
+  const initial = await store.read('library-a', 'test.plugin');
+  const design = { id: 'design-a', name: '产品宣传', updatedAt: new Date().toISOString(), options: { ...defaultPublicationOptions(), imageMode: { fit: 'cover' as const }, composition: defaultComposition() }, items: [{ id: 'image-a', name: '产品.png', assetId, crop: { x: 20, y: 50, zoom: 100 }, imageData: { title: '产品', subtitle: '', name: '产品', index: 1, total: 1 } }] };
+  const value = await store.write('library-a', 'test.plugin', initial.revision, [design], [{ id: 'sticker-a', name: 'Logo', assetId }]);
+  expect((await new ImageWorkspaceStore(root).read('library-a', 'test.plugin')).designs).toEqual([design]);
+  expect((await store.read('library-b', 'test.plugin')).designs).toEqual([]);
+  await expect(store.write('library-a', 'test.plugin', initial.revision, [], [])).rejects.toThrow(/其他窗口/);
+  expect((await store.read('library-a', 'test.plugin')).revision).toBe(value.revision);
+  await expect(store.read('../escape', 'test.plugin')).rejects.toThrow();
+});
+it('rejects missing assets, executable scene data and corrupt image resources', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'mewiki-composition-')); roots.push(root);
+  const store = new ImageWorkspaceStore(root), initial = await store.read('library-a', 'test.plugin');
+  await expect(store.putAsset('library-a', 'test.plugin', 'data:image/svg+xml;base64,AAAA')).rejects.toThrow();
+  await expect(store.putAsset('library-a', 'test.plugin', 'data:image/png;base64,AAAA')).rejects.toThrow();
+  await expect(store.write('library-a', 'test.plugin', initial.revision, [], [{ id: 'x', name: '丢失', assetId: 'a'.repeat(64) }])).rejects.toThrow(/素材/);
+  await expect(store.write('library-a', 'test.plugin', initial.revision, [{ script: 'alert(1)' }], [])).rejects.toThrow();
+});

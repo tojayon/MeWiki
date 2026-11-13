@@ -7,7 +7,30 @@ export interface LibraryCatalog {
   libraries: LibraryProfile[];
   contextDefaults: Record<string, string>;
 }
-export const WEBBENCH_WORKSPACE = "org.mewiki.webbench";
+export interface LibraryEntryChoice {
+  id: string;
+  name: string;
+}
+
+export function libraryEntryChoices(options: {
+  plugins: readonly { id: string; workspace?: { name: string } }[];
+  connection: { id: string; name: string } | null;
+  contextDefaults: Readonly<Record<string, string>>;
+  context: string;
+}): LibraryEntryChoice[] {
+  const entries = new Map<string, LibraryEntryChoice>();
+  const add = (id: string, name = id) => {
+    if (!id || id === "standalone" || entries.has(id)) return;
+    entries.set(id, { id, name: name.trim() || id });
+  };
+  for (const plugin of options.plugins) {
+    if (plugin.workspace) add(plugin.id, plugin.workspace.name);
+  }
+  if (options.connection) add(options.connection.id, options.connection.name);
+  for (const id of Object.keys(options.contextDefaults)) add(id);
+  add(options.context);
+  return [...entries.values()];
+}
 export function libraryCacheKey(id: string) {
   return id === "default"
     ? "mewiki:research-notebook"
@@ -31,11 +54,5 @@ export function selectLibrary(
   if (exists(options.remembered)) return options.remembered!;
   const preferred = catalog.contextDefaults[options.context];
   if (exists(preferred)) return preferred;
-  if (options.context === WEBBENCH_WORKSPACE) {
-    const cislunar = catalog.libraries.find(
-      (item) => item.name.toLowerCase() === "cislunar",
-    );
-    if (cislunar) return cislunar.id;
-  }
   return "default";
 }

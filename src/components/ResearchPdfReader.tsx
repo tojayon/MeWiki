@@ -1,10 +1,11 @@
 import { useLocale } from "../i18n/react.ts";
 import { t, localizeError } from "../i18n/locale.ts";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Search, X, ZoomIn, ZoomOut } from "lucide-react";
 import { getDocument, GlobalWorkerOptions, TextLayer, type PDFDocumentProxy, type RenderTask } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { findPdfText, indexPdfText } from "../domain/researchPdfText.ts";
+import { ResearchContentLibraryContext } from "../state/ResearchContentLibraryContext.ts";
 import "./ResearchPdfReader.css";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
@@ -17,6 +18,7 @@ export default function ResearchPdfReader({ src, name, referenceUrl, size, page:
   src: string; name: string; referenceUrl: string; size?: number; page?: number; onPageChange?: (page: number) => void;
 }) {
   const locale = useLocale();
+  const pixelRatio = useContext(ResearchContentLibraryContext)?.pixelRatio ?? 1;
   const [document, setDocument] = useState<PDFDocumentProxy>();
   const [page, setPage] = useState(savedPage);
   const [pageInput, setPageInput] = useState(String(savedPage));
@@ -105,7 +107,7 @@ export default function ResearchPdfReader({ src, name, referenceUrl, size, page:
         const scale = Math.min(3, width / base.width) * zoom;
         const viewport = pdfPage.getViewport({ scale });
         // Bound canvas memory independently of zoom or malicious page dimensions.
-        const density = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(8_000_000 / (viewport.width * viewport.height)));
+        const density = Math.min(Math.max(Math.min(window.devicePixelRatio || 1, 2), pixelRatio), Math.sqrt(8_000_000 / (viewport.width * viewport.height)));
         const sheet = window.document.createElement("div"); sheet.className = "research-pdf-sheet";
         sheet.style.width = `${viewport.width}px`; sheet.style.height = `${viewport.height}px`;
         sheet.style.setProperty("--total-scale-factor", String(scale));
@@ -130,7 +132,7 @@ export default function ResearchPdfReader({ src, name, referenceUrl, size, page:
       } catch (cause) { if (!cancelled) { setError(`此页未能显示：${errorMessage(cause)}`); setRendering(false); } }
     })();
     return () => { cancelled = true; render?.cancel(); text?.cancel(); releasePage?.(); };
-  }, [document, page, width, zoom, name, searched]);
+  }, [document, page, width, zoom, name, searched, pixelRatio]);
 
   useEffect(() => {
     stageRef.current?.querySelector("canvas")?.setAttribute("aria-label", t`${name} · 第 ${page} 页`);
@@ -179,7 +181,7 @@ export default function ResearchPdfReader({ src, name, referenceUrl, size, page:
     clearTimeout(copyTimer.current); copyTimer.current = setTimeout(() => setCopyStatus(""), 2500);
   };
   const moveHit = (direction: number) => { const next = (hitIndex + direction + hits.length) % hits.length; setHitIndex(next); go(hits[next].page); };
-  return <div className="research-pdf-reader">
+  return <div className="research-pdf-reader" data-page={page}>
     <div className="research-pdf-controls" role="toolbar" aria-label={t("PDF 阅读工具")}>
       <button type="button" data-ui="icon-action" aria-label={t("PDF 上一页")} title={t("上一页")} disabled={!document || page <= 1} onClick={() => go(page - 1)}><ChevronLeft size={16} /></button>
       <input type="number" aria-label={t("PDF 页码")} min={1} max={document?.numPages} value={pageInput} disabled={!document} onChange={event => setPageInput(event.target.value)} onBlur={() => go(Number(pageInput))} onKeyDown={event => { if (event.key === "Enter") go(Number(pageInput)); }} />
@@ -189,7 +191,7 @@ export default function ResearchPdfReader({ src, name, referenceUrl, size, page:
       <button type="button" data-ui="icon-action" aria-label={t("放大 PDF")} title={t("放大")} disabled={zoom >= 3} onClick={() => setZoom(value => Math.min(3, value + 0.25))}><ZoomIn size={15} /></button>
       <button type="button" data-ui="icon-action" aria-label={t("复制当前页引用")} title={t("复制带页码的 Markdown 引用")} disabled={!document} onClick={() => void copy()}>{copyStatus.startsWith("已") ? <Check size={15} /> : <Copy size={15} />}</button>
       <a href={src.split("#")[0] + `#page=${page}`} target="_blank" rel="noopener noreferrer" title={t("在新窗口打开 PDF")} aria-label={t("在新窗口打开 PDF")}><ExternalLink size={15} /></a>
-      <label className="research-pdf-search"><input type="search" aria-label={t("搜索 PDF")} placeholder={t("搜索文档…")} value={query} disabled={!document} onChange={event => { searchOperation.current++; setSearching(false); setQuery(event.target.value); setHits([]); setSearchStatus(""); setSearched(""); }} onKeyDown={event => { if (event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); void search(); } }} /><button type="button" data-ui="icon-action" aria-label={t("开始搜索 PDF")} title={t("搜索全文")} disabled={!document || !query.trim() || searching} onClick={() => void search()}><Search size={14} /></button></label>
+      <label className="research-pdf-search"><input type="search" data-ui="search-input" aria-label={t("搜索 PDF")} placeholder={t("搜索文档…")} value={query} disabled={!document} onChange={event => { searchOperation.current++; setSearching(false); setQuery(event.target.value); setHits([]); setSearchStatus(""); setSearched(""); }} onKeyDown={event => { if (event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); void search(); } }} /><button type="button" data-ui="icon-action" aria-label={t("开始搜索 PDF")} title={t("搜索全文")} disabled={!document || !query.trim() || searching} onClick={() => void search()}><Search size={14} /></button></label>
     </div>
     {passwordRequest && <form className="research-pdf-password" onSubmit={event => { event.preventDefault(); passwordRequest.update(password); setPassword(""); setPasswordRequest(undefined); }}><label>{passwordRequest.incorrect ? t("密码不正确，请重试") : t("此 PDF 已加密")}<input type="password" aria-label={t("PDF 密码")} value={password} onChange={event => setPassword(event.target.value)} autoComplete="off" /></label><button type="submit">{t("解锁")}</button></form>}
     <div ref={viewportRef} className="research-pdf-viewport" aria-busy={!large && !error && rendering}>

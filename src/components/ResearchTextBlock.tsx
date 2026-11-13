@@ -8,6 +8,7 @@ import ResearchTableBlock from "./ResearchTableBlock.tsx";
 import { parseResearchTable } from "../domain/researchTable.ts";
 import type { ResearchOutlineHeading } from "../domain/researchOutline.ts";
 import ResearchMentionTextarea from "./ResearchMentionTextarea.tsx";
+import ResearchReferenceEditor, { type ResearchReferenceEditorHandle } from "./ResearchReferenceEditor.tsx";
 import { researchTextEditorState } from "../domain/researchTextPlaceholders.ts";
 import { continueResearchMarkdownLine, researchListEditorSource } from "../domain/researchMarkdownEditing.ts";
 
@@ -32,7 +33,9 @@ export default function ResearchTextBlock(props: TextBlockProps) {
 function SourceTextBlock({ value, label, readOnly = false, kind = "paragraph", placeholder, headings, onChange, onComplete }: TextBlockProps) {
   useLocale();
   const [editing, setEditing] = useState(false);
-  const ref = useRef<HTMLTextAreaElement>(null);
+  const ref = useRef<ResearchReferenceEditorHandle>(null);
+  const codeRef = useRef<HTMLTextAreaElement>(null);
+  const pendingReference = useRef<{ href: string; occurrence: number } | null>(null);
   const composing = useRef(false);
   const draft = researchTextEditorState(value, kind);
   const source = readOnly ? value : draft.source;
@@ -44,59 +47,47 @@ function SourceTextBlock({ value, label, readOnly = false, kind = "paragraph", p
     {source.split("\n").map((item, index) => <li key={index}><ResearchMathText text={item} /></li>)}
   </ul> : plainText ? <p>{source}</p> : <ResearchMarkdown text={source} headings={headings} />;
   useLayoutEffect(() => {
-    if (!editing || !ref.current) return;
-    initialSource.current = ref.current.value;
-    ref.current.focus({ preventScroll: true });
-    const caret = researchTextEditorState(ref.current.value, kind).caret;
-    ref.current.setSelectionRange(caret, caret);
+    const input = kind === "code" ? codeRef.current : ref.current;
+    if (!editing || !input) return;
+    initialSource.current = input.value;
+    input.focus({ preventScroll: true });
+    const caret = researchTextEditorState(input.value, kind).caret;
+    input.setSelectionRange(caret, caret);
+    if (kind !== "code" && pendingReference.current) {
+      ref.current?.inspectReference(pendingReference.current.href, pendingReference.current.occurrence);
+      pendingReference.current = null;
+    }
   }, [editing, kind]);
 
-  const save = (input: HTMLTextAreaElement) => {
+  const save = (input: ResearchReferenceEditorHandle | HTMLTextAreaElement) => {
     const text = input.value.replace(/\r\n?/g, "\n");
     if (text === initialSource.current) return true;
     initialSource.current = text;
-    return onChange(text, input.parentElement ?? undefined) !== false;
+    const element = "element" in input ? input.element : input;
+    return onChange(text, element.parentElement ?? undefined) !== false;
   };
 
-  if (readOnly) return <div className="research-markdown research-read-text" data-kind={kind} data-plain-text={plainText}>{rendered}</div>;
-  return <div className="research-editable-text research-markdown" data-kind={kind} data-plain-text={plainText}
-    role={editing ? undefined : "textbox"} aria-label={editing ? undefined : label} aria-multiline={editing ? undefined : true} tabIndex={editing ? undefined : 0}
-    onPointerDown={(event) => {
-      if (editing || (event.target instanceof Element && event.target.closest("a, button, input"))) return;
+  const handleKeys = (event: KeyboardEvent, input: ResearchReferenceEditorHandle | HTMLTextAreaElement) => {
+    if (event.key === "Escape") {
       event.preventDefault();
-      setEditing(true);
-    }}
-    onFocus={(event) => { if (event.target === event.currentTarget) setEditing(true); }}
-  >{editing ? <ResearchMentionTextarea ref={ref} className="research-text-source" aria-label={label} rows={1} defaultValue={editorSource} spellCheck={kind !== "code"}
-    aria-keyshortcuts="Control+Enter Meta+Enter Shift+Enter"
-    aria-description={t("Ctrl/Cmd+Enter 完成本块并选择下一内容块；Shift+Enter 续写列表或引用。")}
-    onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
-    onBlur={(event) => {
-      save(event.currentTarget);
+      if (!event.isComposing && !composing.current) input.blur();
+      return;
+    }
+    if (event.key !== "Enter" || event.isComposing || composing.current || event.keyCode === 229 || event.altKey) return;
+    if ((event.ctrlKey || event.metaKey) && !event.shiftKey && onComplete) {
+      event.preventDefault(); event.stopPropagation();
+      const accepted = save(input);
       setEditing(false);
-    }}
-    onKeyDown={(event) => {
-      if (event.key === "Escape") {
-        // Keep Escape inside the editor so the surrounding dialog cannot close during IME input.
-        event.preventDefault();
-        if (!event.nativeEvent.isComposing && !composing.current) event.currentTarget.blur();
-        return;
-      }
-      if (event.key !== "Enter" || event.nativeEvent.isComposing || composing.current || event.keyCode === 229 || event.altKey) return;
-      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && onComplete) {
-        event.preventDefault(); event.stopPropagation();
-        const accepted = save(event.currentTarget);
-        setEditing(false);
-        if (accepted) onComplete();
-      } else if (event.shiftKey && !event.ctrlKey && !event.metaKey) {
-        const input = event.currentTarget;
-        const next = continueResearchMarkdownLine(input.value, input.selectionStart, input.selectionEnd, kind);
-        if (!next) return;
-        event.preventDefault(); event.stopPropagation();
-        // Insert through the browser's editing transaction so native Undo restores the whole shortcut.
-        let start = 0, end = input.value.length, nextEnd = next.text.length;
-        while (start < end && start < nextEnd && input.value[start] === next.text[start]) start++;
-        while (end > start && nextEnd > start && input.value[end - 1] === next.text[nextEnd - 1]) { end--; nextEnd--; }
+      if (accepted) onComplete();
+    } else if (event.shiftKey && !event.ctrlKey && !event.metaKey) {
+      const next = continueResearchMarkdownLine(input.value, input.selectionStart, input.selectionEnd, kind);
+      if (!next) return;
+      event.preventDefault(); event.stopPropagation();
+      let start = 0, end = input.value.length, nextEnd = next.text.length;
+      while (start < end && start < nextEnd && input.value[start] === next.text[start]) start++;
+      while (end > start && nextEnd > start && input.value[end - 1] === next.text[nextEnd - 1]) { end--; nextEnd--; }
+      if ("replaceRange" in input) input.replaceRange(next.text.slice(start, nextEnd), start, end, next.caret);
+      else {
         input.setSelectionRange(start, end);
         if (!document.execCommand("insertText", false, next.text.slice(start, nextEnd))) {
           input.setRangeText(next.text.slice(start, nextEnd), start, end, "end");
@@ -104,7 +95,38 @@ function SourceTextBlock({ value, label, readOnly = false, kind = "paragraph", p
         }
         input.setSelectionRange(next.caret, next.caret);
       }
+    }
+  };
+
+  if (readOnly) return <div className="research-markdown research-read-text" data-kind={kind} data-plain-text={plainText}>{rendered}</div>;
+  return <div className="research-editable-text research-markdown" data-kind={kind} data-plain-text={plainText}
+    role={editing ? undefined : "textbox"} aria-label={editing ? undefined : label} aria-multiline={editing ? undefined : true} tabIndex={editing ? undefined : 0}
+    onClickCapture={event => {
+      if (editing || kind === "code" || !(event.target instanceof Element)) return;
+      const reference = event.target.closest<HTMLElement>("[data-reference-href]");
+      if (!reference?.dataset.referenceHref) return;
+      event.preventDefault(); event.stopPropagation();
+      const matching = [...event.currentTarget.querySelectorAll<HTMLElement>("[data-reference-href]")].filter(element => element.dataset.referenceHref === reference.dataset.referenceHref);
+      pendingReference.current = { href: reference.dataset.referenceHref, occurrence: matching.indexOf(reference) };
+      setEditing(true);
     }}
+    onPointerDown={(event) => {
+      if (editing || (event.target instanceof Element && event.target.closest("a, button, input"))) return;
+      event.preventDefault();
+      setEditing(true);
+    }}
+    onFocus={(event) => { if (event.target === event.currentTarget) setEditing(true); }}
+  >{editing ? kind === "code" ? <ResearchMentionTextarea ref={codeRef} className="research-text-source" aria-label={label} rows={1} defaultValue={editorSource} spellCheck={false}
+    onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
+    onBlur={event => { save(event.currentTarget); setEditing(false); }}
+    onKeyDown={event => handleKeys(event.nativeEvent, event.currentTarget)} placeholder={hint} /> : <ResearchReferenceEditor ref={ref} className="research-text-source" aria-label={label} defaultValue={editorSource}
+    aria-keyshortcuts="Control+Enter Meta+Enter Shift+Enter F2"
+    aria-description={t("Ctrl/Cmd+Enter 完成本块并选择下一内容块；Shift+Enter 续写列表或引用。") + " " + t("光标位于引用旁时按 F2 修改引用。")}
+    onBlur={(input) => {
+      save(input);
+      setEditing(false);
+    }}
+    onKeyDown={handleKeys}
     placeholder={hint}
   /> : rendered}</div>;
 }

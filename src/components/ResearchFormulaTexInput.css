@@ -7,7 +7,7 @@
   border-top: 1px solid #d3deec;
   padding-top: 6px;
   color: #243d5a;
-  font-size: 12px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
 .research-formula-tex-input-heading,
 .research-formula-tex-input-actions {
@@ -35,10 +35,9 @@
   resize: vertical;
   background: #fff;
   color: #172033;
-  font: 13px/1.65 Consolas, "Cascadia Code", monospace;
+  font: calc(var(--mewiki-interface-unit, 1px) * 13)/1.65 Consolas, "Cascadia Code", monospace;
   tab-size: 2;
 }
-.research-formula-tex-input textarea:focus-visible { outline: 2px solid #1547c0; outline-offset: 1px; }
 .research-formula-tex-input textarea[aria-invalid="true"] { border-color: #b32d3d; }
 .research-formula-tex-live-preview {
   display: flex;
@@ -50,11 +49,11 @@
   padding: 8px;
   box-sizing: border-box;
   color: #173454;
-  font-size: 21px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 21);
 }
 .research-formula-tex-live-preview > .formula { max-width: 100%; }
 .research-formula-tex-live-preview .katex-display { margin: 0; }
-.research-formula-tex-preview-placeholder { color: #61758d; font-size: 12px; }
+.research-formula-tex-preview-placeholder { color: #61758d; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-formula-tex-diagnostic { margin-top: 8px; color: #a52536; line-height: 1.6; }
 .research-formula-tex-diagnostic > button {
   border: 0;
@@ -68,8 +67,7 @@
   cursor: pointer;
 }
 .research-formula-tex-diagnostic > button:hover { text-decoration: underline; }
-.research-formula-tex-diagnostic > button:focus-visible { outline: 2px solid #1547c0; outline-offset: 2px; }
-.research-formula-tex-diagnostic pre { margin: 3px 0 0; overflow-x: auto; font: 12px/1.6 Consolas, "Cascadia Code", monospace; }
+.research-formula-tex-diagnostic pre { margin: 3px 0 0; overflow-x: auto; font: calc(var(--mewiki-interface-unit, 1px) * 12)/1.6 Consolas, "Cascadia Code", monospace; }
 .research-formula-tex-diagnostic mark { border-bottom: 2px solid #b32d3d; background: #ffe6e8; color: #8c1727; }
 .research-formula-tex-diagnostic p { margin: 0; }
 .research-formula-tex-input-actions { justify-content: flex-end; margin-top: 8px; }
@@ -85,7 +83,6 @@
 }
 .research-formula-tex-input-actions > button:hover:not(:disabled) { background: #113caa; }
 .research-formula-tex-input-actions > button:disabled { border-color: #c4cfdd; background: #e4eaf3; color: #60738d; cursor: not-allowed; }
-.research-formula-tex-input-actions > button:focus-visible { outline: 2px solid #1547c0; outline-offset: 2px; }
 @container (max-width: 520px) {
   .research-formula-tex-input-grid { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .research-formula-tex-live-preview { min-height: 80px; }

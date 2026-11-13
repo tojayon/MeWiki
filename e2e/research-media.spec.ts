@@ -1,3 +1,4 @@
+import { openSettingsSection, closeSettingsPage } from "./helpers/settings.ts";
 import { createNotebookFixture as createResearchNotebook } from "../src/domain/testUtils/notebook.ts";
 import { expect, test, type Page } from "@playwright/test";
 import { mkdtemp, readdir, rm } from "node:fs/promises";
@@ -7,7 +8,7 @@ import { createResearchNote } from "../src/domain/researchNotebook.ts";
 import { enableNotebookEditing } from "./helpers/researchNotebook.ts";
 
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAACAAAAAYCAYAAACbU/80AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAN0lEQVRIie2WsQ0AAAjC+JqfeLKe4dKB3QSEpoNPxQOqBTOE+IZYRLWK5xjhHCOQVCSbUMpLDg7V2l2IkGDTEwAAAABJRU5ErkJggg==", "base64");
-const settings = path.resolve(".mewiki/media-e2e-settings.json");
+const settings = path.resolve(process.env.MEWIKI_RESEARCH_SETTINGS || ".mewiki/media-e2e-settings.json");
 let root: string;
 test.beforeEach(async ({ page }) => {
   await rm(settings, { force: true });
@@ -30,8 +31,8 @@ async function insertImage(page: Page) {
   return page.locator(".research-media-block").last();
 }
 async function storage(page: Page) {
-  await page.getByRole("button", { name: "研究笔记设置", exact: true }).click();
-  return page.getByRole("dialog", { name: "研究笔记设置", exact: true });
+  await openSettingsSection(page, "storage");
+  return page.getByTestId("research-library-storage");
 }
 async function pasteImage(page: Page, selector: string, bytes = png) {
   return page.evaluate(({ selector, bytes }) => {
@@ -47,7 +48,7 @@ async function migrate(page: Page, directory: string) {
   await dialog.getByRole("button", { name: "检查路径", exact: true }).click();
   await dialog.getByRole("button", { name: "迁移到此目录", exact: true }).click();
   await expect(dialog.getByText("本地自动保存已启用", { exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await closeSettingsPage(page);
 }
 async function connect(page: Page, directory = path.join(root, "资料库")) {
   const dialog = await storage(page);
@@ -95,14 +96,16 @@ test("migrates browser originals before binding the local library and exports a 
   await expect(dialog.getByText("本地自动保存已启用", { exact: true })).toBeVisible();
   expect((await readdir(path.join(directory, "assets"))).some(name => name.endsWith(".png"))).toBe(true);
   const downloadPromise = page.waitForEvent("download");
+  await openSettingsSection(page, "backup");
   await dialog.getByRole("button", { name: "导出含附件备份", exact: true }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.zip$/);
+  await openSettingsSection(page, "backup");
   await dialog.getByLabel("选择完整资料库备份").setInputFiles((await download.path())!);
   await expect(dialog.getByLabel("恢复预览")).toBeVisible();
   await dialog.getByRole("button", { name: "确认恢复此版本", exact: true }).click();
   await expect(dialog.getByText("已恢复资料库，原版本已保留。", { exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await closeSettingsPage(page);
   await page.evaluate(async () => { await new Promise<void>((resolve, reject) => { const request = indexedDB.deleteDatabase("mewiki-research-media"); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); request.onblocked = () => resolve(); }); });
   await page.reload();
   await expect(page.locator(".research-media-block").getByRole("img")).toBeVisible();
@@ -185,6 +188,7 @@ test("exports browser originals through a temporary file and restores them into 
   await expect(block.getByRole("img")).toBeVisible();
   const dialog = await storage(page);
   const downloading = page.waitForEvent("download");
+  await openSettingsSection(page, "backup");
   await dialog.getByRole("button", { name: "导出含附件备份", exact: true }).click();
   const download = await downloading;
   const backup = (await download.path())!;
@@ -199,11 +203,12 @@ test("exports browser originals through a temporary file and restores them into 
     await target.goto(page.url());
     await migrate(target, path.join(root, "独立资料库"));
     const restore = await storage(target);
+    await openSettingsSection(target, "backup");
     await restore.getByLabel("选择完整资料库备份").setInputFiles(backup);
     await expect(restore.getByLabel("恢复预览")).toBeVisible();
     await restore.getByRole("button", { name: "确认恢复此版本", exact: true }).click();
     await expect(restore.getByText("已恢复资料库，原版本已保留。", { exact: true })).toBeVisible();
-    await restore.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+    await closeSettingsPage(target);
     await expect(target.locator(".research-media-block").getByRole("img")).toBeVisible();
   } finally { await clean.close(); }
 });
@@ -215,6 +220,7 @@ test("exports browser originals through a temporary file and restores that ZIP i
   await block.getByRole("textbox", { name: "图片图注", exact: true }).fill("浏览器附件备份");
   const dialog = await storage(page);
   const pending = page.waitForEvent("download");
+  await openSettingsSection(page, "backup");
   await dialog.getByRole("button", { name: "导出含附件备份", exact: true }).click();
   const download = await pending;
   expect(await download.failure()).toBeNull();
@@ -225,6 +231,7 @@ test("exports browser originals through a temporary file and restores that ZIP i
     return names.some(name => /^archive-[a-f0-9-]+\.zip$/.test(name));
   })).toBe(true);
   const directory = path.join(root, "browser-restore");
+  await openSettingsSection(page, "storage");
   await dialog.getByRole("textbox", { name: "本地保存路径", exact: true }).fill(directory);
   await dialog.getByRole("button", { name: "检查路径", exact: true }).click();
   await dialog.getByRole("button", { name: "迁移到此目录", exact: true }).click();
@@ -233,12 +240,13 @@ test("exports browser originals through a temporary file and restores that ZIP i
   const assetPath = `/api/research-library/media/assets/${id}?${new URLSearchParams({ directory })}`;
   const migratedAsset = await (await page.request.get(assetPath)).json();
   expect(migratedAsset.preview, `preview after browser migration: ${JSON.stringify(migratedAsset)}`).toBeTruthy();
+  await openSettingsSection(page, "backup");
   await dialog.getByLabel("选择完整资料库备份").setInputFiles((await download.path())!);
   await expect(dialog.getByLabel("恢复预览")).toBeVisible();
   expect((await (await page.request.get(assetPath)).json()).preview, "preview after ZIP import").toBeTruthy();
   await dialog.getByRole("button", { name: "确认恢复此版本", exact: true }).click();
   await expect(dialog.getByText("已恢复资料库，原版本已保留。", { exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await closeSettingsPage(page);
   await expect(block.getByRole("img")).toBeVisible();
   await expect(block.getByRole("textbox", { name: "图片图注", exact: true })).toHaveValue("浏览器附件备份");
 });
@@ -279,7 +287,7 @@ test("routes image paste from media controls and body editors while leaving form
   await page.getByRole("dialog", { name: "插入笔记内容" }).getByRole("button", { name: "段落", exact: true }).click();
   const paragraph = page.getByRole("textbox", { name: "笔记段落", exact: true });
   await paragraph.click();
-  expect(await pasteImage(page, "textarea.research-text-source")).toBe(true);
+  expect(await pasteImage(page, '.research-text-source [contenteditable="true"]')).toBe(true);
   await expect(page.locator(".research-media-block")).toHaveCount(2);
   await page.getByRole("button", { name: "在笔记末尾插入", exact: true }).click();
   await page.getByRole("dialog", { name: "插入笔记内容" }).getByRole("button", { name: "公式", exact: true }).click();
@@ -311,8 +319,8 @@ test("pastes into an empty nested tab, accepts file drop, and renders the image 
 });
 
 test("pauses a remote download, resumes it, and keeps the saved image available offline", async ({ page }) => {
-  const dialog = await connect(page);
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await connect(page);
+  await closeSettingsPage(page);
   const local = await insertImage(page);
   await local.getByLabel("选择图片文件", { exact: true }).setInputFiles({ name: "offline.png", mimeType: "image/png", buffer: png });
   await expect(local.getByRole("img")).toBeVisible();

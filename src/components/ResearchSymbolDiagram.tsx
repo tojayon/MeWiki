@@ -167,6 +167,7 @@ export default function ResearchSymbolDiagram({ active, entry, entries, bindings
         <h3>{t("主体含义")}</h3>
         <p className="research-symbol-meaning"><ResearchMathText text={entry.meaning} /></p>
         {entry.unit && <p className="research-symbol-meta"><strong>{t("单位")}</strong><span>{entry.unit}</span></p>}
+        {entry.aliases?.length ? <p className="research-symbol-meta"><strong>{t("别名")}</strong><span>{entry.aliases.join("、")}</span></p> : null}
       </article>
       <div className="research-symbol-hero" onPointerMove={highlightFormulaPart} onPointerLeave={() => setHovered(null)}>
         <Formula className="symbol-diagram-formula" tex={tex} block />

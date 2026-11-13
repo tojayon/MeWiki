@@ -1,0 +1,48 @@
+.mewiki-publication-mode{padding:14px 20px;border-bottom:1px solid #dce2e9;background:#f8fafc}
+.mewiki-publication-layout[data-image-mode=true]{grid-template-columns:clamp(250px,25vw,340px) minmax(0,1fr)}
+.mewiki-publication-panel-toggle{margin-left:auto!important}
+.mewiki-publication-panel-toggle+.mewiki-publication-close{margin-left:0!important}
+.mewiki-publication-preview-content[data-image-mode=true]{display:flex;flex-direction:column;overflow:hidden;padding:0}
+.mewiki-publication-preview-content[data-image-mode=true]>:is([role=alert],p){flex-shrink:0;margin:8px 16px}
+.mewiki-publication-preview-content[data-image-mode=true]>#publication-panel-result{flex:1;min-height:0;overflow:auto;padding:20px}
+.mewiki-publication-image-panel{flex:1;min-height:0;min-width:0;display:flex}
+.mewiki-publication-image-panel[hidden]{display:none}
+.mewiki-composition-properties{display:flex;flex-direction:column;min-width:0;min-height:0;border-left:1px solid #dce2e9;background:#fff;color:#243247}
+.mewiki-composition-properties[hidden]{display:none}
+.mewiki-composition-properties-content{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
+.mewiki-composition-properties-content fieldset{min-width:0;margin:0;padding:16px;border:0}
+.mewiki-composition-properties-content fieldset>fieldset{padding:0}
+.mewiki-composition-panel-close{margin-left:auto!important}
+.mewiki-composition-scope{display:flex;gap:4px;align-items:center}
+.mewiki-composition-scope>select{flex:1;min-width:0}
+.mewiki-composition-variables{margin-bottom:12px}
+.mewiki-composition-tools{display:flex;align-items:center;gap:3px;min-height:36px;padding:4px 6px;border-bottom:1px solid #dce2e9;overflow:auto}
+.mewiki-composition-properties label{display:grid;gap:6px;margin-bottom:12px;font-size:calc(var(--mewiki-interface-unit,1px)*12);min-width:0}
+.mewiki-composition-properties input:not([type=checkbox]):not([type=color]),.mewiki-composition-properties select,.mewiki-composition-properties textarea{box-sizing:border-box;width:100%;min-width:0;border:1px solid #cfd8e3;border-radius:4px;padding:6px;color:#243247;background:#fff;font:inherit}
+.mewiki-composition-properties input[type=color]{width:100%;height:32px;padding:2px;border:1px solid #cfd8e3;border-radius:4px;background:#fff}
+.mewiki-composition-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}
+.mewiki-composition-properties .mewiki-composition-check{display:flex;align-items:center;gap:6px}
+.mewiki-composition-layer-list{max-height:208px;overflow:auto;margin-top:12px}
+.mewiki-composition-layer-list>div{display:flex;align-items:center;gap:2px;min-height:34px}
+.mewiki-composition-layer-list>div[data-current=true]{background:#e9edf2}
+.mewiki-composition-layer-list small{flex-shrink:0;font-size:calc(var(--mewiki-interface-unit,1px)*10);color:#67778a}
+.mewiki-composition-layer-list button[data-ui=layer-select]{flex:1;text-align:left;min-width:0;padding:8px;border:0;background:transparent;color:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:inherit;font-size:calc(var(--mewiki-interface-unit,1px)*12);cursor:pointer}
+.mewiki-composition-font{display:flex;align-items:center;gap:3px;min-width:0}.mewiki-composition-font>label{flex:1;min-width:0}
+.mewiki-composition-object{position:absolute;transform-origin:center;pointer-events:none;box-sizing:border-box}
+.mewiki-composition-object[data-selected=true]{border:1px solid #596a7d}
+.mewiki-composition-hit{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;background:transparent!important;pointer-events:auto;cursor:move;touch-action:none;border-radius:0}
+.mewiki-composition-object[data-locked=true] .mewiki-composition-hit{pointer-events:none}
+.mewiki-composition-resize,.mewiki-composition-rotate{position:absolute;box-sizing:border-box;display:block;width:12px;height:12px;padding:0;border:1px solid #596a7d;background:#fff!important;pointer-events:auto;touch-action:none;z-index:1}
+.mewiki-composition-resize{right:-6px;bottom:-6px;cursor:nwse-resize;border-radius:1px}.mewiki-composition-rotate{left:calc(50% - 6px);top:-20px;cursor:grab;border-radius:50%}
+.mewiki-composition-filmstrip{display:flex;flex:0 0 116px;box-sizing:border-box;gap:8px;overflow-x:auto;overflow-y:hidden;margin:0;padding:8px 16px;border-top:1px solid #dce2e9;max-width:100%;background:#f8fafc}
+.mewiki-composition-filmstrip>button{position:relative;flex:0 0 105px;min-width:0;display:flex;flex-direction:column;gap:4px;box-sizing:border-box;height:96px;border:1px solid #dce2e9;border-radius:4px;padding:5px;background:#fff;color:#52627a;text-align:left;cursor:pointer}
+.mewiki-composition-filmstrip>button[data-current=true]{background:#e9edf2}.mewiki-composition-filmstrip .mewiki-publication-image-thumb-content{height:65px}
+.mewiki-composition-filmstrip img{width:100%;height:100%;object-fit:contain}.mewiki-composition-filmstrip span:not(.mewiki-publication-image-thumb-content),.mewiki-composition-filmstrip small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(var(--mewiki-interface-unit,1px)*11)}
+.mewiki-composition-filmstrip .mewiki-publication-image-thumb-content{flex:1;min-height:0}
+.mewiki-composition-filmstrip small{position:absolute;right:5px;top:5px;max-width:calc(100% - 10px);border-radius:4px;padding:2px 4px;background:#fff}
+.mewiki-composition-issues{display:grid;gap:6px;margin:10px 0;padding:8px;background:#fff3e7;border-radius:4px}
+.mewiki-composition-issues>button{text-align:left!important;justify-content:flex-start!important}
+.mewiki-composition-personal-sticker{display:flex;align-items:center;gap:4px;min-width:0}.mewiki-composition-personal-sticker>[data-ui=menu-action]{flex:1;min-width:0}.mewiki-composition-personal-sticker span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:1101px){.mewiki-publication-layout[data-image-mode=true][data-properties-open=true]{grid-template-columns:clamp(250px,25vw,340px) minmax(0,1fr) 300px}}
+@media(max-width:1100px){.mewiki-composition-properties{position:fixed;z-index:3;right:0;top:44px;bottom:0;width:min(300px,calc(100vw - 44px));box-sizing:border-box}}
+@media(max-width:760px){.mewiki-publication-toolbar{gap:2px;padding-inline:4px}.mewiki-publication-view-tabs>button{padding-inline:5px!important;font-size:calc(var(--mewiki-interface-unit,1px)*11)}.mewiki-publication-toolbar:has(.mewiki-composition-toolbar-menu){overflow:visible}.mewiki-publication-layout[data-image-mode=true]{grid-template-columns:minmax(0,1fr)}.mewiki-publication-preview-content[data-image-mode=true]{height:calc(100dvh - 88px);min-height:420px}.mewiki-composition-properties{top:88px}}

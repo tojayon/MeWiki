@@ -67,7 +67,7 @@ export function createLibrarySession(libraryId: string) {
     state: recovery?.notebook ?? loadResearchNotebook(browserStorage, cacheKey),
     recovery,
     client: new ResearchLibraryClient(undefined, libraryId),
-    prepareMedia: prepareBrowserMediaMigration,
+    prepareMedia: (directory, notebook, sourceDirectory) => prepareBrowserMediaMigration(directory, notebook, sourceDirectory, libraryId),
     cache: {
       read: () => loadResearchNotebook(browserStorage, cacheKey),
       write(state) {

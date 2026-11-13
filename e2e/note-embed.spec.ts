@@ -34,6 +34,8 @@ async function picker(page: Page) {
 test('embeds selected blocks and follows source edits and renames after reload', async ({ page }) => {
   await seed(page);
   const dialog = await picker(page);
+  await expect(dialog).toHaveCSS('border-top-width', '1px');
+  await expect(dialog).toHaveCSS('border-top-color', await dialog.evaluate(element => getComputedStyle(element).borderBottomColor));
   await dialog.getByLabel('搜索来源笔记', { exact: true }).fill('来源笔记 B');
   await dialog.getByRole('option', { name: /来源笔记 B/ }).click();
   await dialog.getByLabel('选择内容 1', { exact: true }).check();
@@ -47,7 +49,7 @@ test('embeds selected blocks and follows source edits and renames after reload',
   await expect(embed.getByRole('button', { name: '编辑公式', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '来源笔记 B', exact: true }).click();
   await page.locator('[data-block-id="b-first"]').getByRole('textbox').click();
-  await page.locator('[data-block-id="b-first"] textarea').fill('来源第一段：已经更新，A 应同步显示。');
+  await page.locator('[data-block-id="b-first"] [contenteditable="true"]').fill('来源第一段：已经更新，A 应同步显示。');
   await page.getByLabel('笔记标题', { exact: true }).fill('来源笔记 B 已改名');
   await page.getByLabel('笔记标题', { exact: true }).press('Tab');
   await page.getByRole('button', { name: '引用笔记 A', exact: true }).click();

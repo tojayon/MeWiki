@@ -16,7 +16,7 @@ describe("笔记双链", () => {
     for (const text of ["参见 @", "参见 @零阶保持", "@模型 说明", "参见@", "参见@零阶保持", "（参见）@模型"]) {
       expect(findResearchNoteMention(text, text.length)).toMatchObject({ start: text.indexOf("@"), end: text.length });
     }
-    for (const text of ["reader@example.com", "\\@模型", "`@模型", "```ts\n@模型", "$@模型", "[链接](https://example.com/@模型", "正常文字"]) {
+    for (const text of ["reader@example.com", "\\@模型", "`@模型", "```ts\n@模型", "$@模型", "[链接](https://example.com/@模型", "正常文字", "@模型#轨道", "@模型￥状态"]) {
       expect(findResearchNoteMention(text, text.length)).toBeNull();
     }
   });

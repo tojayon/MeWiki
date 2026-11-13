@@ -8,7 +8,7 @@ import type { ResearchNote } from "../domain/researchNotebook.ts";
 import { buildResearchNoteBacklinks } from "../domain/researchNoteLinks.ts";
 import { getNoteLibrary } from "../domain/researchNoteLibraries.ts";
 
-export default function ResearchOutline({ headings, contentRef, onNavigate, onClose, notes, noteId, contentId, onOpenNote, recipe, recipeActive = false, onRecipeActiveChange }: {
+export default function ResearchOutline({ headings, contentRef, onNavigate, onClose, notes, noteId, contentId, onOpenNote, recipe, recipeActive = false, onRecipeActiveChange, aiPanel, aiActive = false, onAiActiveChange, contentAvailable = true }: {
   headings: readonly ResearchOutlineHeading[];
   contentRef: RefObject<HTMLDivElement | null>;
   onNavigate: (heading: ResearchOutlineHeading) => void;
@@ -20,6 +20,10 @@ export default function ResearchOutline({ headings, contentRef, onNavigate, onCl
   recipe?: ReactNode;
   recipeActive?: boolean;
   onRecipeActiveChange?: (active: boolean) => void;
+  aiPanel?: ReactNode;
+  aiActive?: boolean;
+  onAiActiveChange?: (active: boolean) => void;
+  contentAvailable?: boolean;
 }) {
   useLocale();
   const [tab, setTab] = useState<"outline" | "backlinks">("outline");
@@ -60,17 +64,21 @@ export default function ResearchOutline({ headings, contentRef, onNavigate, onCl
     return () => { cancelAnimationFrame(frame); content.removeEventListener("scroll", onScroll, true); };
   }, [headings, contentRef, contentId]);
 
-  return <aside id="research-note-outline" className="research-note-outline" aria-label={t("文章大纲")} onKeyDown={event => {
+  return <aside id="research-note-outline" className="research-note-outline" aria-label={aiActive ? t('AI 工作区') : t("文章大纲")} onKeyDown={event => {
     if (event.key !== "Escape") return;
     event.preventDefault(); event.stopPropagation(); onClose();
   }}>
-    <header>{notes ? <div className="research-outline-tabs" role="tablist" aria-label={t("笔记右侧面板")}>
-      <button type="button" role="tab" aria-selected={!recipeActive && tab === "outline"} onClick={() => { setTab("outline"); onRecipeActiveChange?.(false); }}>{t("大纲")}</button>
-      <button type="button" role="tab" aria-selected={!recipeActive && tab === "backlinks"} onClick={() => { setTab("backlinks"); onRecipeActiveChange?.(false); }}>{t("反向链接")}</button>
-      {recipe && <button id="research-note-recipe-tab" type="button" role="tab" aria-selected={recipeActive} aria-controls="research-note-recipe-panel" onClick={() => onRecipeActiveChange?.(true)}>{t("变量配方")}</button>}
+    <header>{notes || onAiActiveChange ? <div className="research-outline-tabs" role="tablist" aria-label={t("笔记右侧面板")}>
+      {contentAvailable && <>
+      <button type="button" role="tab" aria-selected={!aiActive && !recipeActive && tab === "outline"} onClick={() => { setTab("outline"); onAiActiveChange?.(false); onRecipeActiveChange?.(false); }}>{t("大纲")}</button>
+      <button type="button" role="tab" aria-selected={!aiActive && !recipeActive && tab === "backlinks"} onClick={() => { setTab("backlinks"); onAiActiveChange?.(false); onRecipeActiveChange?.(false); }}>{t("反向链接")}</button>
+      {recipe && <button id="research-note-recipe-tab" type="button" role="tab" aria-selected={!aiActive && recipeActive} aria-controls="research-note-recipe-panel" onClick={() => onRecipeActiveChange?.(true)}>{t("变量配方")}</button>}
+      </>}
+      {onAiActiveChange && <button id="research-note-ai-tab" type="button" role="tab" aria-label={t('AI')} title={t('AI 工作区')} aria-selected={aiActive} aria-controls="research-note-ai-panel" onClick={() => onAiActiveChange(true)}>{t('AI')}</button>}
     </div> : <strong>{t("大纲")}</strong>}</header>
-    {recipe && <div id="research-note-recipe-panel" className="research-outline-recipe-panel" role="tabpanel" aria-labelledby="research-note-recipe-tab" hidden={!recipeActive}>{recipe}</div>}
-    {!recipeActive && (tab === "outline" ? <>
+    {onAiActiveChange && <div id="research-note-ai-panel" className="research-outline-ai-panel" role="tabpanel" aria-labelledby="research-note-ai-tab" hidden={!aiActive}>{aiPanel}</div>}
+    {recipe && <div id="research-note-recipe-panel" className="research-outline-recipe-panel" role="tabpanel" aria-labelledby="research-note-recipe-tab" hidden={!recipeActive || aiActive || !contentAvailable}>{recipe}</div>}
+    {!recipeActive && !aiActive && contentAvailable && (tab === "outline" ? <>
     <nav aria-label={t("文章标题")}>
       {headings.length ? <ol>{headings.map(heading => <li key={heading.id}>
         <button type="button" style={{ "--outline-depth": heading.depth } as CSSProperties}

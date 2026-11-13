@@ -18,10 +18,16 @@ import {
   type LibraryCatalog,
   type LibraryProfile,
 } from "../state/researchLibraryCatalog.ts";
-import LibraryManager from "./LibraryManager.tsx";
+import { openSettings } from "../state/settingsNavigation.ts";
 import "./LibraryManager.css";
 
 const catalogClient = new ResearchLibraryClient();
+function preserveWindowLibrary(id: string) {
+  const url = new URL(location.href);
+  if (id === "default") url.searchParams.delete("library");
+  else url.searchParams.set("library", id);
+  history.replaceState(history.state, "", url);
+}
 export default function LibraryWorkspaceProvider({
   children,
 }: {
@@ -41,7 +47,6 @@ export default function LibraryWorkspaceProvider({
   } | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
-  const [manager, setManager] = useState(false);
   const [switching, setSwitching] = useState(false);
   const switchingRef = useRef(false);
   const recoveryExport = useRef<{ id: string; notebook: string } | null>(null);
@@ -66,13 +71,18 @@ export default function LibraryWorkspaceProvider({
       } catch {
         /* Files remain durable without an entry preference. */
       }
-      const url = new URL(location.href);
-      if (id === "default") url.searchParams.delete("library");
-      else url.searchParams.set("library", id);
-      history.replaceState(null, "", url);
+      preserveWindowLibrary(id);
     },
     [rememberKey],
   );
+  useEffect(() => {
+    if (!current) return;
+    // History navigation preserves this window's identity without replacing an
+    // entry default explicitly changed in settings or another window.
+    const preserve = () => preserveWindowLibrary(current.id);
+    window.addEventListener("popstate", preserve);
+    return () => window.removeEventListener("popstate", preserve);
+  }, [current]);
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -253,20 +263,13 @@ export default function LibraryWorkspaceProvider({
         context,
         session: current.session,
         switching,
-        showManager: () => setManager(true),
+        showManager: () => openSettings("libraries"),
         switchLibrary,
         refreshCatalog,
         exportRemovedNotebook,
       }}
     >
       {children}
-      {manager && (
-        <LibraryManager
-          onClose={() => {
-            if (!switchingRef.current) setManager(false);
-          }}
-        />
-      )}
     </LibraryWorkspaceContext.Provider>
   );
 }

@@ -5,8 +5,8 @@
   "collectedOnPlatform": "win32",
   "collectionScope": "lockfile metadata and locally installed notice texts",
   "counts": {
-    "packages": 397,
-    "noticeFiles": 333,
+    "packages": 406,
+    "noticeFiles": 342,
     "pendingLicenseFields": 1,
     "uninstalled": 77,
     "installedWithoutNoticeFiles": 5
@@ -141,6 +141,32 @@
       ],
       "homepage": "https://github.com/toyobayashi/emnapi#readme",
       "optional": true
+    },
+    {
+      "name": "@fontsource-variable/noto-sans-sc",
+      "version": "5.3.1",
+      "location": "node_modules/@fontsource-variable/noto-sans-sc",
+      "scope": "runtime-direct",
+      "license": "OFL-1.1",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://fontsource.org/fonts/noto-sans-sc",
+      "optional": false
+    },
+    {
+      "name": "@fontsource-variable/noto-serif-sc",
+      "version": "5.3.1",
+      "location": "node_modules/@fontsource-variable/noto-serif-sc",
+      "scope": "runtime-direct",
+      "license": "OFL-1.1",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://fontsource.org/fonts/noto-serif-sc",
+      "optional": false
     },
     {
       "name": "@iconify/types",
@@ -4095,6 +4121,19 @@
       "optional": false
     },
     {
+      "name": "orderedmap",
+      "version": "2.1.1",
+      "location": "node_modules/orderedmap",
+      "scope": "runtime-transitive",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://github.com/marijnh/orderedmap#readme",
+      "optional": false
+    },
+    {
       "name": "oxlint",
       "version": "1.88.0",
       "location": "node_modules/oxlint",
@@ -4254,7 +4293,7 @@
       "name": "playwright-core",
       "version": "1.64.1",
       "location": "node_modules/playwright-core",
-      "scope": "development-transitive",
+      "scope": "runtime-direct",
       "license": "Apache-2.0",
       "installed": true,
       "noticeFiles": [
@@ -4327,6 +4366,71 @@
         "license"
       ],
       "homepage": "",
+      "optional": false
+    },
+    {
+      "name": "prosemirror-history",
+      "version": "1.5.1",
+      "location": "node_modules/prosemirror-history",
+      "scope": "runtime-direct",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://code.haverbeke.berlin/prosemirror/prosemirror-history",
+      "optional": false
+    },
+    {
+      "name": "prosemirror-model",
+      "version": "1.25.13",
+      "location": "node_modules/prosemirror-model",
+      "scope": "runtime-direct",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://code.haverbeke.berlin/prosemirror/prosemirror-model",
+      "optional": false
+    },
+    {
+      "name": "prosemirror-state",
+      "version": "1.4.4",
+      "location": "node_modules/prosemirror-state",
+      "scope": "runtime-direct",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "",
+      "optional": false
+    },
+    {
+      "name": "prosemirror-transform",
+      "version": "1.12.5",
+      "location": "node_modules/prosemirror-transform",
+      "scope": "runtime-transitive",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://code.haverbeke.berlin/prosemirror/prosemirror-transform",
+      "optional": false
+    },
+    {
+      "name": "prosemirror-view",
+      "version": "1.42.9",
+      "location": "node_modules/prosemirror-view",
+      "scope": "runtime-direct",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://code.haverbeke.berlin/prosemirror/prosemirror-view",
       "optional": false
     },
     {
@@ -4494,6 +4598,19 @@
         "LICENSE"
       ],
       "homepage": "https://rolldown.rs/",
+      "optional": false
+    },
+    {
+      "name": "rope-sequence",
+      "version": "1.3.4",
+      "location": "node_modules/rope-sequence",
+      "scope": "runtime-transitive",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://github.com/marijnh/rope-sequence",
       "optional": false
     },
     {

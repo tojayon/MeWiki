@@ -1,0 +1,33 @@
+.research-reference-editor { min-width: 0; cursor: text; }
+.research-reference-content { min-width: 0; min-height: 1lh; outline: none; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: inherit; font: inherit; color: inherit; caret-color: #172033; }
+.research-reference-line { margin: 0; padding: 0; min-height: 1lh; white-space: inherit; }
+/* Keep the browser caret helper inline; Markdown image styles must not add a blank row. */
+.research-reference-content img.ProseMirror-separator { display: inline; width: 0; height: 0; max-width: none; margin: 0; padding: 0; border: 0; }
+.research-reference-line:has(> br.ProseMirror-trailingBreak:only-child)::before { content: attr(data-placeholder); pointer-events: none; color: #7a8494; }
+.research-reference-atom { display: inline; border: 0; border-radius: 2px; padding: 0; margin: 0; background: transparent; color: inherit; font: inherit; font-weight: inherit; text-decoration: none; cursor: pointer; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.research-reference-atom > svg { display: inline-block; margin-right: 3px; vertical-align: -.12em; color: #64748b; }
+.research-reference-atom:hover { color: #1547c0; text-decoration: underline; text-decoration-color: #779bcd; text-underline-offset: 3px; }
+.research-reference-atom:is(.ProseMirror-selectednode, :focus-visible) { background: #eaf1ff; }
+.research-reference-atom.is-missing { color: #a45748; }
+.research-reference-atom .katex { font-size: 1.05em; }
+.research-reference-atom[data-reference-kind="symbol"] { display: inline-block; white-space: nowrap; }
+.research-reference-popover { position: fixed; inset: auto; box-sizing: border-box; width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); margin: 0; padding: 0; overflow: auto; border: 1px solid #c7d3e3; border-radius: 4px; background: #fff; color: #172033; box-shadow: 0 8px 30px #17355626; font: calc(var(--mewiki-interface-unit, 1px) * 13)/1.6 var(--mewiki-interface-font-family, system-ui, sans-serif); }
+.research-reference-popover > header { display: flex; height: 44px; box-sizing: border-box; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #e4eaf2; padding: 0 14px; }
+.research-reference-popover-body { display: grid; gap: 14px; padding: 16px; min-width: 0; }
+.research-reference-field { display: grid; gap: 6px; min-width: 0; color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+.research-reference-field :is(input, select) { box-sizing: border-box; width: 100%; min-width: 0; min-height: 32px; margin: 0; border: 1px solid #cad5e4; border-radius: 4px; padding: 5px 8px; background: #fff; color: #172033; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); line-height: 1.5; }
+.research-reference-popover :is(p, strong) { margin: 0; overflow-wrap: anywhere; }
+.research-reference-description { color: #37465a; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); }
+.research-reference-atom-description { display: grid; gap: 2px; border-left: 2px solid #dbe6f5; padding-left: 10px; color: #52627a; }
+.research-reference-preview { padding: 12px; border: 1px solid #e4eaf2; border-radius: 4px; text-align: center; background: #fafcff; }
+.research-reference-source-action { display: inline-flex; justify-self: start; align-items: center; gap: 6px; border: 0; padding: 0; background: transparent; color: #1547c0; font: inherit; cursor: pointer; }
+.research-reference-file-source { display: grid; gap: 8px; }
+.research-reference-file-source a { color: #1547c0; }
+.research-reference-popover > footer { display: flex; align-items: center; gap: 6px; position: sticky; bottom: 0; border-top: 1px solid #e4eaf2; padding: 10px; background: #fff; }
+.research-reference-popover > footer > span { flex: 1; }
+.research-reference-popover > footer > button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 30px; border: 1px solid #d1ddeb; border-radius: 4px; padding: 4px 9px; background: #fff; color: #37465a; font: inherit; cursor: pointer; }
+.research-reference-popover > footer > .is-primary { border-color: #1547c0; background: #1547c0; color: #fff; }
+.research-reference-popover > footer > .research-reference-remove { border-color: transparent; color: #b33343; padding-inline: 4px; }
+.research-reference-popover button:disabled { opacity: .45; cursor: not-allowed; }
+.research-reference-editor.research-table-cell-editor { overflow: auto; }
+@media (max-width: 480px) { .research-reference-popover-body { gap: 12px; padding: 12px; } .research-reference-popover > footer { gap: 4px; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); } }

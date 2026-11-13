@@ -1,30 +1,86 @@
 import { useLocale } from "../i18n/react.ts";
 import { t } from "../i18n/locale.ts";
 import { Children, createElement, isValidElement, memo, useContext, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+import { createPortal } from "react-dom";
 import Markdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
-import { Check, Copy, FileText } from "lucide-react";
+import { Check, Copy, FileText, Terminal } from "lucide-react";
 import { Formula } from "./Formula.tsx";
 import ResearchInlineFormula from "./ResearchInlineFormula.tsx";
+import { InlineSymbolDetailsContext } from "./ResearchInlineSymbolContext.ts";
 import { remarkTableCellBreaks } from "../domain/researchTable.ts";
 import type { ResearchOutlineHeading } from "../domain/researchOutline.ts";
-import "highlight.js/styles/github.css";
+import "highlight.js/styles/github-dark.css";
 import "./ResearchMarkdown.css";
 import "./ResearchNoteLinks.css";
 import { ResearchNoteLinkContext } from "./ResearchNoteLinkContext.ts";
 import { researchNoteLinkId } from "../domain/researchNoteLinks.ts";
+import { dictionaryReferenceKind, resolveDictionaryReference, formatTermReference, termReferenceSelection, type ResearchTermEntry, type TermReferenceSelection } from "../domain/researchTerms.ts";
+import { resolveSymbolEntry } from "../domain/researchDictionary.ts";
 import { ResearchMediaInlineImage, ResearchMediaInlineLink } from "./ResearchMediaInline.tsx";
+import ResearchTermPopover from "./ResearchTermPopover.tsx";
+
+function ResearchTermReference({ entry, selection }: { entry: ResearchTermEntry; selection: TermReferenceSelection }) {
+  useLocale();
+  const root = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const [trigger, setTrigger] = useState<HTMLButtonElement | null>(null);
+  const label = formatTermReference(entry, selection);
+  useEffect(() => {
+    if (!open) return;
+    const dismissOther = (event: Event) => { if ((event as CustomEvent).detail !== root.current) setOpen(false); };
+    window.addEventListener("research-term-reference-inspect", dismissOther);
+    return () => window.removeEventListener("research-term-reference-inspect", dismissOther);
+  }, [open]);
+  const close = (restore = false) => {
+    if (restore) root.current?.focus({ preventScroll: true });
+    setOpen(false);
+    setTrigger(null);
+  };
+  return <>
+    <button ref={root} type="button" className="research-dictionary-term-reference" aria-label={t`术语：${label}`} title={t`术语：${entry.name} · ${entry.meaning}`} aria-haspopup="dialog" aria-expanded={open}
+      onClick={event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const next = event.currentTarget;
+        window.dispatchEvent(new CustomEvent("research-term-reference-inspect", { detail: next }));
+        setTrigger(value => open ? null : value === next ? value : next);
+        setOpen(value => !value);
+      }}>{label}</button>
+    {open && trigger && createPortal(<ResearchTermPopover entry={entry} target={trigger} onCancel={close} />, trigger.closest("dialog") ?? document.body)}
+  </>;
+}
 
 function NoteAnchor({ href, children, ...props }: ComponentProps<"a">) {
   useLocale();
   const context = useContext(ResearchNoteLinkContext);
+  const dictionary = resolveDictionaryReference(href, context?.symbols ?? [], context?.terms ?? []);
+  if (dictionary.kind === "term") {
+    const entry = dictionary.entry as ResearchTermEntry | undefined;
+    if (!entry) return <span data-reference-href={href} className="research-dictionary-term-reference is-missing" title={t("词典术语已移除")}>{children}</span>;
+    return <span data-reference-href={href}><ResearchTermReference entry={entry} selection={termReferenceSelection(href)} /></span>;
+  }
+  if (dictionary.kind === "symbol") {
+    const entry = dictionary.entry && "notation" in dictionary.entry ? dictionary.entry : undefined;
+    if (!entry) return <span data-reference-href={href} className="research-dictionary-symbol-reference is-missing" title={t("词典符号已移除")}>{children}</span>;
+    const bindings = { ...Object.fromEntries(entry.slots.map(slot => [slot.key, slot.defaultValue])), ...dictionary.bindings };
+    return <button type="button" data-reference-href={href} className="research-dictionary-symbol-reference" aria-label={t`符号：${entry.name}`} title={t`符号：${entry.name} · ${entry.meaning}`} onClickCapture={event => {
+      event.preventDefault();
+      event.stopPropagation();
+      window.dispatchEvent(new CustomEvent("research-dictionary-open", { detail: { kind: "symbol", id: entry.id } }));
+    }}>
+      <InlineSymbolDetailsContext.Provider value={false}>
+        <ResearchInlineFormula tex={resolveSymbolEntry(entry, bindings).tex} />
+      </InlineSymbolDetailsContext.Provider>
+    </button>;
+  }
   const id = researchNoteLinkId(href);
-  if (href?.startsWith("webbench-asset:")) return <ResearchMediaInlineLink href={href}>{children}</ResearchMediaInlineLink>;
+  if (href?.startsWith("webbench-asset:")) return <span data-reference-href={href}><ResearchMediaInlineLink href={href}>{children}</ResearchMediaInlineLink></span>;
   if (id === null) return <a {...props} href={href} target={href?.startsWith("#") ? undefined : "_blank"} rel="noopener noreferrer">{children}</a>;
   const note = context?.notes.find(note => note.id === id);
-  return <a {...props} href={href} className="research-note-link" aria-disabled={!note || undefined}
+  return <a {...props} href={href} data-reference-href={href} className="research-note-link" aria-disabled={!note || undefined}
     title={note ? t`在右侧打开：${note.title || t("未命名笔记")}` : t("目标笔记已移除")}
     onClick={event => { event.preventDefault(); event.stopPropagation(); if (note) context?.openNote(note.id, undefined, event.currentTarget); }}>
     <FileText size={14} aria-hidden="true" />{note ? note.title || t("未命名笔记") : children}
@@ -52,7 +108,7 @@ function CodeBlock({ children }: ComponentProps<"pre">) {
     }
   };
   return <div className="research-markdown-code">
-    <div className="research-code-toolbar"><span>{language ?? t("代码")}</span><button type="button" data-ui="icon-action" className="research-code-copy" aria-label={copied ? t("代码已复制") : t("复制代码")} title={copied ? t("已复制") : t("复制代码")} onClick={() => void copy()}>{copied ? <Check size={13} /> : <Copy size={13} />}</button></div>
+    <div className="research-code-toolbar"><span><Terminal size={12} aria-hidden="true" />{language ?? t("代码")}</span><button type="button" data-ui="icon-action" className="research-code-copy" aria-label={copied ? t("代码已复制") : t("复制代码")} title={copied ? t("已复制") : t("复制代码")} onClick={() => void copy()}>{copied ? <Check size={13} /> : <Copy size={13} />}</button></div>
     <pre ref={ref}>{children}</pre>
   </div>;
 }
@@ -90,5 +146,5 @@ export default memo(function ResearchMarkdown({ text, inline = false, headings }
     };
     return { ...components(), h1: heading, h2: heading, h3: heading, h4: heading, h5: heading, h6: heading };
   }, [headings]);
-  return <Markdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins} remarkRehypeOptions={remarkRehypeOptions()} components={inline ? inlineComponents : numberedComponents} urlTransform={url => /^webbench-asset:[a-f0-9]{64}(#page=[1-9]\d*)?$/.test(url) ? url : defaultUrlTransform(url)} skipHtml>{text}</Markdown>;
+  return <Markdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins} remarkRehypeOptions={remarkRehypeOptions()} components={inline ? inlineComponents : numberedComponents} urlTransform={url => /^webbench-asset:[a-f0-9]{64}(#page=[1-9]\d*)?$/.test(url) || dictionaryReferenceKind(url) ? url : defaultUrlTransform(url)} skipHtml>{text}</Markdown>;
 });

@@ -8,6 +8,7 @@ import {
   type FormulaOutput,
   type ResearchSymbolEntry,
 } from "./researchDictionary.ts";
+import { normalizeTermEntries, type ResearchTermEntry } from "./researchTerms.ts";
 import { listFormulaConsumers } from "./researchFormulaLinks.ts";
 import { isResearchRichBlock, normalizeResearchRichBlock, serializeResearchRichMarkdown, type ResearchRichContentBlock } from "./researchRichContent.ts";
 import { formulaLatexError } from "./formulaLatex.ts";
@@ -156,7 +157,9 @@ export interface ResearchNotebookState {
   view: "dictionary" | "foundations" | "notes" | "maps";
   activeNoteId: string;
   activeSymbolId: string;
+  activeTermId?: string;
   symbols: ResearchSymbolEntry[];
+  terms?: ResearchTermEntry[];
   notes: ResearchNote[];
   modelLibraryVersion?: number;
   noteFilters?: ResearchNoteFilters;
@@ -568,6 +571,8 @@ export function commitResearchTextBlock(
   });
 }
 
+export { validBlock as normalizeResearchBlock };
+
 function validBlock(value: unknown): ResearchNotebookBlock | null {
   const block = validBlockContent(value);
   if (!block) return null;
@@ -864,6 +869,7 @@ export function normalizeResearchNotebook(
     ? (state.symbols as ResearchSymbolEntry[])
     : [];
   const symbols = normalizeSymbolEntries(state.symbols);
+  const terms = Array.isArray(state.terms) ? normalizeTermEntries(state.terms) : undefined;
   const symbolIds = new Set(symbols.map(entry => entry.id));
   // Only migrate the storage representation of named slots. User prose, raw TeX,
   // symbol definitions and explicitly stored references are never model-upgraded.
@@ -910,11 +916,15 @@ export function normalizeResearchNotebook(
       ? String(state.activeNoteId)
       : (migratedNotes[0]?.id ?? ""),
     symbols,
+    ...(terms ? { terms } : {}),
     activeSymbolId:
       typeof state.activeSymbolId === "string" &&
       symbols.some((entry) => entry.id === state.activeSymbolId)
         ? state.activeSymbolId
         : (symbols[0]?.id ?? ""),
+    ...(terms && typeof state.activeTermId === "string" && terms.some(entry => entry.id === state.activeTermId)
+      ? { activeTermId: state.activeTermId }
+      : {}),
     notes: migratedNotes,
     ...(state.noteFilters
       ? { noteFilters: normalizeNoteFilters(state.noteFilters) }

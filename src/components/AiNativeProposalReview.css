@@ -1,0 +1,32 @@
+.mewiki-ai-native-review { min-width: 0; }
+.mewiki-ai-native-review > h1 { margin: 0 0 28px; font-size: calc(var(--mewiki-document-unit, 1px) * 25); line-height: 1.5; }
+.mewiki-ai-native-review .mewiki-ai-review-term-field { min-width: 0; }
+.mewiki-ai-native-review .mewiki-ai-review-term-field + .mewiki-ai-review-blocks { margin-top: 24px; }
+.mewiki-ai-native-review :is(dl, dd, ul) { min-width: 0; }
+.mewiki-ai-native-review dl { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+.mewiki-ai-native-review dl > div { display: grid; grid-template-columns: minmax(5em, 8em) minmax(0, 1fr); gap: 10px; }
+.mewiki-ai-native-review dt { color: #536176; font-size: .85em; }
+.mewiki-ai-native-review dd { margin: 0; }
+.mewiki-ai-native-values { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.mewiki-ai-native-values > li { min-width: 0; }
+.mewiki-ai-native-values .mewiki-ai-diff-row { border: 1px solid #dce1e8; border-radius: 4px; }
+.mewiki-ai-native-values .mewiki-ai-diff-row + .mewiki-ai-diff-row { margin-top: 4px; }
+.mewiki-ai-native-review pre { max-width: 100%; overflow: auto; margin: 0; font-size: .85em; white-space: pre-wrap; overflow-wrap: anywhere; }
+.mewiki-ai-native-reference { display: inline-flex; min-width: 0; max-width: 100%; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; border: 0; border-radius: 4px; padding: 0; background: transparent; color: #1547c0; font: inherit; line-height: inherit; text-align: left; cursor: pointer; }
+.mewiki-ai-native-reference > span { min-width: 0; overflow-wrap: anywhere; }
+.mewiki-ai-native-reference > span + span { color: #536176; font-size: .9em; }
+.mewiki-ai-native-reference:disabled { color: #687588; cursor: default; }
+.mewiki-ai-native-relation-route { display: flex; min-width: 0; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+.mewiki-ai-native-relation-route > strong { color: #536176; font-size: .85em; font-weight: 500; }
+.mewiki-ai-native-tabs-review { min-width: 0; }
+.mewiki-ai-native-tabs-review > .mewiki-ai-review-term-field { margin: 0 0 14px; }
+.mewiki-ai-native-tab-body { display: flex; min-width: 0; flex-direction: column; gap: 14px; }
+.mewiki-ai-native-tab-body:empty { min-height: 0; }
+.mewiki-ai-review-tab-label { display: inline-flex; align-items: baseline; gap: 4px; }
+.mewiki-ai-review-tab-label del { background: #fbe2e3; color: #812c36; }
+.mewiki-ai-review-tab-label ins { background: #dcefe1; color: #225d38; text-decoration: none; }
+.mewiki-ai-review-tab-label[data-review-tab-moved=true] { background: #dcefe1; color: #225d38; }
+.mewiki-ai-review-tab-label[data-review-tab-changed=true]::after { width: 4px; height: 4px; flex: 0 0 4px; align-self: center; border-radius: 50%; background: #287547; content: ''; }
+@container research-notebook (max-width: 599px) {
+  .mewiki-ai-native-review dl > div { grid-template-columns: minmax(4em, 6em) minmax(0, 1fr); gap: 6px; }
+}

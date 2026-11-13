@@ -3,6 +3,8 @@ import { hashMediaBlob, researchMediaClient, type MediaProgressListener } from "
 import type { ResearchNotebookState } from "../domain/researchNotebook.ts";
 import { researchMediaAssetIds } from "../domain/researchMedia.ts";
 import { mediaHeaderInfo, type MediaHeaderInfo } from "../domain/researchMediaFormats.ts";
+import { meWikiManualAsset, readMeWikiManualAsset } from "../domain/meWikiManualAssets.ts";
+import { isUserFontMime, MAX_USER_FONT_BYTES } from '../domain/researchFonts.ts';
 
 export { imageHeaderInfo } from "../domain/researchMediaFormats.ts";
 export interface StoredBrowserMedia { asset: ResearchMediaAsset; blob: Blob; previewBlob?: Blob }
@@ -36,6 +38,15 @@ export class BrowserMediaStore {
     });
   }
   async get(id: string): Promise<StoredBrowserMedia | undefined> {
+    try {
+      const stored = await this.stored(id);
+      if (stored) return stored;
+    } catch (cause) {
+      if (!meWikiManualAsset(id)) throw cause;
+    }
+    return readMeWikiManualAsset(id);
+  }
+  private async stored(id: string): Promise<StoredBrowserMedia | undefined> {
     const db = await this.db();
     return new Promise((resolve, reject) => {
       const request = db.transaction("assets", "readonly").objectStore("assets").get(id);
@@ -51,14 +62,24 @@ export class BrowserMediaStore {
       request.onerror = () => reject(request.error);
     });
   }
+  async listFonts(): Promise<ResearchMediaAsset[]> {
+    const db = await this.db();
+    return new Promise((resolve, reject) => {
+      const request = db.transaction('assets', 'readonly').objectStore('assets').getAll();
+      request.onsuccess = () => resolve((request.result as StoredBrowserMedia[]).map(item => item.asset).filter(asset => isUserFontMime(asset.mimeType)).sort((a, b) => a.name.localeCompare(b.name)));
+      request.onerror = () => reject(new Error('无法读取已导入字体。'));
+    });
+  }
   async put(file: File, onProgress?: MediaProgressListener, signal?: AbortSignal): Promise<ResearchMediaAsset> {
     const mime = validateMediaFile(file);
-    if (file.size > BROWSER_MEDIA_BYTES) throw new Error("超过 100 MB 的附件请先在研究笔记设置中选择本地资料库；本地资料库支持单文件不超过 1 GB。");
+    if (isUserFontMime(mime)) {
+      if (file.size > MAX_USER_FONT_BYTES) throw new Error('单个字体最大 100 MiB，请选择较小的字体文件。');
+    } else if (file.size > BROWSER_MEDIA_BYTES) throw new Error("超过 100 MB 的附件请先在“设置 → 存储位置”中选择本地资料库；本地资料库支持单文件不超过 1 GB。");
     const quota = await globalThis.navigator?.storage?.estimate?.();
     if (quota?.quota && quota.usage !== undefined && quota.quota - quota.usage < file.size * 1.2) throw new Error("浏览器存储空间不足，请先选择本地资料库。");
-    const info = mediaHeaderInfo(new Uint8Array(await file.slice(0, 1024 * 1024).arrayBuffer()), mime);
+    const info = mediaHeaderInfo(new Uint8Array(await file.slice(0, 1024 * 1024).arrayBuffer()), mime, file.size);
     const digest = await hashMediaBlob(file, onProgress, signal);
-    const existing = await this.get(digest);
+    const existing = await this.stored(digest);
     if (existing) {
       if (existing.asset.mimeType !== info.mimeType || existing.asset.size !== file.size) throw new Error("同一原件已按另一种媒体格式保存，请使用原格式；当前内容保持不变。");
       return existing.asset;
@@ -74,14 +95,23 @@ export class BrowserMediaStore {
       transaction.oncomplete = () => resolve();
       transaction.onerror = transaction.onabort = () => reject(new Error("浏览器附件保存失败或空间不足，请选择本地资料库。"));
     });
-    const stored = await this.get(asset.id);
+    const stored = await this.stored(asset.id);
     if (!stored || stored.blob.size !== file.size) throw new Error("浏览器附件保存后校验失败。");
     return asset;
   }
 }
 export const browserMediaStore = new BrowserMediaStore();
-export async function prepareBrowserMediaMigration(directory: string, notebook: ResearchNotebookState, sourceDirectory: string | null): Promise<string | undefined> {
+const browserFontStores = new Map<string, BrowserMediaStore>();
+export function browserFontStore(libraryId: string): BrowserMediaStore {
+  let store = browserFontStores.get(libraryId);
+  if (!store) { store = new BrowserMediaStore(`mewiki:library:${encodeURIComponent(libraryId)}:fonts`); browserFontStores.set(libraryId, store); }
+  return store;
+}
+export async function prepareBrowserMediaMigration(directory: string, notebook: ResearchNotebookState, sourceDirectory: string | null, libraryId = 'default'): Promise<string | undefined> {
   const ids = researchMediaAssetIds(notebook.notes.flatMap(note => note.blocks));
+  const fontStore = browserFontStore(libraryId);
+  const fonts = !sourceDirectory && typeof indexedDB !== 'undefined' ? await fontStore.listFonts() : [];
+  ids.push(...fonts.map(font => font.id).filter(id => !ids.includes(id)));
   let stagingId: string | undefined;
   for (const id of ids) {
     // A connected library is authoritative; migrating it must not depend on a
@@ -90,7 +120,7 @@ export async function prepareBrowserMediaMigration(directory: string, notebook: 
       try { await researchMediaClient.metadata(sourceDirectory, id); continue; }
       catch { /* An independent browser original may still repair a missing file. */ }
     }
-    const stored = await browserMediaStore.get(id);
+    const stored = fonts.some(font => font.id === id) ? await fontStore.get(id) : await browserMediaStore.get(id);
     if (!stored) {
       if (sourceDirectory) throw new Error("当前本地资料库有媒体原件缺失，请恢复附件或重新关联文件；保存目录尚未切换。");
       throw new Error("有媒体原件未能在浏览器中找到，请先恢复附件或重新关联文件；资料库目录尚未切换。");

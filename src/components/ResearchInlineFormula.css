@@ -1,14 +1,12 @@
 .research-inline-formula { position: relative; display: inline-block; }
 .research-inline-formula > .research-inline-symbol-hit { position: absolute; z-index: 1; display: block; box-sizing: border-box; min-width: 0; min-height: 0; margin: 0; border: 0; border-radius: 4px; padding: 0; appearance: none; background: transparent; color: transparent; font: inherit; cursor: pointer; }
 .research-inline-formula > .research-inline-symbol-hit:hover { background: #1547c014; }
-.research-inline-formula > .research-inline-symbol-hit:focus-visible { outline: 1px solid #517fc5; outline-offset: 2px; background: #1547c00c; }
-.research-inline-symbol-choices > strong { color: #263b57; font-size: 12px; }
-.research-inline-symbol-choices > button { display: flex; min-width: 0; flex-direction: column; gap: 4px; border: 1px solid #cbd6e4; border-radius: 4px; padding: 8px 10px; background: #fff; color: #263b57; font: inherit; font-size: 12px; line-height: 1.6; text-align: left; cursor: pointer; }
-.research-inline-symbol-choices > button:hover { border-color: #517fc5; background: #f5f8fe; }
-.research-inline-symbol-choices > button:focus-visible { outline: 2px solid #1547c0; outline-offset: 1px; }
+.research-inline-formula > .research-inline-symbol-hit:focus-visible { background: #1547c00c; }
+.research-inline-symbol-choices > strong { color: #263b57; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+.research-inline-symbol-choices > button { display: flex; min-width: 0; flex-direction: column; gap: 4px; border: 1px solid #cbd6e4; border-radius: 4px; padding: 8px 10px; background: #fff; color: #263b57; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.6; text-align: left; cursor: pointer; }
+.research-inline-symbol-choices > button:hover { background: #f5f8fe; }
 .research-inline-symbol-choices > button > span { color: #526780; }
 .research-inline-symbol-definitions { display: grid; min-width: 0; gap: 5px; }
-.research-inline-symbol-definitions > button { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid #cbd6e4; border-radius: 4px; padding: 7px 9px; background: #fff; color: #1547c0; font: inherit; font-size: 12px; line-height: 1.5; text-align: left; cursor: pointer; }
-.research-inline-symbol-definitions > button:hover { background: #f2f6fc; border-color: #517fc5; }
-.research-inline-symbol-definitions > button:focus-visible { outline: 2px solid #1547c0; outline-offset: 1px; }
+.research-inline-symbol-definitions > button { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid #cbd6e4; border-radius: 4px; padding: 7px 9px; background: #fff; color: #1547c0; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.5; text-align: left; cursor: pointer; }
+.research-inline-symbol-definitions > button:hover { background: #f2f6fc; }
 .research-inline-symbol-definitions > button > svg { flex: 0 0 auto; }

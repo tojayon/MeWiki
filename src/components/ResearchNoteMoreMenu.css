@@ -1,8 +1,7 @@
 .research-note-more-menu { position: fixed; inset: auto; display: flex; box-sizing: border-box; width: min(210px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); flex-direction: column; gap: 2px; overflow: auto; margin: 0; border: 1px solid #bdcadd; border-radius: 4px; padding: 4px; background: #fff; color: #172033; box-shadow: 0 6px 24px #17355624; }
-.research-note-more-menu > button { display: flex; min-height: 34px; flex: 0 0 auto; align-items: center; gap: 9px; border: 0; border-radius: 4px; padding: 7px 10px; background: transparent; color: inherit; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.research-note-more-menu > button { display: flex; min-height: 34px; flex: 0 0 auto; align-items: center; gap: 9px; border: 0; border-radius: 4px; padding: 7px 10px; background: transparent; color: inherit; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); text-align: left; cursor: pointer; }
 .research-note-more-menu > button > svg { flex: 0 0 auto; }
-.research-note-more-menu > button:hover:not(:disabled), .research-note-more-menu > button:focus-visible { outline: none; background: #eaf0ff; color: #123c9b; }
-.research-note-more-menu > button:focus-visible { box-shadow: inset 0 0 0 1px #1547c0; }
+.research-note-more-menu > button:hover:not(:disabled), .research-note-more-menu > button:focus-visible { background: #eaf0ff; color: #123c9b; }
 .research-note-more-menu > button:disabled { opacity: 0.45; cursor: not-allowed; }
 .research-note-more-menu > .research-note-more-delete { color: #a32236; }
 .research-note-more-menu > .research-note-more-delete:hover:not(:disabled), .research-note-more-menu > .research-note-more-delete:focus-visible { background: #fff0f2; color: #a32236; }

@@ -60,7 +60,7 @@ export default function ResearchReadingPane({ pane, note, state, active, target,
     {block.type === 'external' && <ExternalContentCard block={block} />}
     {block.type === 'noteEmbed' && <ResearchNoteEmbedContent block={block} ownerNoteId={note.id} state={state} onOpenNote={onOpenNote} />}
   </section>;
-  return <ResearchNoteLinkContext.Provider value={{ notes: state.notes, symbols: state.symbols, state, sourceNoteId: note.id, openNote: onOpenNote }}>
+  return <ResearchNoteLinkContext.Provider value={{ notes: state.notes, symbols: state.symbols, terms: state.terms ?? [], state, sourceNoteId: note.id, openNote: onOpenNote }}>
     <section className="research-reading-pane is-readonly" data-reading-pane-id={pane.id} data-reading-note-id={note.id} data-reading-active={active} aria-label={t`阅读笔记 ${note.title || t("未命名笔记")}`} onPointerDownCapture={onActivate} onFocusCapture={onActivate}>
       <header className="research-reading-pane-header"><FileText size={15} aria-hidden="true" /><strong title={note.title}>{note.title || t("未命名笔记")}</strong>
         {pane.parentId ? <button type="button" data-ui="icon-action" aria-label={t`解绑阅读笔记 ${note.title}`} title={t("解绑后，关闭来源笔记时保留此屏及其下游")} onClick={onDetach}><Unlink size={14} /></button> : <span className="research-reading-independent">{t("独立")}</span>}

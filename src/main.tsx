@@ -2,12 +2,19 @@ import { initializeLocale, setLocale, getLocale, LOCALE_STORAGE_KEY } from "./i1
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import ResearchNotebookPage from "./components/ResearchNotebookPage.tsx";
+import PublicationPage from './components/PublicationPage.tsx';
 import { DeleteConfirmationProvider } from "./components/DeleteConfirmation.tsx";
 import IntegrationProvider from "./integrations/IntegrationProvider.tsx";
 import LibraryWorkspaceProvider from "./components/LibraryWorkspaceProvider.tsx";
 import "./index.css";
 import "./components/WorkspaceModal.css";
 import "./ui-controls.css";
+import { documentContentCss } from './styles/documentTheme.ts';
+
+const documentStyle = document.createElement('style');
+documentStyle.id = 'mewiki-document-theme';
+documentStyle.textContent = documentContentCss;
+document.head.prepend(documentStyle);
 
 const browserLanguages = navigator.languages;
 try { initializeLocale(localStorage, browserLanguages); } catch { initializeLocale(undefined, browserLanguages); }
@@ -26,9 +33,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <DeleteConfirmationProvider>
       <IntegrationProvider>
-        <LibraryWorkspaceProvider>
+        {new URLSearchParams(location.search).has('publication') ? <PublicationPage /> : <LibraryWorkspaceProvider>
           <ResearchNotebookPage />
-        </LibraryWorkspaceProvider>
+        </LibraryWorkspaceProvider>}
       </IntegrationProvider>
     </DeleteConfirmationProvider>
   </StrictMode>,

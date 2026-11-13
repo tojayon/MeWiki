@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createReplayReference, fetchReplayCatalog, parseReplayCatalog } from './webbenchReplayCatalog.ts';
+import manifest from '../../plugins/webbench/manifest.json';
+import { parsePluginManifest } from './sdk/manifest.ts';
+import { createPluginContent, fetchPluginCatalog, parsePluginCatalog } from './sdk/runtime.ts';
+const plugin = parsePluginManifest(manifest);
+const catalog = plugin.contentTypes[0].picker!.catalog!;
+const parseReplayCatalog = (value: unknown) => parsePluginCatalog(catalog, value);
+const createReplayReference = (selected: Record<string, unknown>, connection: Record<string, string>, time: number, loopId = '') => createPluginContent(plugin, 'replay-position', { selected, connection, fields: { time, loopId } });
+const fetchReplayCatalog = (serviceBase: string, signal: AbortSignal, fetcher?: typeof fetch) => fetchPluginCatalog(catalog, { serviceBase }, signal, fetcher);
 
 const item = {
   id: 'indexed-record', file: 'examples/experiment.replay.sqlite',
@@ -33,14 +40,14 @@ describe('standalone WebBench replay selection', () => {
     expect(createReplayReference(entry, connection, 0.1).data.loopId).toBeUndefined();
     expect(createReplayReference(entry, connection, 0.8).data.time).toBe(0.8);
     for (const time of [0, 0.81, NaN, Infinity]) expect(() => createReplayReference(entry, connection, time)).toThrow(/时间/);
-    expect(() => createReplayReference(entry, connection, 0.125, 'unknown')).toThrow(/环路/);
+    expect(() => createReplayReference(entry, connection, 0.125, 'unknown')).toThrow(/选项/);
     expect(() => createReplayReference(entry, { ...connection, serviceBase: 'https://example.com' }, 0.125)).toThrow();
   });
   it('queries only the selected local service with cancellation and reports failed responses', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [item] })));
     const controller = new AbortController();
     expect(await fetchReplayCatalog(connection.serviceBase, controller.signal, fetcher)).toHaveLength(1);
-    expect(fetcher).toHaveBeenCalledWith(`${connection.serviceBase}/api/replays`, expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(fetcher).toHaveBeenCalledWith(new URL(`${connection.serviceBase}/api/replays`), expect.objectContaining({ signal: expect.any(AbortSignal) }));
     await expect(fetchReplayCatalog('https://example.com', controller.signal, fetcher)).rejects.toThrow();
     expect(fetcher).toHaveBeenCalledTimes(1);
     fetcher.mockResolvedValue(new Response('', { status: 503 }));

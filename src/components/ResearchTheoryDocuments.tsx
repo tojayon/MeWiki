@@ -78,6 +78,7 @@ function DocumentEditor({
           <>
             <label>
               {t("引用笔记")}<input
+                data-ui="search-input"
                 aria-label={t("筛选地图笔记")}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -122,6 +123,7 @@ function DocumentEditor({
 
 export default function ResearchTheoryDocuments({
   active,
+  sidebarActive,
   state,
   onChange,
   readOnly,
@@ -131,6 +133,7 @@ export default function ResearchTheoryDocuments({
   pageControls,
 }: {
   active: boolean;
+  sidebarActive: boolean;
   state: ResearchNotebookState;
   onChange: (state: ResearchNotebookState) => void;
   readOnly: boolean;
@@ -152,17 +155,11 @@ export default function ResearchTheoryDocuments({
   useLayoutEffect(() => {
     latest.current = state;
   }, [state]);
-  if (!active) return null;
+  if (!active && !sidebarActive) return null;
   const workspace = ensureTheoryMaps(state).theoryMaps!;
   const doc = activeTheoryMapDocument(state);
   return (
     <div className="research-theory-documents research-notebook-view is-active">
-      <aside
-        id="research-theory-sidebar"
-        className="research-notebook-sidebar theory-document-sidebar"
-        aria-label={t("理论地图文档列表")}
-      >
-        <div className="theory-document-files">
           <input
             ref={importRef}
             type="file"
@@ -184,6 +181,12 @@ export default function ResearchTheoryDocuments({
               }
             }}
           />
+      {sidebarActive && <aside
+        id="research-theory-sidebar"
+        className="research-notebook-sidebar theory-document-sidebar"
+        aria-label={t("理论地图文档列表")}
+      >
+        <div className="theory-document-files">
           <span className="theory-file-status">{localizeError(files.status)}</span>
           {files.directoryName && (
             <small title={files.directoryName}>{files.directoryName}</small>
@@ -207,12 +210,14 @@ export default function ResearchTheoryDocuments({
           <label className="research-dictionary-search">
             <Search size={14} />
             <input
+              data-ui="search-input"
               aria-label={t("搜索地图")}
               placeholder={t("搜索地图")}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
+          {!active && !readOnly && <button type="button" data-ui="icon-action" aria-label={t("新建地图")} title={t("新建地图")} onClick={() => setEditor("new")}><FilePlus2 size={16} /></button>}
         </div>
         <nav aria-label={t("地图文件")}>
           {workspace.documents
@@ -230,6 +235,7 @@ export default function ResearchTheoryDocuments({
                   setEditor(null);
                   onChange({
                     ...state,
+                    view: "maps",
                     theoryMaps: { ...workspace, activeMapId: item.id },
                   });
                 }}
@@ -250,8 +256,8 @@ export default function ResearchTheoryDocuments({
               </button>
             ))}
         </nav>
-      </aside>
-      <section className="research-notebook-editor" aria-label={t("理论地图文档")}>
+      </aside>}
+      {active && <section className="research-notebook-editor" aria-label={t("理论地图文档")}>
         <div
           className="research-notebook-toolbar theory-document-toolbar"
           role="toolbar"
@@ -386,7 +392,7 @@ export default function ResearchTheoryDocuments({
           onOpenContent={onOpenContent}
           toolbarContainer={mapTools}
         />
-      </section>
+      </section>}
       {editor && !readOnly && (
         <DocumentEditor
           key={editor === "new" ? "new" : editor.id}

@@ -1,10 +1,10 @@
 import { useLocale } from "../i18n/react.ts";
 import { t } from "../i18n/locale.ts";
 import { useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
-import { CheckSquare2, FileText, Square } from 'lucide-react';
+import { Atom, CheckSquare2, FileText, Square } from 'lucide-react';
 import { resolveSymbolEntry } from '../domain/researchDictionary.ts';
 import { getNoteReviewStatus, noteReviewStates } from '../domain/researchNoteOrganization.ts';
-import { buildResearchTagTree, type ResearchTagBranch } from '../domain/researchTags.ts';
+import { buildResearchTagTree, type ResearchTagBranch, type ResearchTaggedItem } from '../domain/researchTags.ts';
 import { Formula } from './Formula.tsx';
 import ResearchTagTree from './ResearchTagTree.tsx';
 import './ResearchSelection.css';
@@ -15,8 +15,8 @@ export function ResearchChoiceContent({ choice, multiple, checked }: { choice: R
   const status = choice.note && getNoteReviewStatus(choice.note);
   return <>
     {multiple && <span className="research-choice-checkbox" aria-hidden="true">{checked ? <CheckSquare2 size={14} /> : <Square size={14} />}</span>}
-    {entry ? <span className="research-symbol-entry-formula"><Formula tex={resolveSymbolEntry(entry, Object.fromEntries(entry.slots.map(slot => [slot.key, slot.defaultValue]))).tex} /></span> : <FileText size={14} aria-hidden="true" />}
-    <span className={entry ? 'research-symbol-entry-copy' : 'research-note-item-copy'}>{entry ? <strong>{choice.label}</strong> : <span>{choice.label}</span>}{choice.detail && <small>{choice.detail}</small>}</span>
+    {entry ? <span className="research-symbol-entry-formula"><Formula tex={resolveSymbolEntry(entry, Object.fromEntries(entry.slots.map(slot => [slot.key, slot.defaultValue]))).tex} /></span> : choice.term ? <Atom size={15} aria-hidden="true" /> : <FileText size={14} aria-hidden="true" />}
+    <span className={entry ? 'research-symbol-entry-copy' : choice.term ? 'research-term-item-copy' : 'research-note-item-copy'}>{entry || choice.term ? <strong>{choice.label}</strong> : <span>{choice.label}</span>}{choice.detail && <small>{choice.detail}</small>}</span>
     {status && <span className="research-note-status-dot" data-status={status} role="img" aria-label={t(noteReviewStates.find(item => item.value === status)!.label)} title={t(noteReviewStates.find(item => item.value === status)!.label)} />}
   </>;
 }
@@ -32,7 +32,7 @@ function ChoiceOption({ choice, selected, highlighted, navigation, multiple, dis
   useLocale();
   const id = useId();
   return <button type="button" id={id} data-research-choice="" data-choice-id={choice.id} data-note-id={choice.note?.id} data-symbol-id={choice.symbol?.id}
-    className={`${choice.symbol ? 'research-symbol-entry' : 'research-note-item'}${highlighted === id ? ' is-highlighted' : ''}`}
+    className={`${choice.symbol ? 'research-symbol-entry' : choice.term ? 'research-term-item' : 'research-note-item'}${highlighted === id ? ' is-highlighted' : ''}`}
     role={navigation ? undefined : 'option'} aria-label={choice.label} title={[choice.label, choice.detail, choice.symbol?.meaning].filter(Boolean).join('\n')}
     aria-current={selected ? navigation && choice.note ? 'page' : 'true' : undefined}
     aria-selected={navigation ? undefined : selected} disabled={disabled}
@@ -41,8 +41,9 @@ function ChoiceOption({ choice, selected, highlighted, navigation, multiple, dis
   </button>;
 }
 
-export default function ResearchClassifiedList({ choices, branches: suppliedBranches, selectedId, selectedIds, activeTags, query = '', filtering = !!query.trim(), filterKey = query, storageKey, label, treeLabel = label, navigation = false, listId, className = '', listRef, onActiveChange, onSelect, disabled, empty = t('没有匹配的内容') }: {
+export default function ResearchClassifiedList({ choices, branches: suppliedBranches, foldingItems, selectedId, selectedIds, activeTags, query = '', filtering = !!query.trim(), filterKey = query, storageKey, label, treeLabel = label, navigation = false, listId, className = '', listRef, onActiveChange, onSelect, disabled, empty = t('没有匹配的内容') }: {
   choices: ResearchChoice[]; branches?: ResearchTagBranch<ResearchChoice>[]; selectedId?: string; selectedIds?: readonly string[]; activeTags?: string[];
+  foldingItems?: ResearchTaggedItem[];
   query?: string; filtering?: boolean; filterKey?: string; storageKey: string; label: string; treeLabel?: string;
   navigation?: boolean; listId?: string; className?: string; listRef?: Ref<ResearchChoiceListHandle>;
   onActiveChange?: (id: string) => void; onSelect: (choice: ResearchChoice) => void; disabled?: (choice: ResearchChoice) => boolean; empty?: ReactNode;
@@ -53,6 +54,7 @@ export default function ResearchClassifiedList({ choices, branches: suppliedBran
   const highlighted = highlight.filterKey === filterKey ? highlight.id : '';
   const setHighlighted = (id: string) => setHighlight({ filterKey, id });
   const branches = useMemo(() => suppliedBranches ?? buildResearchTagTree(choices), [suppliedBranches, choices]);
+  const preferenceBranches = useMemo(() => foldingItems ? buildResearchTagTree(foldingItems) : branches, [foldingItems, branches]);
   const selected = selectedIds ?? (selectedId !== undefined ? [selectedId] : []);
   const visible = () => [...(root.current?.querySelectorAll<HTMLButtonElement>('button[data-research-choice]:not(:disabled)') ?? [])].filter(button => button.getClientRects().length > 0);
   const activeOption = (options: HTMLButtonElement[]) => options.find(button => button.id === highlighted)
@@ -75,14 +77,15 @@ export default function ResearchClassifiedList({ choices, branches: suppliedBran
     const next = active?.id ?? '';
     onActiveChange?.(next);
   });
+  const renderChoice = (choice: ResearchChoice) => <ChoiceOption key={choice.id} choice={choice} selected={selected.includes(choice.id)} highlighted={highlighted} navigation={navigation} multiple={!!selectedIds} disabled={disabled?.(choice) ?? false} onActive={setHighlighted} onSelect={onSelect} />;
   return <div ref={root} id={listId} className={`research-classified-list ${className}`} role={navigation ? undefined : 'listbox'} aria-label={label} aria-multiselectable={selectedIds ? true : undefined}
     onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.keyCode === 229 || !(event.target instanceof HTMLButtonElement)) return;
       if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) { event.preventDefault(); event.stopPropagation(); move(event.key, true); }
     }}>
-    <ResearchTagTree branches={branches} activeId={selected.join('|')} activeTags={activeTags ?? choices.filter(choice => selected.includes(choice.id)).flatMap(choice => choice.tags ?? [])} revealActiveOnMount={!navigation && selected.length > 0}
-      filtering={filtering} filterKey={filterKey} storageKey={storageKey} label={treeLabel}
-      renderItem={choice => <ChoiceOption choice={choice} selected={selected.includes(choice.id)} highlighted={highlighted} navigation={navigation} multiple={!!selectedIds} disabled={disabled?.(choice) ?? false} onActive={setHighlighted} onSelect={onSelect} />}
+    <ResearchTagTree branches={branches} preferenceBranches={preferenceBranches} activeId={selected.join('|')} activeTags={activeTags ?? choices.filter(choice => selected.includes(choice.id)).flatMap(choice => choice.tags ?? [])} revealActiveOnMount={!navigation && selected.length > 0}
+      filtering={filtering} filterKey={filterKey} storageKey={storageKey} label={treeLabel} showBulkToggle={navigation} keepTagsVisible={navigation}
+      renderItem={renderChoice}
       empty={<div className="research-note-no-results">{empty}</div>} />
   </div>;
 }

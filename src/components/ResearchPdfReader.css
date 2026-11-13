@@ -1,10 +1,10 @@
 .research-pdf-reader { min-width: 0; border: 1px solid #d9e2ef; border-radius: 4px; overflow: hidden; background: #fff; }
-.research-pdf-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; padding: 5px 7px; background: #f7f9fc; border-bottom: 1px solid #e1e7f0; font-size: 12px; color: #445771; }
-.research-pdf-controls > input { width: 44px; text-align: center; border: 1px solid #d2ddeb; padding: 4px 2px; border-radius: 4px; background: #fff; color: #25344a; font-size: 12px; appearance: textfield; }
+.research-pdf-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; padding: 5px 7px; background: #f7f9fc; border-bottom: 1px solid #e1e7f0; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); color: #445771; }
+.research-pdf-controls > input { width: 44px; text-align: center; border: 1px solid #d2ddeb; padding: 4px 2px; border-radius: 4px; background: #fff; color: #25344a; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); appearance: textfield; }
 .research-pdf-controls input::-webkit-inner-spin-button { appearance: none; }
 .research-pdf-controls > a { display: flex; padding: 5px; border-radius: 4px; color: #46617f; }
 .research-pdf-search { display: flex; align-items: center; flex: 1 1 120px; min-width: 85px; margin-left: auto; border: 1px solid #d2ddeb; background: #fff; border-radius: 4px; }
-.research-pdf-search input { min-width: 0; width: 100%; border: 0; background: transparent; padding: 5px 7px; color: #25344a; font-size: 12px; }
+.research-pdf-search input { min-width: 0; width: 100%; border: 0; background: transparent; padding: 5px 7px; color: #25344a; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-pdf-viewport { max-height: 600px; min-height: 120px; overflow: auto; background: #eef2f7; padding: 10px; }
 .research-pdf-stage { width: max-content; min-width: 100%; }
 .research-pdf-sheet { position: relative; background: white; box-shadow: 0 1px 4px #1b32541c; margin: 0 auto; --scale-round-x: 1px; --scale-round-y: 1px; }
@@ -16,9 +16,9 @@
 .research-pdf-text .markedContent { display: contents; }
 .research-pdf-text [data-pdf-match="true"] { background: #f7b94366; }
 .research-pdf-text ::selection { background: #4c90e766; color: transparent; }
-.research-pdf-message { padding: 20px; margin: 0; font-size: 12px; color: #5e718b; overflow-wrap: anywhere; display: flex; gap: 8px; flex-wrap: wrap; }
-.research-pdf-search-results { display: flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 11px; color: #556e8c; }
+.research-pdf-message { padding: 20px; margin: 0; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); color: #5e718b; overflow-wrap: anywhere; display: flex; gap: 8px; flex-wrap: wrap; }
+.research-pdf-search-results { display: flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); color: #556e8c; }
 .research-pdf-search-results span { flex: 1; }
-.research-pdf-password { display: flex; align-items: flex-end; gap: 8px; padding: 10px; font-size: 12px; }
+.research-pdf-password { display: flex; align-items: flex-end; gap: 8px; padding: 10px; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-pdf-password label { display: grid; gap: 5px; }
 .research-pdf-password input { padding: 5px; border: 1px solid #cbd6e4; border-radius: 4px; }

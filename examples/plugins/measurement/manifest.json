@@ -1,0 +1,32 @@
+{
+  "manifestVersion": 1,
+  "apiVersion": 1,
+  "id": "org.example.measurement",
+  "name": "测量记录示例",
+  "version": "1.0.0",
+  "description": "独立声明式插件示例：填写测量记录并插入笔记。",
+  "capabilities": ["context.read", "content.open"],
+  "workspace": { "name": "测量程序" },
+  "contentTypes": [{
+    "id": "measurement", "schemaVersion": 1, "insertionLabel": "插入测量记录",
+    "schema": { "type": "object", "required": ["recordId", "value", "origin"], "properties": {
+      "recordId": { "type": "string", "minLength": 1, "maxLength": 100 },
+      "value": { "type": "number" },
+      "origin": { "type": "string", "format": "local-origin" }
+    } },
+    "view": [{ "label": "测量值", "path": "data.value", "unit": "mm", "digits": 2 }],
+    "source": { "origin": { "path": "data.origin" }, "pathname": "/measurement", "query": { "record": { "path": "data.recordId" } } },
+    "picker": {
+      "title": "插入测量记录",
+      "connection": [{ "key": "origin", "label": "测量程序地址", "default": "http://127.0.0.1:7777" }],
+      "fields": [
+        { "key": "recordId", "label": "记录名称", "type": "text", "required": true },
+        { "key": "value", "label": "测量值", "type": "number", "required": true }
+      ],
+      "content": {
+        "title": { "path": "fields.recordId" }, "summary": { "path": "fields.value", "prefix": "测量值：", "suffix": " mm" },
+        "data": { "recordId": { "path": "fields.recordId" }, "value": { "path": "fields.value" }, "origin": { "path": "connection.origin" } }
+      }
+    }
+  }]
+}

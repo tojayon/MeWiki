@@ -16,7 +16,6 @@
 .research-formula-interactive-expression .research-formula-selected:hover {
   border-radius: 4px;
   background: #cde1ff;
-  box-shadow: 0 0 0 2px #cde1ff;
 }
 .research-formula-interactive-expression .research-formula-selected,
 .research-formula-interactive-expression .research-formula-selected * {
@@ -28,7 +27,6 @@
 .research-formula-interactive-expression .research-formula-drag-source {
   border-radius: 4px;
   background: #e1ebfa;
-  box-shadow: 0 0 0 2px #afc8eb;
   opacity: .5;
 }
 .research-formula-interactive-expression.is-dragging-formula,
@@ -65,7 +63,7 @@
 .research-formula-transfer-status {
   display: block;
   color: #365c91;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   line-height: 1.5;
 }
 .research-formula-transfer-status { margin: 3px 0 0; }

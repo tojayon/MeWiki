@@ -1,9 +1,51 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="440" viewBox="0 0 1600 440" role="img" aria-labelledby="title description">
-<title id="title">MeWiki — Knowledge, connected.</title><desc id="description">An open book connects notes, mathematical symbols, and their sources in a local knowledge workspace.</desc>
-<defs><linearGradient id="bg" x1="0" x2="1" y2="1"><stop stop-color="#f8faff"/><stop offset="1" stop-color="#edf3fc"/></linearGradient><linearGradient id="book" x2="1" y2="1"><stop stop-color="#2563eb"/><stop offset="1" stop-color="#1547b5"/></linearGradient><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#b8cce9" opacity=".35"/></pattern><filter id="shadow" x="-30%" y="-40%" width="170%" height="200%"><feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#123268" flood-opacity=".09"/></filter></defs>
+<title id="title">MeWiki — Knowledge, connected.</title><desc id="description">The blue and white MeWiki monogram connects notes, mathematical symbols, and their sources in a local knowledge workspace.</desc>
+<defs><linearGradient id="bg" x1="0" x2="1" y2="1"><stop stop-color="#f8faff"/><stop offset="1" stop-color="#edf3fc"/></linearGradient><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#b8cce9" opacity=".35"/></pattern><filter id="shadow" x="-30%" y="-40%" width="170%" height="200%"><feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#123268" flood-opacity=".09"/></filter></defs>
 <rect width="1600" height="440" rx="12" fill="url(#bg)"/><rect x="850" width="750" height="440" fill="url(#grid)"/>
 <path d="M 920 0 V 440" stroke="#dae5f4" stroke-width="1"/>
-<g transform="translate(92 72)"><rect width="80" height="80" rx="18" fill="url(#book)"/><path d="M 18 24 C 26 22 34 25 40 30 C 46 25 54 22 62 24 V 57 C 54 55 46 57 40 62 C 34 57 26 55 18 57 Z" fill="none" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"/><path d="M40 30 V62" stroke="#fff" stroke-width="3.4"/>
+<g transform="translate(92 72)"><svg width="80" height="80" viewBox="17.5 17.5 157 157"><defs><clipPath id="emblem-clip"><circle cx="145" cy="104.5" r="78.5"/></clipPath></defs>
+  <g transform="translate(-49 -8.5)">
+  <g id="emblem">
+    <circle cx="145" cy="104.5" r="78.5" fill="#060606"/>
+    <g clip-path="url(#emblem-clip)">
+      <path id="white-ribbon" fill="#fff" d="M 66.7 121.8
+        C 72.4 99.9 90.8 70.2 116.8 58.4
+        C 128.2 53.2 137.1 54.1 140.1 62.2
+        C 144.4 73.8 135.1 94.9 141.8 94.1
+        C 147.5 93.5 166.3 72.5 181.4 64.1
+        C 192.9 57.7 200.4 59.8 201.8 66.2
+        C 205.1 80.8 187.2 110.8 185.4 122.3
+        C 183.4 135.1 195.1 133.4 222.4 121.7
+        L 231 121.7 L 231 130.8 L 218.5 130.8
+        C 196.4 145.2 177.1 148 173.4 134.1
+        C 170.9 125.1 177.5 110.6 182.9 97.1
+        C 189.1 81.5 180.1 77.8 166.6 87.1
+        C 155.6 94.7 138.5 110.8 131.8 112.4
+        C 125.9 113.9 127.8 103.5 128.1 97.1
+        C 128.8 84.8 125.3 77.2 109.4 82.7
+        C 93.7 88.2 77.3 113.5 71.1 132.2
+        L 64 132.2 L 64 121.8 Z"/>
+      <path id="blue-ribbon" fill="#2f94c7" d="M 71.1 132.2
+        C 77.3 113.5 93.7 88.2 109.4 82.7
+        C 125.3 77.2 128.8 84.8 128.1 97.1
+        C 127.8 103.5 125.9 113.9 131.8 112.4
+        C 138.5 110.8 155.6 94.7 166.6 87.1
+        C 180.1 77.8 189.1 81.5 182.9 97.1
+        C 177.5 110.6 170.9 125.1 173.4 134.1
+        C 177.1 148 196.4 145.2 218.5 130.8
+        C 215 140.4 207.4 150.6 195.9 157.5
+        C 183.3 165 168 168.6 160.5 162
+        C 149 151.9 160.5 122.8 167.5 107.7
+        C 172.5 96.9 169.8 95.5 161.8 101.4
+        C 147.2 112.1 134.5 129.7 123.5 139.7
+        C 114.7 147.7 111.5 141.6 112 130.5
+        C 112.4 121 114.3 109.1 108 110.2
+        C 98.1 111.9 86 140.7 93 163
+        C 82.6 154.5 75.9 143.1 71.1 132.2 Z"/>
+    </g>
+  </g>
+  </g>
+</svg>
 <text x="104" y="61" font-family="Segoe UI, Arial, sans-serif" font-size="70" font-weight="700" letter-spacing="-2.8" fill="#112746">MeWiki</text></g>
 <text x="94" y="220" font-family="Segoe UI, Arial, sans-serif" font-size="46" font-weight="600" letter-spacing="-1.4" fill="#152e50">Knowledge, connected.</text>
 <text x="96" y="269" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#526987">Notes. Symbols. Sources. One local workspace.</text>

@@ -8,7 +8,7 @@ import type { ResearchNotebookState } from "../domain/researchNotebook.ts";
 import { Formula } from "./Formula.tsx";
 import "./ResearchOutline.css";
 
-export default function ResearchSymbolBacklinks({ state, entry, onOpenFormula, onClose, recipe, recipeActive = false, onRecipeActiveChange }: {
+export default function ResearchSymbolBacklinks({ state, entry, onOpenFormula, onClose, recipe, recipeActive = false, onRecipeActiveChange, aiPanel, aiActive = false, onAiActiveChange }: {
   state: ResearchNotebookState;
   entry: ResearchSymbolEntry;
   onOpenFormula: (address: FormulaAddress) => void;
@@ -16,6 +16,9 @@ export default function ResearchSymbolBacklinks({ state, entry, onOpenFormula, o
   recipe?: ReactNode;
   recipeActive?: boolean;
   onRecipeActiveChange?: (active: boolean) => void;
+  aiPanel?: ReactNode;
+  aiActive?: boolean;
+  onAiActiveChange?: (active: boolean) => void;
 }) {
   useLocale();
   const definitions = useMemo(() => listFormulaOutputs(state, entry.id), [state, entry.id]);
@@ -25,16 +28,18 @@ export default function ResearchSymbolBacklinks({ state, entry, onOpenFormula, o
     return [{ ...use, ...found }];
   }), [state, entry.id]);
 
-  return <aside id="research-note-outline" className="research-note-outline research-symbol-backlinks" aria-label={t("符号反向链接")} onKeyDown={event => {
+  return <aside id="research-note-outline" className="research-note-outline research-symbol-backlinks" aria-label={aiActive ? t('AI 工作区') : t("符号反向链接")} onKeyDown={event => {
     if (event.key !== "Escape") return;
     event.preventDefault(); event.stopPropagation(); onClose();
   }}>
     <header><div className="research-outline-tabs" role="tablist" aria-label={t("符号右侧面板")}>
-      <button id="research-symbol-backlinks-tab" type="button" role="tab" aria-selected={!recipeActive} aria-controls="research-symbol-backlinks-panel" onClick={() => onRecipeActiveChange?.(false)}>{t("反向链接")}</button>
-      {recipe && <button id="research-symbol-recipe-tab" type="button" role="tab" aria-selected={recipeActive} aria-controls="research-symbol-recipe-panel" onClick={() => onRecipeActiveChange?.(true)}>{t("变量配方")}</button>}
+      <button id="research-symbol-backlinks-tab" type="button" role="tab" aria-selected={!aiActive && !recipeActive} aria-controls="research-symbol-backlinks-panel" onClick={() => { onAiActiveChange?.(false); onRecipeActiveChange?.(false); }}>{t("反向链接")}</button>
+      {recipe && <button id="research-symbol-recipe-tab" type="button" role="tab" aria-selected={!aiActive && recipeActive} aria-controls="research-symbol-recipe-panel" onClick={() => onRecipeActiveChange?.(true)}>{t("变量配方")}</button>}
+      {onAiActiveChange && <button id="research-note-ai-tab" type="button" role="tab" title={t('AI 工作区')} aria-selected={aiActive} aria-controls="research-note-ai-panel" onClick={() => onAiActiveChange(true)}>{t('AI')}</button>}
     </div></header>
-    {recipe && <div id="research-symbol-recipe-panel" className="research-outline-recipe-panel" role="tabpanel" aria-labelledby="research-symbol-recipe-tab" hidden={!recipeActive}>{recipe}</div>}
-    <div id="research-symbol-backlinks-panel" className="research-symbol-backlinks-content" role="tabpanel" aria-labelledby="research-symbol-backlinks-tab" hidden={recipeActive}>
+    {onAiActiveChange && <div id="research-note-ai-panel" className="research-outline-ai-panel" role="tabpanel" aria-labelledby="research-note-ai-tab" hidden={!aiActive}>{aiPanel}</div>}
+    {recipe && <div id="research-symbol-recipe-panel" className="research-outline-recipe-panel" role="tabpanel" aria-labelledby="research-symbol-recipe-tab" hidden={!recipeActive || aiActive}>{recipe}</div>}
+    <div id="research-symbol-backlinks-panel" className="research-symbol-backlinks-content" role="tabpanel" aria-labelledby="research-symbol-backlinks-tab" hidden={recipeActive || aiActive}>
       <p className="research-symbol-backlinks-name">{entry.name}</p>
       <nav aria-label={t("定义与计算公式")}>
         <h3>{t("定义与计算公式")}</h3>
@@ -56,6 +61,6 @@ export default function ResearchSymbolBacklinks({ state, entry, onOpenFormula, o
         </li>)}</ol> : <p className="research-outline-empty">{t("暂无公式使用此符号。")}<span>{t("在笔记公式中引用此符号后，会在这里显示。")}</span></p>}
       </nav>
     </div>
-    {!recipeActive && <footer>{definitions.length}  {t("个定义结果 ·")} {appearances.length}  {t("个引用公式")}</footer>}
+    {!recipeActive && !aiActive && <footer>{definitions.length}  {t("个定义结果 ·")} {appearances.length}  {t("个引用公式")}</footer>}
   </aside>;
 }

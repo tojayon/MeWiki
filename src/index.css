@@ -1,12 +1,15 @@
 @import "katex/dist/katex.min.css";
+@import "@fontsource-variable/noto-sans-sc/index.css";
+/* Interface sizes scale text only. Document sizes use an independent unit;
+   keep fixed canvas / PDF geometry and toolbar dimensions in pixels. */
 :root {
-  font-family:
-    "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--mewiki-interface-font-family,
+    "Noto Sans SC Variable", "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif);
   color: #172033;
   background: #f3f5f8;
-  font-synthesis: none;
+  font-synthesis: var(--mewiki-interface-font-synthesis, none);
   font-weight: 400;
-  font-size: 14px;
+  font-size: var(--mewiki-interface-font-size, 14px);
   color-scheme: light;
 }
 * {
@@ -16,6 +19,8 @@ body {
   margin: 0;
   min-width: 360px;
 }
+#root[data-mewiki-font-loading] { opacity: 0; pointer-events: none; }
+.mewiki-font-loading { position: fixed; inset: 0; display: grid; place-content: center; color: #64748b; background: #f3f5f8; }
 button,
 a,
 input,
@@ -25,6 +30,11 @@ select {
 button,
 select {
   font: inherit;
+}
+input,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
 }
 button {
   cursor: pointer;
@@ -41,13 +51,6 @@ button:disabled {
 a {
   color: inherit;
   text-decoration: none;
-}
-button:focus-visible,
-a:focus-visible,
-select:focus-visible,
-input:focus-visible {
-  outline: 2px solid #1547c0;
-  outline-offset: 4px;
 }
 input:focus:not(:read-only)::placeholder,
 textarea:focus:not(:read-only)::placeholder {

@@ -3,6 +3,7 @@ import katex from "katex";
 import { createResearchNotebook } from "./researchNotebook.ts";
 import { addSymbolEntry, createSymbolEntry, deleteSymbolEntry, formulaPartsToTex, listSymbolUses, normalizeSymbolEntries, resolveSymbolEntry, symbolEntryError, updateSymbolEntry, type FormulaPart } from "./researchDictionary.ts";
 import { positionSlots } from "./researchSymbolPositions.ts";
+import { scanResearchDictionaryText } from "./researchTerms.ts";
 
 describe("general dictionary", () => {
   it("keeps starter IDs unique and saved definitions distinct from defaults", () => {
@@ -65,5 +66,14 @@ describe("general dictionary", () => {
     expect(original.meaning).not.toBe("更新含义");
     const custom = createSymbolEntry({name:"未知变量",meaning:"测试",notation:"q_{[index]}",category:"custom",slots:[{key:"index",label:"编号",domain:"generic",defaultValue:"i"}]});
     expect(resolveSymbolEntry(custom,{x2:"j"}).tex).toBe("q_{j}");
+  });
+
+  it("keeps renamed symbol names as aliases for legacy consistency checks", () => {
+    const state = createResearchNotebook();
+    const original = state.symbols.find(entry => entry.id === "example-x")!;
+    const renamed = updateSymbolEntry(state, { ...original, name: "新的输入变量" });
+    expect(renamed.symbols.find(entry => entry.id === original.id)?.aliases).toContain(original.name);
+    expect(normalizeSymbolEntries([{ ...original, aliases: ["旧名称", "旧名称"] }])[0].aliases).toEqual(["旧名称"]);
+    expect(scanResearchDictionaryText(`正文使用${original.name}。`, renamed.symbols, [])).toMatchObject([{ kind: "symbol", entryId: original.id, matchedText: original.name }]);
   });
 });

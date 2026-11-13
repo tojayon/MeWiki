@@ -153,7 +153,9 @@ export function createResearchMediaMiddleware(store: ResearchMediaStore) {
             );
           return;
         }
-      } else if (request.method === "GET" && remote && !remote[2])
+      } else if (request.method === 'GET' && route === '/fonts')
+        result = await store.fonts(directory);
+      else if (request.method === "GET" && remote && !remote[2])
         result = await store.remoteStatus(directory, remote[1]);
       else if (request.method === "GET" && exporting) {
         const archive = await store.exportArchive(directory, exporting[1]);

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { ResearchMediaAsset, ResearchMediaSource } from "../domain/researchMedia.ts";
 import { researchMediaClient } from "../state/researchMediaClient.ts";
 import { browserMediaStore } from "../state/researchMediaStorage.ts";
-import { useResearchLibrary } from "../state/useResearchNotebook.ts";
+import { useResearchContentLibrary } from "../state/ResearchContentLibraryContext.ts";
 import type { LibrarySaveStatus } from "../state/researchLibraryController.ts";
 
 interface MediaView { key: string; asset?: ResearchMediaAsset; previewUrl?: string; originalUrl?: string; playbackUrl?: string; error?: string; loading?: boolean }
@@ -11,7 +11,7 @@ export function refreshResearchMediaAsset(directory: string | null, assetId: str
   window.dispatchEvent(new CustomEvent(mediaSavedEvent, { detail: { directory, assetId } }));
 }
 export function useResearchMediaSource(source: ResearchMediaSource | undefined): Omit<MediaView, "key"> & { directory: string | null; busy: boolean; status: LibrarySaveStatus } {
-  const { directory, busy, status } = useResearchLibrary();
+  const { directory, busy, status } = useResearchContentLibrary();
   const assetId = source?.type === "asset" ? source.assetId : undefined;
   const [revision, setRevision] = useState(0);
   const key = `${directory ?? "browser"}:${source?.type === "asset" ? source.assetId : source?.url ?? ""}:${revision}`;

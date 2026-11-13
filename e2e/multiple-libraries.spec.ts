@@ -1,3 +1,4 @@
+import { closeSettingsPage } from "./helpers/settings.ts";
 import { expect, test, type Page } from "@playwright/test";
 import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
@@ -6,7 +7,7 @@ import {
   runNotebookAction,
   enableNotebookEditing,
 } from "./helpers/researchNotebook.ts";
-const settings = path.resolve(".mewiki/media-e2e-settings.json");
+const settings = path.resolve(process.env.MEWIKI_RESEARCH_SETTINGS || ".mewiki/media-e2e-settings.json");
 let root = "";
 test.beforeEach(async () => {
   await rm(settings, { force: true });
@@ -60,6 +61,9 @@ test("creates separate libraries, flushes before switching and remembers each en
   const research = path.join(root, "Cislunar");
   const personal = path.join(root, "Personal");
   const researchId = await create(page, "Cislunar", research);
+  await expect(page.getByRole("tab", { name: "使用手册", exact: true })).toBeVisible();
+  await runNotebookAction(page.getByTestId("research-notebook"), "使用手册");
+  await expect(page.getByRole("tab", { name: "使用手册", exact: true })).toHaveCount(0);
   await note(page, "Cislunar 的专属研究");
   let dialog = await manager(page);
   const row = dialog.locator(`[data-library-id="${researchId}"]`);
@@ -68,10 +72,9 @@ test("creates separate libraries, flushes before switching and remembers each en
     .click();
   await expect(row).toContainText("WebBench 默认");
   await expect(dialog.getByRole("status")).not.toContainText("正在保存");
-  await dialog
-    .getByRole("button", { name: "关闭切换资料库", exact: true })
-    .click();
+  await closeSettingsPage(page);
   const personalId = await create(page, "个人 Wiki", personal);
+  await expect(page.getByRole("tab", { name: "使用手册", exact: true })).toBeVisible();
   await expect(page.getByTestId("research-notebook")).not.toContainText(
     "Cislunar 的专属研究",
   );
@@ -84,6 +87,7 @@ test("creates separate libraries, flushes before switching and remembers each en
   await expect(page.getByLabel("笔记标题", { exact: true })).toHaveValue(
     "Cislunar 的专属研究",
   );
+  await expect(page.getByRole("tab", { name: "使用手册", exact: true })).toHaveCount(0);
   expect(
     await readFile(
       path.join(personal, "research-library.webbench.json"),
@@ -125,9 +129,7 @@ test("creates separate libraries, flushes before switching and remembers each en
     ),
   ).toBe(true);
   await page.screenshot({ path: "test-results/multiple-libraries-mobile.png" });
-  await dialog
-    .getByRole("button", { name: "关闭切换资料库", exact: true })
-    .click();
+  await closeSettingsPage(page);
   await host.close();
 });
 test("failed saves and missing target libraries retain the current notebook", async ({
@@ -151,6 +153,36 @@ test("failed saves and missing target libraries retain the current notebook", as
   await expect(page.getByLabel("笔记标题", { exact: true })).toHaveValue(
     "保存失败时保留的正文",
   );
+});
+
+test("configures a default library for a generic external entry without switching open windows", async ({ page, context }) => {
+  await page.goto("/");
+  const projectId = await create(page, "项目资料", path.join(root, "Project"));
+  await note(page, "项目资料的笔记");
+  const personalId = await create(page, "个人资料", path.join(root, "Personal"));
+  await note(page, "个人资料的笔记");
+
+  const external = await context.newPage();
+  await external.goto(`/?workspace=org.example.instrument&library=${projectId}`);
+  await expect(external.getByLabel("笔记标题", { exact: true })).toHaveValue("项目资料的笔记");
+  const dialog = await manager(external);
+  const entry = dialog.getByLabel("默认资料库入口", { exact: true });
+  await entry.selectOption("org.example.instrument");
+  const row = dialog.locator(`[data-library-id="${personalId}"]`);
+  await row.getByRole("button", { name: "设为 org.example.instrument 默认", exact: true }).click();
+  await expect(row).toContainText("org.example.instrument 默认");
+  await closeSettingsPage(external);
+  await expect(external.getByLabel("笔记标题", { exact: true })).toHaveValue("项目资料的笔记");
+  expect(await external.evaluate(() => localStorage.getItem("mewiki:workspace:org.example.instrument:library"))).toBe(personalId);
+  await expect(page.getByLabel("笔记标题", { exact: true })).toHaveValue("个人资料的笔记");
+
+  const next = await context.newPage();
+  await next.goto("/?workspace=org.example.instrument");
+  await expect(next.getByLabel("笔记标题", { exact: true })).toHaveValue("个人资料的笔记");
+  expect(new URL(next.url()).searchParams.get("library")).toBe(personalId);
+  expect(new URL(external.url()).searchParams.get("library")).toBe(projectId);
+  await next.close();
+  await external.close();
 });
 
 test("keeps original attachments and browser caches with their owning library", async ({

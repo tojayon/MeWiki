@@ -30,19 +30,21 @@ export const currentNoteLibrary = (
   state.view === "foundations" ? "foundation" : "research";
 export const libraryNotes = (
   state: Pick<ResearchNotebookState, "notes" | "view">,
+  library: ResearchNoteLibrary = currentNoteLibrary(state),
 ) =>
   state.notes.filter(
-    (note) => getNoteLibrary(note) === currentNoteLibrary(state),
+    (note) => getNoteLibrary(note) === library,
   );
-export const libraryFilters = (state: ResearchNotebookState) =>
-  (currentNoteLibrary(state) === "foundation"
+export const libraryFilters = (state: ResearchNotebookState, library = currentNoteLibrary(state)) =>
+  (library === "foundation"
     ? state.foundationFilters
     : state.noteFilters) ?? defaultResearchNoteFilters;
 export function setLibraryFilters(
   state: ResearchNotebookState,
   filters = { ...defaultResearchNoteFilters },
+  library: ResearchNoteLibrary = currentNoteLibrary(state),
 ): ResearchNotebookState {
-  return currentNoteLibrary(state) === "foundation"
+  return library === "foundation"
     ? { ...state, foundationFilters: filters }
     : { ...state, noteFilters: filters };
 }

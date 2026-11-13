@@ -227,6 +227,7 @@ async function capture(page: Page, filename: string) {
   });
   await expect(page.locator('.research-library-initializing')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.evaluate(() => { if (document.activeElement instanceof HTMLElement && document.activeElement.matches('[role="tab"]')) document.activeElement.blur(); });
   await page.mouse.move(1590, 1030);
   await page.screenshot({ path: path.join(assetDirectory, filename), fullPage: false, animations: 'disabled', caret: 'hide' });
 }
@@ -256,7 +257,7 @@ test('gallery · English workspace', async ({ page }) => {
 test('gallery · Chinese workspace', async ({ page }) => {
   await seed(page, 'studio-home', 'notes', 'zh-CN');
   await expect(page.getByLabel('笔记标题', { exact: true })).toHaveValue('让知识彼此连接');
-  await expect(page.getByRole('tab', { name: '符号词典', exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: '符号', exact: true })).toBeVisible();
   await capture(page, 'workspace-zh.png');
 });
 

@@ -1,0 +1,46 @@
+{
+  "showcase-image.png": {
+    "id": "003790df3f0a08836fdb59855adde01338a2ec549b69558cf40a6e395e00fbbc",
+    "sha256": "003790df3f0a08836fdb59855adde01338a2ec549b69558cf40a6e395e00fbbc",
+    "name": "showcase-image.png",
+    "mimeType": "image/png",
+    "size": 21900,
+    "createdAt": "2026-11-11T00:00:00.000Z",
+    "width": 960,
+    "height": 360
+  },
+  "showcase-audio.wav": {
+    "id": "05f460539c716896c4753bb32888f851e2cae3478eaafbaa6bc0327d23c0124b",
+    "sha256": "05f460539c716896c4753bb32888f851e2cae3478eaafbaa6bc0327d23c0124b",
+    "name": "showcase-audio.wav",
+    "mimeType": "audio/wav",
+    "size": 64044,
+    "createdAt": "2026-11-11T00:00:00.000Z"
+  },
+  "showcase-video.webm": {
+    "id": "e21b97562c3d2eef2f78830326fecd5bde32aa06f2bdb01a3e46e0eef7188bb6",
+    "sha256": "e21b97562c3d2eef2f78830326fecd5bde32aa06f2bdb01a3e46e0eef7188bb6",
+    "name": "showcase-video.webm",
+    "mimeType": "video/webm",
+    "size": 11436,
+    "createdAt": "2026-11-11T00:00:00.000Z",
+    "width": 480,
+    "height": 270
+  },
+  "showcase-document.pdf": {
+    "id": "1dde8c276ec24e126e72551d1d293edbd363a2f1bb7e9078fff820a6d4e8d2f6",
+    "sha256": "1dde8c276ec24e126e72551d1d293edbd363a2f1bb7e9078fff820a6d4e8d2f6",
+    "name": "showcase-document.pdf",
+    "mimeType": "application/pdf",
+    "size": 1445,
+    "createdAt": "2026-11-11T00:00:00.000Z"
+  },
+  "showcase-data.csv": {
+    "id": "8b2e5d57649e768a3f35112c9eb16aa7d3d7143925022f89243d3129134e09e3",
+    "sha256": "8b2e5d57649e768a3f35112c9eb16aa7d3d7143925022f89243d3129134e09e3",
+    "name": "showcase-data.csv",
+    "mimeType": "text/csv",
+    "size": 73,
+    "createdAt": "2026-11-11T00:00:00.000Z"
+  }
+}

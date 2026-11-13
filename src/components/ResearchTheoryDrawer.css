@@ -67,8 +67,8 @@
   background: #153b6d;
   color: #fff;
   font: inherit;
-  font-family: "SimHei", "黑体", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
-  font-size: 14px;
+  font-family: var(--mewiki-interface-font-family, "SimHei", "黑体", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif);
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 14);
   font-weight: 800;
   font-synthesis: weight;
   line-height: 1;
@@ -92,7 +92,6 @@
 @media (hover: hover) and (pointer: fine) {
   .research-theory-drawer-toggle:hover { filter: brightness(.96); }
 }
-.research-theory-drawer-toggle:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
 .research-theory-drawer-content {
   min-width: 0;
   min-height: 0;
@@ -140,7 +139,6 @@
 .research-theory-drawer-resize:hover::after,
 .research-theory-drawer-resize:focus-visible::after,
 .research-note-content-frame[data-drawers-resizing="true"] .research-theory-drawer-resize::after { background: #1547c0; }
-.research-theory-drawer-resize:focus-visible { outline: 2px solid #1547c0; outline-offset: -2px; }
 .research-note-content-frame[data-derivation-hidden="true"] .is-given > .research-theory-drawer-resize { width: 50%; align-self: flex-start; }
 .research-note-content-frame[data-derivation-hidden="true"] .is-conclusion > .research-theory-drawer-resize { width: 50%; align-self: flex-end; }
 .research-theory-source-marker { min-width: 0; padding-block: 4px; }
@@ -156,7 +154,7 @@
   background: #f8fafd;
   color: #405b7b;
   font: inherit;
-  font-size: 11px;
+  font-size: calc(var(--mewiki-interface-unit, 1px) * 11);
   line-height: 1.6;
   text-align: left;
   cursor: pointer;
@@ -164,8 +162,7 @@
 .research-theory-source-marker > button > svg { flex: 0 0 14px; margin-top: 2px; }
 .research-theory-source-marker > button > span { min-width: 0; overflow-wrap: anywhere; }
 .research-theory-source-marker strong { margin-right: 8px; color: #173b65; font-weight: 650; }
-.research-theory-source-marker > button:hover { border-color: #9bb5d3; background: #eff4fb; color: #1547c0; }
-.research-theory-source-marker > button:focus-visible { outline: 2px solid #1547c0; outline-offset: 1px; }
+.research-theory-source-marker > button:hover { background: #eff4fb; color: #1547c0; }
 @media (pointer: coarse) {
   .research-theory-drawer-resize { height: 18px; min-height: 18px; flex-basis: 18px; margin-block: -9px; }
 }
@@ -175,14 +172,14 @@
   padding: 12px var(--theory-edge-inset) 14px;
 }
 .research-theory-drawer .research-note-block { padding-block: 3px; }
-.research-theory-drawer .research-note-block.is-heading :is(h1, h2, h3, h4, h5, h6) { margin-block: 2px 4px; font-size: 15px; }
+.research-theory-drawer .research-note-block.is-heading :is(h1, h2, h3, h4, h5, h6) { margin-block: 2px 4px; font-size: calc(var(--mewiki-document-unit, 1px) * 15); }
 .research-theory-placeholder {
   min-height: 32px;
   padding: 4px 6px;
   border-bottom: 1px dashed #dbe4ef;
   line-height: 23px;
 }
-.research-theory-empty { color: #4d627e; font-size: 12px; line-height: inherit; overflow-wrap: anywhere; }
+.research-theory-empty { color: #4d627e; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: inherit; overflow-wrap: anywhere; }
 .research-theory-placeholder > .research-block-insert { padding-top: 4px; }
 :root .research-theory-placeholder .research-block-insert-trigger[data-ui="icon-action"][aria-label] { align-self: flex-start; opacity: 1; }
 :root .research-notebook-actions button.research-notebook-sections-toggle[aria-pressed="true"] { background: #e9edf2; }

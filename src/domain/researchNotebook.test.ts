@@ -130,4 +130,17 @@ describe("research notebook documents", () => {
       ),
     ).toBe(false);
   });
+
+  it("preserves optional terms while keeping old notebooks without terms unchanged", () => {
+    const state = createResearchNotebook();
+    const normalized = normalizeResearchNotebook({
+      ...state,
+      activeTermId: "term-1",
+      terms: [{ id: "term-1", name: "轨道面", aliases: ["轨道平面", "轨道平面"], meaning: "几何定义" }],
+    });
+    expect(normalized.activeTermId).toBe("term-1");
+    expect(normalized.terms).toEqual([{ id: "term-1", name: "轨道面", aliases: ["轨道平面"], meaning: "几何定义", status: "active" }]);
+    const old = normalizeResearchNotebook(state);
+    expect(Object.hasOwn(old, "terms")).toBe(false);
+  });
 });

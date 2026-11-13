@@ -1,6 +1,6 @@
-.research-callout { position: relative; display: flow-root; min-width: 0; margin: 16px 0 7px; border-radius: 4px; padding: 0 16px 12px; background: #fff; }
+.research-callout { position: relative; display: flow-root; min-width: 0; margin: calc(var(--mewiki-document-unit, 1px) * 16) 0 7px; border-radius: 4px; padding: 0 16px 12px; background: #fff; }
 .research-callout-border { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.research-callout-label { position: relative; display: table; box-sizing: border-box; max-width: 100%; margin: -13px 0 9px; border-radius: 4px; padding: 3px 10px; font-size: 15px; font-weight: 750; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
+.research-callout-label { position: relative; display: table; box-sizing: border-box; max-width: 100%; margin: calc(var(--mewiki-document-unit, 1px) * -13) 0 9px; border-radius: 4px; padding: 3px 10px; font-size: calc(var(--mewiki-document-unit, 1px) * 15); font-weight: 750; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
 .research-callout-body { position: relative; min-width: 0; min-height: 26px; }
 .research-callout-body > .research-markdown { padding: 0; }
 .research-callout-body > .research-markdown > :first-child { margin-top: 0; }
@@ -8,12 +8,11 @@
 .research-callout-settings-button { position: absolute; top: 32px; right: 4px; opacity: 0; cursor: pointer; }
 .research-note-block:is(:hover, :focus-within) > .research-callout-settings-button,
 .research-callout-settings-button:focus-visible { opacity: 1; }
-.research-callout-settings { position: fixed; inset: auto; box-sizing: border-box; width: min(300px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; margin: 0; border: 1px solid #aebfd5; border-radius: 4px; padding: 10px; background: #fff; color: #172033; box-shadow: 0 5px 20px #17355624; font-size: 12px; }
+.research-callout-settings { position: fixed; inset: auto; box-sizing: border-box; width: min(300px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; margin: 0; border: 1px solid #aebfd5; border-radius: 4px; padding: 10px; background: #fff; color: #172033; box-shadow: 0 5px 20px #17355624; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-callout-settings > header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.research-callout-settings > header > strong { color: #173454; font-size: 12px; }
+.research-callout-settings > header > strong { color: #173454; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-callout-settings :is(input, button) { font: inherit; }
-.research-callout-settings input:not([type="color"]) { box-sizing: border-box; width: 100%; min-width: 0; height: 30px; border: 1px solid #bdcadd; border-radius: 4px; padding: 3px 7px; background: #fff; color: #172033; outline: none; }
-.research-callout-settings input:focus-visible { border-color: #1547c0; outline: 2px solid #dce7fb; outline-offset: 0; }
+.research-callout-settings input:not([type="color"]) { box-sizing: border-box; width: 100%; min-width: 0; height: 30px; border: 1px solid #bdcadd; border-radius: 4px; padding: 3px 7px; background: #fff; color: #172033; }
 .research-callout-title-field, .research-callout-color-field, .research-callout-width-field, .research-callout-line-field { display: flex; min-width: 0; flex-direction: column; gap: 5px; margin: 0; }
 .research-callout-settings label > span:first-child, .research-callout-line-field > span { color: #354a64; font-weight: 600; }
 .research-callout-label-colors, .research-callout-border-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -22,18 +21,17 @@
 .research-callout-settings input[type="color"] { box-sizing: border-box; width: 29px; height: 30px; flex: 0 0 29px; border: 1px solid #bdcadd; border-radius: 4px; padding: 3px; background: #fff; cursor: pointer; }
 .research-callout-settings input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
 .research-callout-settings input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 2px; }
-.research-callout-color-inputs > input[type="text"] { padding-inline: 5px; font-family: Consolas, monospace; font-size: 12px; }
+.research-callout-color-inputs > input[type="text"] { padding-inline: 5px; font-family: Consolas, monospace; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-callout-border-settings { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; border-top: 1px dashed #d3ddea; padding-top: 10px; }
 .research-callout-border-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
 .research-callout-border-options > button { display: flex; min-width: 0; flex-direction: column; align-items: center; gap: 3px; border: 1px solid transparent; border-radius: 4px; padding: 5px 4px; background: transparent; color: #354a64; cursor: pointer; }
 .research-callout-border-options > button:is(:hover, :focus-visible) { background: #edf2fc; color: #1547c0; }
-.research-callout-border-options > button[aria-pressed="true"] { border-color: #9bb5e0; background: #edf2fc; color: #1547c0; }
-.research-callout-border-options > button:focus-visible { outline: 2px solid #1547c0; outline-offset: 1px; }
+.research-callout-border-options > button[aria-pressed="true"] { background: #edf2fc; color: #1547c0; }
 .research-callout-border-options svg { width: 44px; height: 8px; }
 .research-callout-width-field > span:last-child { display: flex; min-width: 0; align-items: center; gap: 6px; }
-.research-callout-width-field small { flex: 0 0 auto; color: #52627a; font-size: 11px; white-space: nowrap; }
+.research-callout-width-field small { flex: 0 0 auto; color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); white-space: nowrap; }
 .research-callout-settings > footer { display: flex; justify-content: flex-end; margin-top: 10px; }
 .research-callout-reset { display: inline-flex; align-items: center; gap: 5px; border: 0; border-radius: 4px; padding: 4px; background: transparent; color: #45566e; cursor: pointer; }
 .research-callout-reset:is(:hover, :focus-visible) { background: #edf2fc; color: #1547c0; }
-@media (max-width: 720px) { .research-callout { padding-inline: 12px; } .research-callout-label { font-size: 14px; } }
+@media (max-width: 720px) { .research-callout { padding-inline: 12px; } .research-callout-label { font-size: calc(var(--mewiki-document-unit, 1px) * 14); } }
 @media (hover: none) { .research-callout-settings-button { opacity: 1; } }

@@ -1,3 +1,4 @@
+import { openSettingsSection, closeSettingsPage } from "./helpers/settings.ts";
 import { createNotebookFixture as createResearchNotebook } from "../src/domain/testUtils/notebook.ts";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -8,7 +9,7 @@ import { enableNotebookEditing, runNotebookAction } from "./helpers/researchNote
 import { researchPdfFixture } from "./fixtures/researchPdf.ts";
 import { researchSpreadsheetFixture } from "./fixtures/researchSpreadsheet.ts";
 
-const settings = path.resolve(".mewiki/media-e2e-settings.json");
+const settings = path.resolve(process.env.MEWIKI_RESEARCH_SETTINGS || ".mewiki/media-e2e-settings.json");
 let root: string;
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/research-library/media/citation-metadata", route => route.fulfill({ status: 404, json: { error: "未找到此 DOI 的文献元信息。" } }));
@@ -143,13 +144,13 @@ test("allows DOI retry after a cancelled lookup during a failed library connecti
   await block.getByLabel("文献来源网址", { exact: true }).fill("https://");
   await block.getByLabel("文献 DOI", { exact: true }).fill("10.1234/cancel");
   await expect.poll(() => requests).toBe(1);
-  await page.getByRole("button", { name: "研究笔记设置", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "研究笔记设置", exact: true });
+  await openSettingsSection(page, "storage");
+  const dialog = page.getByTestId("research-library-storage");
   await dialog.getByRole("textbox", { name: "本地保存路径", exact: true }).fill(path.join(root, "连接测试"));
   await dialog.getByRole("button", { name: "检查路径", exact: true }).click();
   await dialog.getByRole("button", { name: "迁移到此目录", exact: true }).click();
   await expect(dialog.getByText("资料库连接测试失败", { exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await closeSettingsPage(page);
   release();
   const retry = block.getByRole("button", { name: "获取 DOI 元信息", exact: true });
   await expect(retry).toBeEnabled();
@@ -188,13 +189,13 @@ async function insert(page: Page, label: string) {
   await page.getByRole("dialog", { name: "插入笔记内容" }).getByRole("button", { name: label, exact: true }).click();
 }
 async function connect(page: Page) {
-  await page.getByRole("button", { name: "研究笔记设置", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "研究笔记设置", exact: true });
+  await openSettingsSection(page, "storage");
+  const dialog = page.getByTestId("research-library-storage");
   await dialog.getByRole("textbox", { name: "本地保存路径", exact: true }).fill(path.join(root, "资料库"));
   await dialog.getByRole("button", { name: "检查路径", exact: true }).click();
   await dialog.getByRole("button", { name: "迁移到此目录", exact: true }).click();
   await expect(dialog.getByText("本地自动保存已启用", { exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await closeSettingsPage(page);
 }
 
 test("edits citations, validates DOI and keeps linked PDF pages and copied references", async ({ page, context }) => {
@@ -308,6 +309,114 @@ test("renders local flow, sequence and structure diagrams and recovers from inva
   await expect(block.locator(".research-diagram-preview")).toContainText("通过");
 });
 
+test("opens a flowchart in a large preview window and closes it with Escape", async ({ page }) => {
+  await insert(page, "绘图与流程图");
+  const block = page.locator(".research-diagram-block").last();
+  await block.getByLabel("流程图模板", { exact: true }).selectOption("flow");
+  await expect(block.locator(".research-diagram-preview svg")).toBeVisible({ timeout: 30000 });
+  await expect(block.locator(".research-diagram-preview")).toContainText("是否满足条件");
+  const before = await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem("mewiki:research-notebook")!).notes.find((note: { id: string }) => note.id === "rich-note").blocks));
+
+  const enlarge = block.getByRole("button", { name: "放大流程图", exact: true });
+  await enlarge.click();
+  const dialog = page.getByRole("dialog", { name: "流程图预览", exact: true });
+  await expect(dialog).toBeVisible();
+  const image = dialog.getByRole("img", { name: "流程图预览", exact: true });
+  await expect(image).toBeVisible();
+  await expect.poll(() => image.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  const snapshot = decodeURIComponent((await image.getAttribute("src"))!.split(",").slice(1).join(","));
+  expect(snapshot).toContain("完成");
+  expect(snapshot).toContain("是否满足条件");
+  const source = block.locator(".research-diagram-preview > svg");
+  expect(snapshot).toContain(`viewBox="${await source.getAttribute("viewBox")}"`);
+  expect((await image.boundingBox())!.width).toBeGreaterThan((await source.boundingBox())!.width);
+  const dialogBounds = (await dialog.boundingBox())!;
+  const closeBounds = (await dialog.getByRole("button", { name: "关闭流程图预览", exact: true }).boundingBox())!;
+  expect(dialogBounds.x + dialogBounds.width - closeBounds.x - closeBounds.width).toBeLessThan(20);
+  await page.screenshot({ path: test.info().outputPath("diagram-preview-desktop.png") });
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(enlarge).toBeFocused();
+
+  const preview = block.getByRole("button", { name: "查看流程图预览", exact: true });
+  await preview.click();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "关闭流程图预览", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(preview).toBeFocused();
+  await preview.press("Enter");
+  await expect(dialog).toBeVisible();
+  await page.mouse.click(4, 4);
+  await expect(dialog).toBeHidden();
+  await expect(preview).toBeFocused();
+
+  await runNotebookAction(page.getByTestId("research-notebook"), "切换为只读模式");
+  await preview.focus();
+  await preview.press("Space");
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(preview).toBeFocused();
+  expect(await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem("mewiki:research-notebook")!).notes.find((note: { id: string }) => note.id === "rich-note").blocks))).toBe(before);
+});
+
+test("disables diagram enlargement for empty or invalid source and restores it after recovery", async ({ page }) => {
+  await insert(page, "绘图与流程图");
+  const block = page.locator(".research-diagram-block").last();
+  const source = block.getByLabel("流程图源码", { exact: true });
+  const enlarge = block.getByRole("button", { name: "放大流程图", exact: true });
+  await expect(enlarge).toBeEnabled({ timeout: 30000 });
+  await source.fill("");
+  await expect(enlarge).toBeDisabled();
+  await expect(block.getByRole("button", { name: "查看流程图预览", exact: true })).toHaveCount(0);
+  await source.fill("flowchart LR\n A[broken");
+  await expect(block.getByRole("alert")).toContainText(/line|行|语法/i);
+  await expect(enlarge).toBeDisabled();
+  await source.fill("flowchart LR\n A[恢复] --> B[完成]");
+  await expect(enlarge).toBeEnabled();
+  await enlarge.click();
+  const dialog = page.getByRole("dialog", { name: "流程图预览", exact: true });
+  await expect(dialog).toBeVisible();
+  expect(decodeURIComponent((await dialog.getByRole("img").getAttribute("src"))!)).toContain("恢复");
+  await page.keyboard.press("Escape");
+});
+
+test("keeps a tall diagram preview scrollable in a narrow English window", async ({ page }) => {
+  await insert(page, "绘图与流程图");
+  const block = page.locator(".research-diagram-block").last();
+  const code = `flowchart TB\n${Array.from({ length: 14 }, (_, index) => ` N${index}[Step ${index + 1}] --> N${index + 1}[Step ${index + 2}]`).join("\n")}`;
+  await block.getByLabel("流程图源码", { exact: true }).fill(code);
+  await expect(block.locator(".research-diagram-preview")).toContainText("Step 15");
+  await runNotebookAction(page.getByTestId("research-notebook"), "切换为只读模式");
+  for (const name of ["收起文章大纲", "收起笔记左侧面板"]) {
+    const toggle = page.getByRole("button", { name, exact: true });
+    if (await toggle.isVisible()) await toggle.click();
+  }
+  await page.evaluate(() => localStorage.setItem("mewiki:locale", "en"));
+  await page.reload();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await block.getByRole("button", { name: "Enlarge diagram", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Diagram preview", exact: true });
+  await expect(dialog).toBeVisible();
+  const image = dialog.getByRole("img", { name: "Diagram preview", exact: true });
+  await expect.poll(() => image.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  const bounds = (await dialog.boundingBox())!;
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(844);
+  const imageBounds = (await image.boundingBox())!;
+  expect(imageBounds.x).toBeGreaterThanOrEqual(bounds.x);
+  expect(imageBounds.x + imageBounds.width).toBeLessThanOrEqual(bounds.x + bounds.width);
+  const content = dialog.locator(".device-record-modal-content");
+  expect(await content.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
+  await content.evaluate(element => { element.scrollTop = element.scrollHeight; });
+  expect(await content.evaluate(element => Math.abs(element.scrollTop + element.clientHeight - element.scrollHeight) < 2)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("diagram-preview-mobile-en.png") });
+  await dialog.getByRole("button", { name: "Close Diagram preview", exact: true }).click();
+  await expect(dialog).toBeHidden();
+});
+
 async function expectCompleteDiagram(svg: Locator) {
   const geometry = await svg.evaluate(element => {
     const svg = element as SVGSVGElement;
@@ -390,7 +499,12 @@ test("fits a tall diagram after its nested tab opens and the reading area resize
   const svg = page.locator(".research-diagram-preview > svg");
   await expect(svg).toContainText("完成");
   await expectCompleteDiagram(svg);
-  await page.getByRole("tab", { name: "符号词典", exact: true }).click();
+  await page.getByRole("button", { name: "放大流程图", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "流程图预览", exact: true });
+  await expect(dialog.getByRole("img")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await page.getByRole("tab", { name: "符号", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("tab", { name: "研究记录", exact: true }).click();
   for (const name of ["收起文章大纲", "收起笔记左侧面板"]) {
@@ -430,9 +544,23 @@ test("draws and edits a vector sketch with undo, redo, text and read-only viewin
   await page.reload();
   await expect(surface.locator("line")).toHaveCount(1);
   await expect(surface.locator("text")).toContainText("接收时刻");
+  await block.getByRole("button", { name: "放大草图", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "草图预览", exact: true });
+  await expect(dialog).toBeVisible();
+  const image = dialog.getByRole("img", { name: "草图预览", exact: true });
+  await expect.poll(() => image.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  const snapshot = decodeURIComponent((await image.getAttribute("src"))!);
+  expect(snapshot).toContain("接收时刻");
+  expect(snapshot).toContain("<line");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(surface.locator("line")).toHaveCount(1);
   await runNotebookAction(page.getByTestId("research-notebook"), "切换为只读模式");
   await expect(block.getByRole("toolbar", { name: "草图工具", exact: true })).toHaveCount(0);
   await expect(surface).toBeVisible();
+  await block.getByRole("button", { name: "放大草图", exact: true }).click();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "关闭草图预览", exact: true }).click();
 });
 
 test("restores all three content types and linked originals from an attachment backup", async ({ page }) => {
@@ -451,19 +579,21 @@ test("restores all three content types and linked originals from an attachment b
   const drawing = page.locator(".research-diagram-block").last();
   await drawing.getByLabel("流程图源码", { exact: true }).fill("flowchart LR\n A[备份] --> B[恢复]");
   await expect(drawing.locator(".research-diagram-preview")).toContainText("恢复");
-  await page.getByRole("button", { name: "研究笔记设置", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "研究笔记设置", exact: true });
+  await openSettingsSection(page, "storage");
+  const dialog = page.getByTestId("research-library-storage");
   const download = page.waitForEvent("download");
+  await openSettingsSection(page, "backup");
   await dialog.getByRole("button", { name: "导出含附件备份", exact: true }).click();
   const backup = await download;
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await closeSettingsPage(page);
   await drawing.getByLabel("流程图源码", { exact: true }).fill("flowchart LR\n X[后续修改]");
-  await page.getByRole("button", { name: "研究笔记设置", exact: true }).click();
+  await openSettingsSection(page, "storage");
+  await openSettingsSection(page, "backup");
   await dialog.getByLabel("选择完整资料库备份").setInputFiles((await backup.path())!);
   await expect(dialog.getByLabel("恢复预览")).toBeVisible();
   await dialog.getByRole("button", { name: "确认恢复此版本", exact: true }).click();
   await expect(dialog.getByText("已恢复资料库，原版本已保留。", { exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "关闭研究笔记设置", exact: true }).click();
+  await closeSettingsPage(page);
   await expect(drawing.locator(".research-diagram-preview")).toContainText("恢复");
   await expect(data.getByRole("table", { name: "数据表预览" })).toContainText("6");
   const original = data.getByRole("link", { name: "观测.csv", exact: true });

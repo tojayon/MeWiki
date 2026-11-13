@@ -1,27 +1,26 @@
-.research-table-editor { position: relative; min-width: 0; margin: 12px 0 8px; outline: none; }
+.research-table-editor { position: relative; min-width: 0; margin: 12px 0 8px; }
 .research-table-editor > .research-markdown-table { position: relative; margin: 0; }
-.research-table-editor:focus-visible { outline: 2px solid #7197cd; outline-offset: 3px; }
 .research-table-editor table { cursor: text; }
 .research-table-editor [data-research-table-editing] > .research-table-cell-content { visibility: hidden; }
 :root .research-table-options[data-ui="icon-action"][aria-label] { position: absolute; right: 0; bottom: calc(100% + 1px); z-index: 1; --action-size: 23px; --action-ink: currentColor; --action-accent: currentColor; --action-hover: color-mix(in srgb, currentColor 12%, transparent); opacity: 0; }
 :root .research-table-editor:is(:hover, :focus-within) > .research-table-options[data-ui="icon-action"][aria-label] { opacity: 1; }
-.research-table-cell-editor { position: absolute; z-index: 2; display: block; box-sizing: border-box; min-width: 0; min-height: 0; max-width: none; margin: 0; border: 0; border-radius: 0; resize: none; overflow: auto; outline: 2px solid #1547c0; outline-offset: -2px; background: transparent; box-shadow: none; line-height: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
-.research-table-tools { position: fixed; inset: auto; box-sizing: border-box; width: min(296px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; margin: 0; border: 1px solid #aebfd5; border-radius: 4px; padding: 8px; background: #fff; color: #172033; box-shadow: 0 5px 18px #17355624; font-size: 12px; }
+.research-table-cell-editor .research-reference-content { caret-color: currentColor; }
+.research-table-cell-editor { position: absolute; z-index: 2; display: block; box-sizing: border-box; min-width: 0; min-height: 0; max-width: none; margin: 0; border: 0; border-radius: 0; resize: none; overflow: auto; background: transparent; box-shadow: none; line-height: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+.research-table-tools { position: fixed; inset: auto; box-sizing: border-box; width: min(296px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; margin: 0; border: 1px solid #aebfd5; border-radius: 4px; padding: 8px; background: #fff; color: #172033; box-shadow: 0 5px 18px #17355624; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-table-tools > header { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
-.research-table-tools > header > strong { display: flex; align-items: center; gap: 10px; color: #172033; font-size: 12px; }
-.research-table-tools > header span { color: #52627a; font-size: 11px; font-weight: 400; }
+.research-table-tools > header > strong { display: flex; align-items: center; gap: 10px; color: #172033; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+.research-table-tools > header span { color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); font-weight: 400; }
 .research-table-structure { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .research-table-structure > button { display: flex; min-height: 30px; align-items: center; justify-content: center; gap: 5px; border: 1px solid #d1ddeb; border-radius: 4px; padding: 5px; background: #f7f9fc; color: #25364d; font: inherit; cursor: pointer; }
-.research-table-structure > button:hover:not(:disabled) { border-color: #a1b7d7; background: #eaf0fa; }
+.research-table-structure > button:hover:not(:disabled) { background: #eaf0fa; }
 .research-table-tools button:disabled { opacity: .4; cursor: not-allowed; }
-.research-table-tools button:focus-visible { outline: 2px solid #1547c0; outline-offset: 1px; }
 .research-table-alignment { display: flex; align-items: center; gap: 6px; margin-top: 8px; border-top: 1px solid #dce4ee; padding-top: 6px; }
 .research-table-alignment > span { margin-right: auto; color: #45566e; }
 .research-table-tools > footer { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
 .research-table-source-toggle { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; border: 0; border-radius: 4px; padding: 5px; background: transparent; color: #25364d; font: inherit; cursor: pointer; }
 .research-table-source-toggle:hover { background: #eaf0fa; }
 .research-table-source { min-width: 0; border: 1px solid #bdcadd; border-radius: 4px; background: #fff; color: #25364d; }
-.research-table-source > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #dae2ec; padding: 4px 8px; font-size: 12px; }
+.research-table-source > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #dae2ec; padding: 4px 8px; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-table-source > header > button { border: 0; border-radius: 4px; padding: 3px 6px; background: #edf3fb; color: #1547c0; font: inherit; cursor: pointer; }
-.research-table-source textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; max-height: 65dvh; margin: 0; border: 0; padding: 8px; outline: none; background: transparent; color: inherit; font: 13px/1.65 Consolas, "Cascadia Code", monospace; white-space: pre; overflow: auto; resize: vertical; }
+.research-table-source textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; max-height: 65dvh; margin: 0; border: 0; padding: 8px; outline: none; background: transparent; color: inherit; font: calc(var(--mewiki-document-unit, 1px) * 13)/1.65 Consolas, "Cascadia Code", monospace; white-space: pre; overflow: auto; resize: vertical; }
 @media (hover: none) { :root .research-table-options[data-ui="icon-action"][aria-label] { opacity: 1; } }

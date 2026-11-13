@@ -1,0 +1,99 @@
+.mewiki-publication-page { display: flex; flex-direction: column; box-sizing: border-box; width: 100%; height: 100dvh; margin: 0; border: 0; background: #fff; }
+.mewiki-publication-state { display: grid; min-height: 100dvh; place-content: center; padding: 24px; color: #52627a; background: #fff; }
+.mewiki-publication-page > .mewiki-publication-content { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; padding: 0; overflow: hidden; }
+.mewiki-publication-layout { display: grid; grid-template-columns: minmax(310px, 410px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); flex: 1 1 auto; min-height: 0; color: #243247; background: #fff; }
+.mewiki-publication-controls-pane, .mewiki-publication-preview-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.mewiki-publication-controls-pane { border-right: 1px solid #dce2e9; }
+.mewiki-publication-toolbar { display: flex; box-sizing: border-box; flex: 0 0 44px; align-items: center; gap: 6px; height: 44px; min-width: 0; padding: 0 10px; border-bottom: 1px solid #dce2e9; background: #f8fafc; }
+.mewiki-publication-template-toolbar { position: relative; z-index: 5; }
+.mewiki-publication-toolbar select { flex: 1 1 auto; min-width: 0; height: 30px; border: 1px solid #cfd8e3; border-radius: 4px; padding: 3px 6px; background: #fff; color: #243247; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); }
+.mewiki-publication-view-tabs { display: flex; align-self: stretch; align-items: stretch; gap: 2px; min-width: 0; margin-right: 4px; }
+.mewiki-publication-view-tabs > button { min-width: 0; padding: 0 9px !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; color: #596a7d; white-space: nowrap; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+.mewiki-publication-view-tabs > button[aria-selected="true"] { background: #e9edf2 !important; color: #172033; font-weight: 650; }
+.mewiki-publication-view-tabs > button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-publication-close { margin-left: auto !important; }
+.mewiki-publication-controls, .mewiki-publication-preview-content { flex: 1 1 auto; min-width: 0; min-height: 0; overflow: auto; padding: 20px; overscroll-behavior: contain; }
+.mewiki-publication-controls { padding: 0; }
+.mewiki-publication-hint { color: #596a7d; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.6; }
+.mewiki-publication-controls fieldset { min-width: 0; border: 0; padding: 20px; margin: 0; }
+.mewiki-publication-settings-section > summary { display: flex; align-items: center; gap: 10px; box-sizing: border-box; width: 100%; min-height: 38px; margin: 0; border-bottom: 1px solid #dce2e9; border-radius: 0; padding: 9px 16px; background: #edf0f4; color: #243247; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); font-weight: 650; line-height: 1.5; list-style: none; cursor: pointer; }
+.mewiki-publication-settings-section > summary::-webkit-details-marker { display: none; }
+.mewiki-publication-settings-section > summary:hover { background: #e5e9ef; }
+.mewiki-publication-settings-section > summary > span { flex: 1 1 auto; text-align: right; }
+.mewiki-publication-settings-section > summary > svg { flex: 0 0 16px; }
+.mewiki-publication-settings-section[open] > summary > svg { transform: rotate(90deg); }
+.mewiki-publication-content-choice { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 16px; }
+.mewiki-publication-controls label { display: grid; gap: 6px; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); margin-bottom: 12px; min-width: 0; overflow-wrap: anywhere; }
+.mewiki-publication-controls input:not([type=checkbox]):not([type=color]), .mewiki-publication-controls select { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid #cfd8e3; border-radius: 4px; padding: 7px 8px; background: #fff; color: #243247; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); }
+.mewiki-publication-controls input[type=color] { width: 100%; height: 34px; border: 1px solid #cfd8e3; background: transparent; border-radius: 4px; padding: 3px; }
+.mewiki-publication-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+.mewiki-publication-font-control { grid-column: 1 / -1; display: flex; align-items: center; gap: 4px; min-width: 0; }
+.mewiki-publication-font-control > label { flex: 1; }
+.mewiki-publication-controls .mewiki-publication-check { display: flex; align-items: center; gap: 8px; }
+.mewiki-publication-dialog button:where(:not([data-ui])) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid #cfd8e3; border-radius: 4px; padding: 7px 10px; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); background: #fff; color: #243247; cursor: pointer; }
+.mewiki-publication-dialog button:disabled { opacity: .5; cursor: default; }
+.mewiki-publication-dialog button:hover:not(:disabled) { background: #f0f5fb; }
+.mewiki-publication-toolbar .mewiki-publication-generate { --action-ink: #1547c0; }
+.mewiki-publication-scope-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.mewiki-publication-dimensions > summary { cursor: pointer; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); margin: 10px 0; }
+.mewiki-publication-frame { margin-top: 18px; border-top: 1px solid #dce2e9; padding-top: 16px; }
+.mewiki-publication-sample { max-width: 760px; margin: 0 auto; min-width: 0; }
+.mewiki-publication-sample-canvas { position: relative; overflow: hidden; margin: 0 auto; border: 1px solid #dce2e9; box-sizing: content-box; }
+.mewiki-publication-sample-canvas iframe { display: block; border: 0; transform-origin: top left; pointer-events: none; }
+.mewiki-publication-source { min-width: 0; }
+.mewiki-publication-source > .mewiki-publication-scope-actions { margin: 0; padding: 0; border: 0; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); color: #596a7d; }
+.mewiki-publication-scope-actions > label { display: flex; align-items: center; gap: 6px; }
+.mewiki-publication-source-paper { max-width: 860px; min-width: 0; padding: 22px 18px 28px; margin: 0 auto; border: 1px solid #dce2e9; border-radius: 4px; background: #fff; }
+.mewiki-publication-source-paper > .research-note-title { margin: 0 0 18px; }
+.mewiki-publication-source-blocks { margin-left: 0; }
+.mewiki-publication-source-item { display: grid; grid-template-columns: 46px minmax(0, 1fr); min-width: 0; padding: 8px 0; border-bottom: 1px solid #edf0f4; }
+.mewiki-publication-source-item:last-child { border-bottom: 0; }
+.mewiki-publication-source-item[data-selected="false"] { background: #f8fafc; }
+.mewiki-publication-source-item[data-publication-issue="true"] { background: #fff5ed; scroll-margin-block: 100px; }
+.mewiki-publication-source-body { min-width: 0; }
+.mewiki-publication-source-diagnostic { display: flex; align-items: flex-start; gap: 7px; margin: 0 0 10px; padding: 8px; border-radius: 4px; background: #ffead7; color: #873e17; font: calc(var(--mewiki-interface-unit, 1px) * 12)/1.6 var(--mewiki-interface-font-family, sans-serif); }
+.mewiki-publication-source-diagnostic > svg { flex: 0 0 16px; margin-top: 2px; }
+.mewiki-publication-problem-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.mewiki-publication-error > p { margin: 0 0 8px; }
+.mewiki-publication-source-checks { display: flex; align-items: flex-start; flex-direction: column; gap: 12px; padding-top: 8px; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); color: #66758a; }
+.mewiki-publication-source-checks label { display: inline-flex; align-items: center; gap: 3px; cursor: pointer; }
+.mewiki-publication-source-checks input { width: 14px; height: 14px; margin: 2px; }
+.mewiki-publication-source-break { color: #66758a; }
+.mewiki-publication-source-paper .research-note-block { min-width: 0; }
+.mewiki-publication-preview-pane { background: #f4f6f9; }
+.mewiki-publication-preview { display: grid; gap: 22px; max-width: 760px; margin: 0 auto; }
+.mewiki-publication-preview figure { margin: 0; min-width: 0; }
+.mewiki-publication-preview img { display: block; width: 100%; height: auto; background: #fff; border: 1px solid #dce2e9; box-sizing: border-box; }
+.mewiki-publication-preview figcaption { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 8px; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); color: #596a7d; }
+.mewiki-publication-empty { color: #596a7d; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); margin: 24px 0; line-height: 1.7; }
+.mewiki-publication-error { white-space: pre-wrap; overflow-wrap: anywhere; color: #a33b28; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); line-height: 1.6; }
+.mewiki-publication-popover { position: fixed; inset: auto; box-sizing: border-box; width: min(280px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; margin: 0; border: 1px solid #c8d3e1; border-radius: 4px; padding: 12px; background: #fff; color: #243247; box-shadow: 0 6px 24px #17355624; }
+.mewiki-publication-popover.is-actions { display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: 6px; }
+.mewiki-publication-popover label { display: grid; min-width: 0; gap: 8px; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+.mewiki-publication-popover input { box-sizing: border-box; min-width: 0; width: 100%; border: 1px solid #cfd8e3; border-radius: 4px; padding: 7px 8px; color: #243247; font: inherit; }
+.mewiki-publication-save-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
+.mewiki-publication-info { position: relative; display: flex; align-items: center; }
+.mewiki-publication-tooltip { position: absolute; z-index: 6; right: 0; top: calc(100% + 6px); box-sizing: border-box; width: min(340px, calc(100vw - 40px)); padding: 12px; border: 1px solid #c8d3e1; border-radius: 4px; background: #fff; color: #52627a; box-shadow: 0 6px 24px #17355624; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.65; }
+.mewiki-publication-tooltip::before { content: ''; position: absolute; left: 0; right: 0; top: -8px; height: 8px; }
+.mewiki-publication-tooltip p { margin: 0; }
+.mewiki-publication-tooltip p + p { margin-top: 10px; }
+@media (max-width: 760px) {
+  .mewiki-publication-page > .mewiki-publication-content { overflow: auto; }
+  .mewiki-publication-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: 44px 44px auto auto; flex: 0 0 auto; }
+  .mewiki-publication-controls-pane, .mewiki-publication-preview-pane { display: contents; }
+  .mewiki-publication-toolbar { position: sticky; }
+  .mewiki-publication-template-toolbar { grid-row: 1; top: 0; }
+  .mewiki-publication-preview-toolbar { grid-row: 2; top: 44px; z-index: 4; }
+  .mewiki-publication-controls { grid-row: 3; }
+  .mewiki-publication-preview-content { grid-row: 4; min-height: 240px; background: #f4f6f9; }
+  .mewiki-publication-controls, .mewiki-publication-preview-content { overflow: visible; }
+  .mewiki-publication-preview-content, .mewiki-publication-controls fieldset { padding: 16px; }
+  #publication-panel-content { scroll-margin-top: 96px; }
+  .mewiki-publication-controls input:not([type=checkbox]):not([type=color]), .mewiki-publication-controls select { font-size: calc(var(--mewiki-interface-unit, 1px) * 16); }
+  .mewiki-publication-toolbar select { font-size: calc(var(--mewiki-interface-unit, 1px) * 16); }
+  .mewiki-publication-view-tabs { flex: 1 1 auto; margin-right: 0; }
+  .mewiki-publication-view-tabs > button { flex: 1 1 0; overflow: hidden; text-overflow: ellipsis; padding-inline: 5px !important; }
+  .mewiki-publication-preview-toolbar { gap: 3px; padding-inline: 7px; }
+  .mewiki-publication-source-paper { padding: 16px 8px; }
+  .mewiki-publication-source-item { grid-template-columns: 39px minmax(0, 1fr); }
+}

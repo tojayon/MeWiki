@@ -1,18 +1,29 @@
 import { useLocale } from "../i18n/react.ts";
 import { t, localizeError } from "../i18n/locale.ts";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, FolderOpen, Plus } from "lucide-react";
-import DeviceInspectorModal from "./DeviceInspectorModal.tsx";
 import { useLibraryWorkspace } from "../state/LibraryWorkspaceContext.ts";
 import { ResearchLibraryClient } from "../state/researchLibraryClient.ts";
 import { createMeWikiNotebook } from "../domain/meWikiWorkspace.ts";
-import { WEBBENCH_WORKSPACE } from "../state/researchLibraryCatalog.ts";
+import { libraryEntryChoices } from "../state/researchLibraryCatalog.ts";
+import { useIntegration } from "../integrations/IntegrationContext.ts";
 import { useDeleteConfirmation } from "./useDeleteConfirmation.ts";
 
 const client = new ResearchLibraryClient();
-export default function LibraryManager({ onClose }: { onClose: () => void }) {
+export default function LibraryManager({ onClose, onBusyChange }: { onClose: () => void; onBusyChange: (busy: boolean) => void }) {
   useLocale();
   const workspace = useLibraryWorkspace();
+  const integration = useIntegration();
+  const entries = libraryEntryChoices({
+    plugins: integration.catalog,
+    connection: integration.connection,
+    contextDefaults: workspace.catalog.contextDefaults,
+    context: workspace.context,
+  });
+  const [entryId, setEntryId] = useState("");
+  const entry = entries.find(item => item.id === entryId)
+    ?? entries.find(item => item.id === workspace.context)
+    ?? entries[0];
   const confirm = useDeleteConfirmation();
   const [adding, setAdding] = useState<"create" | "open" | null>(null);
   const [name, setName] = useState("");
@@ -21,8 +32,12 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
   const [rename, setRename] = useState("");
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState<string | { entryName: string }>("");
   const busy = working || workspace.switching;
+  useEffect(() => {
+    onBusyChange(busy);
+    return () => onBusyChange(false);
+  }, [busy, onBusyChange]);
   const run = async (operation: () => Promise<void>) => {
     if (busy) return;
     setWorking(true);
@@ -37,17 +52,19 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
     }
   };
   return (
-    <DeviceInspectorModal
-      open
-      title={t("切换资料库")}
-      testId="mewiki-library-manager"
+    <section
+      aria-label={t("切换资料库")}
+      data-testid="mewiki-library-manager"
       className="mewiki-library-manager"
-      onClose={() => {
-        if (!busy) onClose();
-      }}
     >
       <p>
         {t("每个资料库独立保存笔记、符号、附件和历史版本。切换前自动保存当前修改。")}</p>
+      {entry && <label className="mewiki-library-entry-select">
+        {t("默认资料库入口")}
+        <select aria-label={t("默认资料库入口")} value={entry.id} disabled={busy} onChange={event => setEntryId(event.target.value)}>
+          {entries.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </select>
+      </label>}
       {!workspace.catalog.libraries.some(
         (item) => item.id === workspace.profile.id,
       ) && (
@@ -117,8 +134,8 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
               </small>
               <span className="mewiki-library-badges">
                 {workspace.profile.id === profile.id && <span>{t("当前资料库")}</span>}
-                {workspace.catalog.contextDefaults[WEBBENCH_WORKSPACE] ===
-                  profile.id && <span>{t("WebBench 默认")}</span>}
+                {entries.filter(item => workspace.catalog.contextDefaults[item.id] === profile.id)
+                  .map(item => <span key={item.id}>{t`${item.name} 默认`}</span>)}
               </span>
               <div className="mewiki-library-actions">
                 <button
@@ -130,35 +147,33 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
                   }}
                 >
                   {t("改名")}</button>
-                <button
+                {entry && <button
                   type="button"
                   disabled={
                     busy ||
-                    workspace.catalog.contextDefaults[WEBBENCH_WORKSPACE] ===
+                    workspace.catalog.contextDefaults[entry.id] ===
                       profile.id
                   }
                   onClick={() =>
                     void run(async () => {
                       await client.updateLibrary(profile.id, {
-                        context: WEBBENCH_WORKSPACE,
+                        context: entry.id,
                         useAsDefault: true,
                       });
                       await workspace.refreshCatalog();
                       try {
                         localStorage.setItem(
-                          `mewiki:workspace:${WEBBENCH_WORKSPACE}:library`,
+                          `mewiki:workspace:${entry.id}:library`,
                           profile.id,
                         );
                       } catch {
                         /* The service still remembers the entry default. */
                       }
-                      setNotice(
-                        "WebBench 的默认资料库已更新。已打开的窗口保持当前资料库。",
-                      );
+                      setNotice({ entryName: entry.name });
                     })
                   }
                 >
-                  {t("设为 WebBench 默认")}</button>
+                  {t`设为 ${entry.name} 默认`}</button>}
                 {profile.id !== "default" &&
                   profile.id !== workspace.profile.id && (
                     <button
@@ -242,11 +257,11 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
                 notebook: createMeWikiNotebook(),
               });
               if (
-                workspace.context === WEBBENCH_WORKSPACE &&
-                !workspace.catalog.contextDefaults[WEBBENCH_WORKSPACE]
+                workspace.context !== "standalone" &&
+                !workspace.catalog.contextDefaults[workspace.context]
               )
                 await client.updateLibrary(profile.id, {
-                  context: WEBBENCH_WORKSPACE,
+                  context: workspace.context,
                   useAsDefault: true,
                 });
               await workspace.refreshCatalog();
@@ -262,7 +277,7 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
               required
               maxLength={100}
               value={name}
-              placeholder={t("例如 Cislunar 或个人 Wiki")}
+              placeholder={t("例如项目资料或个人 Wiki")}
               onChange={(event) => setName(event.target.value)}
               disabled={busy}
             />
@@ -299,7 +314,8 @@ export default function LibraryManager({ onClose }: { onClose: () => void }) {
       )}
       {busy && <p role="status">{t("正在保存并打开资料库…")}</p>}
       {error && <p role="alert">{localizeError(error)}</p>}
-      {notice && <p role="status">{localizeError(notice)}</p>}
-    </DeviceInspectorModal>
+      {notice && <p role="status">{typeof notice === "string" ? localizeError(notice)
+        : t`${notice.entryName} 的默认资料库已更新。已打开的窗口保持当前资料库。`}</p>}
+    </section>
   );
 }

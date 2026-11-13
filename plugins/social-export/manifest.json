@@ -1,0 +1,27 @@
+{
+  "manifestVersion": 2,
+  "apiVersion": 2,
+  "id": "org.mewiki.social-export",
+  "name": "社交图文导出",
+  "version": "1.1.0",
+  "description": "将选定笔记排成适合分享的长图或多页知识卡片，保存自己的配色、字体和作者信息。",
+  "capabilities": [],
+  "contentTypes": [],
+  "exporters": [{
+    "id": "social-images",
+    "label": "社交图文导出",
+    "description": "选择平台和模板，预览并导出 PNG、JPEG 或多页图片 ZIP。",
+    "templates": [
+      { "id": "mewiki", "name": "MeWiki 原生", "style": "document" },
+      { "id": "clear", "name": "清爽科普", "background": "#FFFFFF", "textColor": "#243247", "headingColor": "#15253D", "accentColor": "#2563EB", "fontFamily": "sans", "fontSize": 32, "lineHeight": 1.65 },
+      { "id": "academic", "name": "学术笔记", "background": "#FAF8F2", "textColor": "#303030", "headingColor": "#1D2838", "accentColor": "#B45309", "fontFamily": "serif", "fontSize": 32, "lineHeight": 1.7 },
+      { "id": "focus", "name": "重点卡片", "background": "#FFF7F2", "textColor": "#38291F", "headingColor": "#5D2818", "accentColor": "#C2410C", "fontFamily": "sans", "fontSize": 36, "lineHeight": 1.6 }
+    ],
+    "presets": [
+      { "id": "xiaohongshu", "name": "小红书", "width": 1080, "height": 1440 },
+      { "id": "x", "name": "X（推特）", "width": 1600, "height": 900 },
+      { "id": "zhihu", "name": "知乎", "width": 1080, "height": 1440 },
+      { "id": "wechat", "name": "微信公众号", "width": 1080, "height": 1440 }
+    ]
+  }]
+}

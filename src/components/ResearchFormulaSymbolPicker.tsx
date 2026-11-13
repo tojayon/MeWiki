@@ -20,7 +20,7 @@ export default function ResearchFormulaSymbolPicker({ entries, selectedId, query
   return <section className="research-formula-symbol-browser" aria-label={t("符号词典选择")} data-popover-no-drag="">
     <div className="research-formula-symbol-search-row"><div className="research-formula-symbol-search">
       <Search size={14} aria-hidden="true" />
-      <input ref={inputRef} type="search" aria-label={t("搜索公式符号")} placeholder={t("搜索符号或标签")}
+      <input ref={inputRef} type="search" data-ui="search-input" aria-label={t("搜索公式符号")} placeholder={t("搜索符号或标签")}
         title={t`按名称、记号、含义或标签定位；方向键选择，回车${inserting ? t('插入') : t('选用')}`}
         aria-controls={id} aria-activedescendant={active || undefined} value={query} onChange={event => onQueryChange(event.target.value)}
         onKeyDown={event => {

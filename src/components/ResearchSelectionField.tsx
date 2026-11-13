@@ -32,7 +32,7 @@ function SelectionPopup({ label, choices, selectedId, placeholder, onSelect, onC
     onToggle={event => { if (event.newState === 'closed') onClose(); }}
     onKeyDown={event => { event.stopPropagation(); if (event.key === 'Escape' && !event.nativeEvent.isComposing) { event.preventDefault(); onClose(); anchor.focus({ preventScroll: true }); } }}>
     <header><strong>{label}</strong><button type="button" aria-label={t`关闭${label}`} title={t("关闭")} onClick={() => { onClose(); anchor.focus({ preventScroll: true }); }}><X size={14} /></button></header>
-    <label className="research-choice-search"><Search size={14} aria-hidden="true" /><input ref={search} type="search" aria-label={t`搜索${label}`} placeholder={placeholder} value={query}
+    <label className="research-choice-search"><Search size={14} aria-hidden="true" /><input ref={search} type="search" data-ui="search-input" aria-label={t`搜索${label}`} placeholder={placeholder} value={query}
       aria-controls={`${id}-list`} aria-activedescendant={active || undefined} onChange={event => setQuery(event.target.value)}
       onKeyDown={event => {
         if (event.nativeEvent.isComposing || event.keyCode === 229) return;

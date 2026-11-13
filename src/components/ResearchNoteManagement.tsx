@@ -17,9 +17,7 @@ import type {
 } from "../domain/researchNotebook.ts";
 import {
   defaultResearchNoteFilters,
-  filterResearchNotes,
   getNoteReviewStatus,
-  getResearchNoteProgress,
   getResearchTagTree,
   noteReviewStates,
   setNoteReviewStatus,
@@ -30,21 +28,27 @@ import {
 import { useFormulaPopover } from "./useFormulaPopover.ts";
 import ResearchNoteMetadata from "./ResearchNoteMetadata.tsx";
 import ResearchTagsPopover from "./ResearchTagsPopover.tsx";
+import ResearchTagTreeToolbar from "./ResearchTagTreeToolbar.tsx";
 import "./ResearchNoteManagement.css";
+import { isMeWikiManualNote } from "../domain/meWikiManual.ts";
 import {
+  currentNoteLibrary,
   libraryFilters,
   libraryNotes,
   setLibraryFilters,
+  type ResearchNoteLibrary,
 } from "../domain/researchNoteLibraries.ts";
 
 function NoteFilterPopover({
   state,
+  library,
   filters,
   onChange,
   trigger,
   onClose,
 }: {
   state: ResearchNotebookState;
+  library: ResearchNoteLibrary;
   filters: ResearchNoteFilters;
   onChange: (filters: ResearchNoteFilters) => void;
   trigger: HTMLButtonElement;
@@ -52,6 +56,7 @@ function NoteFilterPopover({
 }) {
   useLocale();
   const ref = useRef<HTMLDivElement>(null);
+  const notes = libraryNotes(state, library).filter(note => !isMeWikiManualNote(note));
   const triggerRef = useRef<HTMLElement>(trigger);
   useFormulaPopover({
     ref,
@@ -107,10 +112,10 @@ function NoteFilterPopover({
         >
           <option value="">{t("全部标签")}</option>
           {filters.tag &&
-            !getResearchTagTree(libraryNotes(state)).some(
+            !getResearchTagTree(notes).some(
               (tag) => tag.path === filters.tag,
             ) && <option value={filters.tag}>{filters.tag}（0）</option>}
-          {getResearchTagTree(libraryNotes(state)).map((tag) => (
+          {getResearchTagTree(notes).map((tag) => (
             <option key={tag.path} value={tag.path}>
               {"　".repeat(tag.depth)}
               {tag.path}（{tag.count}）
@@ -134,23 +139,20 @@ function NoteFilterPopover({
 
 export function ResearchNoteListTools({
   state,
+  library = currentNoteLibrary(state),
   onChange,
   onCreateNote,
 }: {
   state: ResearchNotebookState;
+  library?: ResearchNoteLibrary;
   onChange: (state: ResearchNotebookState) => void;
   onCreateNote: () => void;
 }) {
   useLocale();
   const [trigger, setTrigger] = useState<HTMLButtonElement | null>(null);
-  const filters = libraryFilters(state);
-  const progress = getResearchNoteProgress(libraryNotes(state));
-  const filteredCount = filterResearchNotes(
-    libraryNotes(state),
-    filters,
-  ).length;
+  const filters = libraryFilters(state, library);
   const setFilters = (noteFilters: ResearchNoteFilters) =>
-    onChange(setLibraryFilters(state, noteFilters));
+    onChange(setLibraryFilters(state, noteFilters, library));
   const close = (focus = false) => {
     if (focus) trigger?.focus();
     setTrigger(null);
@@ -161,6 +163,7 @@ export function ResearchNoteListTools({
         <label className="research-note-search">
           <Search size={13} />
           <input
+            data-ui="search-input"
             aria-label={t("搜索研究笔记")}
             placeholder={t("搜索笔记或标签")}
             value={filters.query}
@@ -192,26 +195,8 @@ export function ResearchNoteListTools({
         >
           <FilePlus2 size={15} />
         </button>
+        <ResearchTagTreeToolbar />
       </div>
-      <div className="research-note-progress-copy">
-        <button
-          aria-label={t("查看已核对笔记")}
-          onClick={() =>
-            setFilters({
-              ...filters,
-              status: filters.status === "reviewed" ? "all" : "reviewed",
-            })
-          }
-        >
-          {t("已核对")} {progress.reviewed} / {progress.total}
-        </button>
-        <span>{filteredCount}  {t("篇")}</span>
-      </div>
-      <progress
-        aria-label={t("笔记核对进度")}
-        value={progress.reviewed}
-        max={progress.total || 1}
-      />
       {(filters.status !== "all" || filters.tag) && (
         <button
           className="research-note-active-filter"
@@ -234,6 +219,7 @@ export function ResearchNoteListTools({
       {trigger && (
         <NoteFilterPopover
           state={state}
+          library={library}
           filters={filters}
           onChange={setFilters}
           trigger={trigger}
@@ -359,19 +345,13 @@ export function ResearchNoteOrganizationPanel({ state, note, readOnly, onChange,
 }
 
 export function ResearchNoteOrganizationBar({
-  note,
   activePanel,
   onOpenPanel,
 }: {
-  note: ResearchNote;
   activePanel?: "tags" | "metadata";
   onOpenPanel: (panel: "tags" | "metadata", trigger: HTMLButtonElement) => void;
 }) {
   useLocale();
-  const status = getNoteReviewStatus(note);
-  const reviewedTime = note.reviewedAt
-    ? `${status === "reviewed" ? t("核对时间") : t("上次核对")}：${formatDate(note.reviewedAt, { dateStyle: "medium", timeStyle: "short" })}`
-    : "";
   return (
     <div className="research-note-organization">
       <button
@@ -394,11 +374,18 @@ export function ResearchNoteOrganizationBar({
       >
         <Info size={15} />
       </button>
-      {reviewedTime && (
-        <span className="research-note-review-time" title={reviewedTime}>
-          {reviewedTime}
-        </span>
-      )}
     </div>
+  );
+}
+
+export function ResearchNoteReviewTime({ note }: { note: ResearchNote }) {
+  useLocale();
+  if (!note.reviewedAt) return null;
+  const label = getNoteReviewStatus(note) === "reviewed" ? t("核对时间") : t("上次核对");
+  const time = formatDate(note.reviewedAt, { dateStyle: "medium", timeStyle: "short" });
+  return (
+    <span className="research-note-review-time" title={`${label}：${time}`}>
+      {label}：<time dateTime={note.reviewedAt}>{time}</time>
+    </span>
   );
 }
