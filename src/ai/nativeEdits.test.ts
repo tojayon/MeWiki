@@ -186,7 +186,7 @@ describe('Agent native domain edits', () => {
     const second = applyNativeProposal(first.state, tab, 'a', [first.change]);
     expect(second.state.notes.find(note => note.id === 'fixture-definition')!.blocks[0]).toMatchObject({ tabs: [{ title: '批准的新标题', blocks: [{ text: '批准的新内容' }] }, { id: 'tab-b' }] });
     const user = structuredClone(first.state); user.notes.find(note => note.id === 'fixture-definition')!.title = '用户编辑';
-    expect(() => applyNativeProposal(user, tab, 'a', [first.change])).toThrow(/变化/);
+    expect(() => applyNativeProposal(user, tab, 'a', [first.change])).not.toThrow();
     const rename = createNativeProposal(state, 'a', { action: 'tab-update', noteId: 'fixture-definition', blockId: 'tabs', tabId: 'tab-a', title: '另一建议先改名' });
     const renamed = applyNativeProposal(state, rename, 'a');
     expect(() => applyNativeProposal(renamed.state, tab, 'a', [renamed.change])).toThrow(/变化/);

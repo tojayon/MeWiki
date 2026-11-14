@@ -1,0 +1,56 @@
+/* Workspace chrome only. Document, formula, chart, diff and export colors are
+   owned by their renderers and deliberately do not inherit these selectors. */
+:root :is(.research-notebook-toolbar, .research-outline-tabs, .research-note-outline > header, .research-note-outline > footer, .mewiki-publication-toolbar, .theory-detail-header, .theory-editor-form > header, .theory-map-toolbar) {
+  border-color: var(--mewiki-ui-border);
+  background: var(--mewiki-ui-surface);
+  color: var(--mewiki-ui-ink);
+}
+:root :is(.research-notebook-mode-tabs, .research-notebook-sidebar, .research-dictionary-sidebar, .research-sidebar-footer, .research-note-outline, .mewiki-settings-footer, .research-variable-recipe) {
+  border-color: var(--mewiki-ui-border);
+  background: var(--mewiki-ui-surface-muted);
+}
+:root :is(.research-note-search, .research-dictionary-search, .research-note-more-menu, .research-metadata-popover, .research-block-insert-popover, .research-reference-popover, .research-selection-popup, .mewiki-ai-model-options, .mewiki-ai-conversation-panel, .mewiki-ai-usage-panel, .mewiki-ai-composer, .mewiki-ai-proposal-card, .mewiki-ai-tool-progress, .mewiki-publication-popover, .mewiki-publication-tooltip, .theory-document-dialog, .theory-map-legend, .theory-map-detail) {
+  border-color: var(--mewiki-ui-border);
+  background: var(--mewiki-ui-surface);
+  color: var(--mewiki-ui-ink);
+}
+:root :is(.research-note-more-menu, .research-metadata-popover, .research-block-insert-popover, .research-reference-popover, .research-selection-popup, .mewiki-publication-popover, .mewiki-publication-tooltip, .theory-document-dialog) {
+  box-shadow: 0 6px 24px #17203314;
+}
+:root :is(.research-notebook-mode-tabs button, .research-outline-tabs > button) { color: var(--mewiki-ui-muted); font-weight: 500; }
+:root :is(.research-notebook-mode-tabs button, .research-outline-tabs > button)[aria-selected="true"] { border-bottom-color: var(--mewiki-ui-accent); background: var(--mewiki-ui-selected); color: var(--mewiki-ui-accent); font-weight: 600; }
+:root :is(.research-note-list-tools, .research-dictionary-toolbar, .research-note-tree, .research-note-tree > li + li, .research-note-tree-children > li + li, .mewiki-library-row, .mewiki-plugin-row) { border-color: var(--mewiki-ui-border); }
+:root .research-note-tree .research-note-folder { border-color: var(--mewiki-ui-border); background: #eef1f5; color: #4b596a; font-weight: 550; }
+:root .research-note-tree-children .research-note-folder { background: #f4f6f8; }
+:root .research-note-tree-children .research-note-tree-children .research-note-folder { background: #f8f9fb; }
+:root .research-note-tree .research-note-folder:hover { background: var(--mewiki-ui-hover); color: var(--mewiki-ui-ink); }
+:root :is(.research-note-more-menu > button, .mewiki-publication-settings-section > summary):hover:not(:disabled) { background: var(--mewiki-ui-hover); color: var(--mewiki-ui-ink); }
+:root .research-note-more-menu > .research-note-more-delete:hover:not(:disabled) { background: #fff0f2; color: #a32236; }
+:root .mewiki-publication-settings-section > summary { border-color: var(--mewiki-ui-border); background: var(--mewiki-ui-surface-muted); font-weight: 550; }
+:root :is(.mewiki-ai-message > .mewiki-ai-assistant-header, .mewiki-ai-task-status, .mewiki-ai-model-menu > summary, .mewiki-ai-session-title) { color: var(--mewiki-ui-muted); }
+:root .mewiki-ai-user-bubble { background: var(--mewiki-ui-surface-muted); }
+:root .mewiki-ai-tool-progress { color: var(--mewiki-ui-muted); }
+:root .research-dictionary-consistency { border-color: var(--mewiki-ui-border); background: var(--mewiki-ui-surface); }
+:root .research-term-reference-preview { border: 0; border-radius: 4px; background: var(--mewiki-ui-surface-muted); }
+:root .research-term-atom-composition output > span { border-color: var(--mewiki-ui-border); background: var(--mewiki-ui-surface); color: var(--mewiki-ui-ink); }
+
+:root :is(.mewiki-settings-page, .mewiki-library-manager, .mewiki-plugin-manager, .research-symbol-edit, .research-term-editor, .theory-editor-form, .theory-document-dialog, .mewiki-ai-model-options, .mewiki-publication-controls, .mewiki-publication-toolbar, .mewiki-publication-popover)
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]), textarea, select) {
+  border-color: var(--mewiki-ui-field-border);
+}
+:root :is(.mewiki-library-manager, .mewiki-plugin-manager, .research-library-dialog, .mewiki-ai-service-actions, .mewiki-publication-controls, .mewiki-publication-scope-actions, .mewiki-publication-save-actions, .mewiki-publication-preview figcaption) button:not([data-ui]):not([type="submit"]):not(.research-storage-primary) {
+  border-color: var(--mewiki-ui-field-border);
+  color: var(--mewiki-ui-ink);
+  background: var(--mewiki-ui-surface);
+}
+:root :is(.mewiki-library-manager, .mewiki-plugin-manager, .research-library-dialog, .mewiki-ai-service-actions, .mewiki-publication-controls, .mewiki-publication-scope-actions, .mewiki-publication-save-actions, .mewiki-publication-preview figcaption) button:not([data-ui]):not([type="submit"]):not(.research-storage-primary):hover:not(:disabled) { background: var(--mewiki-ui-hover); }
+:root :is(.research-storage-location, .research-storage-path-preview, .mewiki-plugin-preview) { border-color: var(--mewiki-ui-border); background: var(--mewiki-ui-surface-muted); }
+:root :is(.mewiki-library-add-form, .mewiki-plugin-row, .mewiki-plugin-install, .mewiki-publication-controls-pane, .mewiki-publication-frame, .mewiki-publication-texture, .mewiki-texture-layers, .mewiki-publication-source-paper, .mewiki-publication-preview img, .mewiki-publication-sample-canvas, .theory-map-status) { border-color: var(--mewiki-ui-border); }
+:root :is(.mewiki-library-description > small, .mewiki-plugin-metadata, .mewiki-publication-hint, .mewiki-publication-empty, .mewiki-publication-source > .mewiki-publication-scope-actions, .theory-map-status) { color: var(--mewiki-ui-muted); }
+:root :is(.theory-map-canvas, .mewiki-publication-preview-pane) { background: var(--mewiki-ui-surface-muted); }
+:root .mewiki-publication-settings-section > summary > span { text-align: left; }
+:root .mewiki-publication-view-tabs > button[aria-selected="true"] { background: var(--mewiki-ui-selected) !important; color: var(--mewiki-ui-accent); font-weight: 600; }
+:root .mewiki-texture-layers { border: 0; padding: 0; }
+:root .mewiki-texture-layers > button[data-ui="menu-action"][aria-pressed="true"] { background: var(--mewiki-ui-selected); color: var(--mewiki-ui-accent); font-weight: 550; }
+:root .theory-detail-header, :root .theory-editor-form > header { min-height: 44px; }
+:root .research-symbol-position-field { border-color: var(--mewiki-ui-border); }

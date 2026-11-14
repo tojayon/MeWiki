@@ -4,6 +4,7 @@ import type { Plugin } from 'vite';
 import type { AiSettingsInput, AiStreamEvent } from '../src/ai/types.ts';
 import { AiProviderStore, AiServiceError } from './aiProviderStore.ts';
 import { checkedAiChatInput, completeAi, listAiModels, testAiConnection } from './aiTransport.ts';
+import { aiHttpFailure, type AiFailure } from '../src/ai/failures.ts';
 
 const prefix = '/api/mewiki/ai';
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -37,8 +38,8 @@ async function body(request: IncomingMessage): Promise<Record<string, unknown>> 
     return value as Record<string, unknown>;
   } catch { throw new AiServiceError('AI 请求不是有效的 JSON。'); }
 }
-function safeError(cause: unknown): { status: number; error: string } {
-  return cause instanceof AiServiceError ? { status: cause.status, error: cause.message } : { status: 500, error: 'AI 服务操作失败，请稍后重试。' };
+function safeError(cause: unknown): { status: number; error: string; failure: AiFailure } {
+  return cause instanceof AiServiceError ? { status: cause.status, error: cause.message, failure: cause.failure ?? (cause.status === 400 ? { kind: 'request', recovery: 'revise', status: 400 } : aiHttpFailure(cause.status)) } : { status: 500, error: 'AI 服务操作失败，请稍后重试。', failure: aiHttpFailure(500) };
 }
 
 export function createAiServiceMiddleware(store: AiProviderStore) {
@@ -63,11 +64,14 @@ export function createAiServiceMiddleware(store: AiProviderStore) {
       const value = await body(request);
       if (typeof value.providerId !== 'string' || value.providerId.length > 128) throw new AiServiceError('请选择已保存的 AI 服务。');
       const chat = route.endsWith('/chat') ? checkedAiChatInput(value) : null;
-      if (active >= 4) throw new AiServiceError('AI 请求过多，请等待现有任务完成。', 429);
+      if (active >= 4) throw new AiServiceError('AI 请求过多，请等待现有任务完成。', 429, { kind: 'rate-limit', recovery: 'retry', status: 429, retryAt: Date.now() + 1000 });
       allocated = true; active++;
       controller = new AbortController();
       request.on('aborted', abort); response.on('close', abort);
-      const provider = await store.resolve(value.providerId);
+      const provider = await store.resolve(value.providerId).catch(cause => {
+        if (cause instanceof AiServiceError) throw new AiServiceError(cause.message, cause.status, { kind: 'configuration', recovery: 'settings', status: cause.status });
+        throw cause;
+      });
       if (controller.signal.aborted || response.destroyed) return;
       const options = { signal: controller.signal };
       if (route.endsWith('/models')) response.end(JSON.stringify({ models: await listAiModels(provider, options) }));
@@ -79,14 +83,18 @@ export function createAiServiceMiddleware(store: AiProviderStore) {
         try {
           const result = await completeAi(provider, chat!, { ...options, onText: text => send({ type: 'text', text }), onTool: update => send({ type: 'tool', update }) });
           send({ type: 'done', result });
-        } catch (cause) { send({ type: 'error', error: safeError(cause).error }); }
+        } catch (cause) { const failure = safeError(cause); send({ type: 'error', error: failure.error, failure: failure.failure }); }
         response.end();
       }
     } catch (cause) {
       if (!response.destroyed && !response.writableEnded) {
         const failure = safeError(cause);
-        if (!response.headersSent) { response.statusCode = failure.status; response.end(JSON.stringify({ error: failure.error })); }
-        else response.end(JSON.stringify({ type: 'error', error: failure.error }) + '\n');
+        if (!response.headersSent) {
+          response.statusCode = failure.status;
+          if (failure.failure.retryAt) response.setHeader('Retry-After', Math.max(0, Math.ceil((failure.failure.retryAt - Date.now()) / 1000)));
+          response.end(JSON.stringify({ error: failure.error, failure: failure.failure }));
+        }
+        else response.end(JSON.stringify({ type: 'error', error: failure.error, failure: failure.failure }) + '\n');
       }
     } finally {
       request.off('aborted', abort); response.off('close', abort);

@@ -9,6 +9,8 @@ import type { TheoryMapDocument } from '../domain/researchTheoryMap.ts';
 import { readableAiNote } from './readable.ts';
 import { isMeWikiManualNote } from '../domain/meWikiManual.ts';
 import type { ResearchNote, ResearchNotebookBlock } from '../domain/researchNotebook.ts';
+import type { ResearchSymbolEntry } from '../domain/researchDictionary.ts';
+import { aiSymbolConventions, aiSymbolNotation, assertAiProposalSymbolNotation } from './symbolNotation.ts';
 
 export type AiExecutableTool = AiToolDefinition & { execute: (ctx: AiToolContext, args: Record<string, unknown>) => unknown };
 function fail(message: string): never { throw new Error(message); }
@@ -252,15 +254,16 @@ export const nativeAiTools: AiExecutableTool[] = [
   } },
   { name: 'read_block', description: '读取授权笔记中一个内容块的完整可编辑字段、所属标签页路径和操作列表。修改、删除、移动块或标签页前先调用；不读取附件原件和插件私有数据。', parameters: aiObject({ noteId: aiString, blockId: aiString }, ['noteId', 'blockId']), execute: (ctx, args) => {
     const note = nativeReadNote(ctx, args.noteId), block = findResearchBlock(note.blocks, id(args.blockId))?.block ?? fail('目标内容块已不存在。');
+    const readable = readableAiNote({ ...note, title: '', blocks: [block] }, ctx.state.notes.filter(item => ctx.noteIds.has(item.id)), ctx.state.symbols).slice(0, 12000);
     const result = budgetAiRead(ctx, { noteId: note.id, ...nativeBlockLocation(note, block), fields: blockFields(block),
-      readable: readableAiNote({ ...note, title: '', blocks: [block] }, ctx.state.notes.filter(item => ctx.noteIds.has(item.id)), ctx.state.symbols).slice(0, 12000) });
+      readable, symbolConventions: aiSymbolConventions(readable, ctx.state.symbols) });
     ctx.readBlockIds.add(blockKey(note.id, block.id)); ctx.sourceIds.add(note.id);
     return result;
   } },
   { name: 'read_dictionary_entry', description: '读取完整符号或术语字段及稳定 ID。修改/删除已有词条前必须调用；搜索片段不能代替完整读取。', parameters: aiObject({ kind: { type: 'string', enum: ['symbol', 'term'] }, entryId: aiString }, ['kind', 'entryId']), execute: (ctx, args) => {
     if (args.kind !== 'symbol' && args.kind !== 'term') fail('词条类型无效。');
     const entry = (args.kind === 'symbol' ? ctx.state.symbols : ctx.state.terms)?.find(item => item.id === id(args.entryId)) ?? fail('目标词条已不存在。');
-    const result = budgetAiRead(ctx, { kind: args.kind, entry: { id: entry.id, ...projectAiFields(entry, args.kind === 'symbol' ? aiSymbolSnapshotFields : aiTermFields) } }); ctx.readDictionaryIds.add(`${args.kind}:${entry.id}`); return result;
+    const result = budgetAiRead(ctx, { kind: args.kind, entry: { id: entry.id, ...projectAiFields(entry, args.kind === 'symbol' ? aiSymbolSnapshotFields : aiTermFields), ...(args.kind === 'symbol' ? { resolved: aiSymbolNotation(entry as ResearchSymbolEntry) } : {}) } }); ctx.readDictionaryIds.add(`${args.kind}:${entry.id}`); return result;
   } },
   { name: 'read_theory_maps', description: '浏览理论地图，或传 mapId 读取一张地图。列表用 offset 分页。仅返回本次授权笔记相关的成员与关系；只有完整范围均获授权并读取原文后才能修改地图，全局地图要求全库范围。', parameters: aiObject({ mapId: aiString, offset: { type: 'integer', minimum: 0 } }), execute: (ctx, args) => {
     const documents = ensureAiTheoryMaps(ctx.state).theoryMaps!.documents;
@@ -294,6 +297,7 @@ export const nativeAiTools: AiExecutableTool[] = [
     const action = id(args.action);
     assertNativeEditAccess(ctx, args);
     const proposal = createNativeProposal(ctx.state, ctx.libraryId, args);
+    assertAiProposalSymbolNotation(ctx.state, proposal);
     ctx.proposals.push(proposal);
     return { proposalId: proposal.id, status: '等待用户审阅', title: proposal.title, action };
   } },

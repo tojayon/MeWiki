@@ -6,6 +6,13 @@ import { normalizeResearchNotebook } from '../src/domain/researchNotebook.ts';
 import { createNoteProposal } from '../src/ai/proposals.ts';
 import { createNativeProposal } from '../src/ai/nativeProposals.ts';
 import { createAiSession } from '../src/ai/session.ts';
+import { expandAiProposalCards, openAiWorkspace } from './helpers/ai.ts';
+
+async function useNarrowReview(page: Page) {
+  const collapse = page.getByRole('button', { name: '收起笔记左侧面板', exact: true });
+  if (await collapse.isVisible()) await collapse.click();
+  await page.setViewportSize({ width: 390, height: 680 });
+}
 
 async function setup(page: Page, configured = true, locale = 'zh-CN', initial: Partial<ResearchNotebookState> = {}) {
   const state = createNotebookFixture(); state.activeNoteId = 'fixture-definition'; state.view = 'notes'; state.open = true;
@@ -34,8 +41,7 @@ async function setup(page: Page, configured = true, locale = 'zh-CN', initial: P
   return { saved };
 }
 async function openAi(page: Page) {
-  await page.getByRole('button', { name: 'AI 工作区', exact: true }).first().click();
-  const dialog = page.getByTestId('mewiki-ai-workspace'); await expect(dialog).toBeVisible(); return dialog;
+  const dialog = await openAiWorkspace(page); await expandAiProposalCards(dialog, false); return dialog;
 }
 
 async function suggestEdits(page: Page, suggestions: Record<string, string>[]) {
@@ -51,6 +57,7 @@ async function suggestEdits(page: Page, suggestions: Record<string, string>[]) {
   await ai.getByLabel('任务要求', { exact: true }).fill('审阅并修改当前笔记');
   await ai.getByRole('button', { name: '发送消息', exact: true }).click();
   await expect(ai.getByText('已准备修改，等待审阅。', { exact: true })).toBeVisible();
+  await expandAiProposalCards(ai);
   return ai;
 }
 
@@ -67,6 +74,7 @@ async function suggestNativeOperations(page: Page, reads: { name: string; args: 
   await ai.getByLabel('任务要求', { exact: true }).fill('按原生内容修改并保留稳定引用');
   await ai.getByRole('button', { name: '发送消息', exact: true }).click();
   await expect(ai.getByText('原生修改已准备，等待审阅。', { exact: true })).toBeVisible();
+  await expandAiProposalCards(ai);
   return ai;
 }
 
@@ -90,6 +98,76 @@ function fiveTabFixture() {
   }];
   return state;
 }
+
+test('resolves existing AI reply citations in the current library and keeps real missing links disabled after reload', async ({ page }) => {
+  const state = createNotebookFixture(), encodedId = 'citation/中文 空格';
+  state.notes.push({ ...state.notes.find(note => note.id === 'fixture-conditions')!, id: encodedId, title: '引用测试笔记' });
+  await setup(page, true, 'zh-CN', { notes: state.notes });
+  const href = `#research-note/${encodeURIComponent(encodedId)}`;
+  await page.route('**/api/mewiki/ai/chat', route => route.fulfill({ contentType: 'application/x-ndjson', body: JSON.stringify({ type: 'done', result: { message: { role: 'assistant', content: `参见[定义](#research-note/fixture-definition)与[来源](${href})。缺失的[关系定义](#research-note/actually-missing)。` }, usage: { inputTokens: 1, outputTokens: 1 } } }) + '\n' }));
+  const ai = await openAi(page);
+  await ai.getByLabel('任务要求', { exact: true }).fill('解释引用');
+  await ai.getByRole('button', { name: '发送消息', exact: true }).click();
+  const citation = ai.locator(`a[data-reference-href="${href}"]`);
+  await expect(citation).not.toHaveAttribute('aria-disabled', 'true');
+  await expect(citation).toHaveText('引用测试笔记');
+  const missing = ai.locator('a[data-reference-href="#research-note/actually-missing"]');
+  await expect(missing).toHaveAttribute('aria-disabled', 'true');
+  await expect(missing).toHaveAttribute('title', '目标笔记已移除');
+  await citation.click();
+  await expect(page.locator(`.research-reading-pane[data-reading-note-id="${encodedId}"]`)).toBeVisible();
+  await expect(ai).toBeVisible();
+  await page.reload();
+  await expect(citation).not.toHaveAttribute('aria-disabled', 'true');
+  await expect(citation).toHaveText('引用测试笔记');
+  await expect(missing).toHaveAttribute('aria-disabled', 'true');
+});
+
+test('highlights distant changed words in rendered Markdown without marking shared prose as deleted', async ({ page }, info) => {
+  const state = createNotebookFixture(), note = state.notes.find(note => note.id === 'fixture-definition')!;
+  const before = `保留 **原有格式** 与 [参考](#research-note/fixture-conditions)，系统始终稳定。${'保留背景条件。'.repeat(100)}响应迅速，$x^2$ 不变。`;
+  note.blocks = [{ id: 'rich-words', type: 'markdown', kind: 'markdown', text: before }];
+  await setup(page, true, 'zh-CN', { notes: state.notes });
+  await suggestEdits(page, [{ operation: 'replace-text', noteId: note.id, blockId: 'rich-words', content: before.replace('始终', '局部').replace('迅速', '平稳') }]);
+  const review = page.getByTestId('mewiki-ai-review');
+  const block = review.locator('[data-review-block-id="rich-words"]');
+  await expect(block.locator('del.mewiki-ai-inline-change')).toHaveText(['始终', '迅速']);
+  await expect(block.locator('ins.mewiki-ai-inline-change')).toHaveText(['局部', '平稳']);
+  await expect(block.locator('strong')).toHaveText(['原有格式', '原有格式']);
+  await expect(block.locator('.katex')).toHaveCount(2);
+  await expect(block.locator('a.research-note-link[aria-disabled="true"]')).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath('precise-markdown-desktop.png') });
+  await page.setViewportSize({ width: 390, height: 620 });
+  await expect(block.locator('ins.mewiki-ai-inline-change').first()).toBeVisible();
+  await page.screenshot({ path: info.outputPath('precise-markdown-mobile.png') });
+  await review.getByRole('button', { name: '查看源码差异', exact: true }).click();
+  await expect(block.locator('del.mewiki-ai-inline-change')).toHaveText(['始终', '迅速']);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('mewiki:research-notebook')!).notes.find((note: { id: string }) => note.id === 'fixture-definition').blocks[0].text);
+  expect(saved).toBe(before);
+});
+
+test('shows visible change markers on rendered code and table structure despite their native backgrounds', async ({ page }, info) => {
+  const state = createNotebookFixture(), note = state.notes.find(note => note.id === 'fixture-definition')!;
+  note.blocks = [
+    { id: 'marked-code', type: 'markdown', kind: 'code', text: '```js\nconst value = 1;\n```' },
+    { id: 'marked-table', type: 'markdown', kind: 'table', text: '| 列 |\n| :--- |\n| 保留值 |' },
+  ];
+  await setup(page, true, 'zh-CN', { notes: state.notes });
+  await suggestEdits(page, [
+    { operation: 'replace-text', noteId: note.id, blockId: 'marked-code', content: '```js\nconst value = 2;\n```' },
+    { operation: 'replace-text', noteId: note.id, blockId: 'marked-table', content: '| 列 |\n| ---: |\n| 保留值 |' },
+  ]);
+  const review = page.getByTestId('mewiki-ai-review');
+  for (const [kind, color] of [['remove', 'rgb(247, 203, 208)'], ['add', 'rgb(188, 228, 200)']]) {
+    const code = review.locator(`code[data-ai-change="${kind}"]`);
+    await expect(code).toBeVisible();
+    await expect(code).toHaveCSS('box-shadow', `${color} 3px 0px 0px 0px inset`);
+    const cells = review.locator(`table[data-ai-change="${kind}"] :is(th, td)`);
+    await expect(cells).toHaveCount(2);
+    for (const cell of await cells.all()) await expect(cell).toHaveCSS('background-color', color);
+  }
+  await page.screenshot({ path: info.outputPath('precise-code-table-desktop.png') });
+});
 
 test('combines seven alternating text and native changes in one note with switchable tabs and batch approval', async ({ page }, info) => {
   const state = fiveTabFixture(), id = 'fixture-definition';
@@ -133,6 +211,7 @@ test('combines seven alternating text and native changes in one note with switch
     await expect(review.getByRole('tablist')).toHaveCount(1);
   }
   await page.screenshot({ path: info.outputPath('ai-combined-note-tabs.png') });
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).nth(1).click();
   await expect(review.getByRole('tablist')).toHaveCount(1);
   await expect(review.getByRole('tabpanel')).toHaveCount(1);
@@ -147,6 +226,7 @@ test('combines seven alternating text and native changes in one note with switch
   await page.evaluate(() => sessionStorage.setItem('mewiki-test-preserve-state', 'true'));
   await page.reload(); ai = await openAi(page);
   for (let index = 6; index >= 0; index--) {
+    await expandAiProposalCards(ai);
     await ai.getByRole('button', { name: '撤回此修改', exact: true }).nth(index).click();
     await expect(ai.getByText('此项修改已撤回并保存。', { exact: true })).toBeVisible();
   }
@@ -164,15 +244,19 @@ test('merges redundant pending edits without creating a false undo record and re
   }, { ...createAiSession('default'), proposals });
   await setup(page, true, 'zh-CN', state);
   let ai = await openAi(page);
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).first().click();
   await page.getByTestId('mewiki-ai-review').getByRole('button', { name: '应用当前页面修改', exact: true }).click();
   await expect(ai.getByText('已合并', { exact: true })).toHaveCount(1);
   await expect(ai.getByText('已撤回', { exact: true })).toHaveCount(0);
+  await expandAiProposalCards(ai);
   await expect(ai.getByRole('button', { name: '撤回此修改', exact: true })).toHaveCount(2);
   await page.evaluate(() => sessionStorage.setItem('mewiki-test-preserve-state', 'true'));
   await page.reload(); ai = await openAi(page);
   await expect(ai.getByText('已合并', { exact: true })).toHaveCount(1);
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).last().click();
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).click();
   await expect(ai.getByText('已撤回', { exact: true })).toHaveCount(2);
   await expect(ai.getByText('已合并', { exact: true })).toHaveCount(1);
@@ -199,15 +283,19 @@ test('focuses a selected tab rename after earlier changes and can refocus the sa
     { action: 'block-insert', noteId: 'fixture-definition', blockType: 'paragraph', fields: { text: '**目标页末尾新增**。' }, container: { exampleBlockId: 'tabs', tabId: 'other' } },
   ]);
   const review = page.getByTestId('mewiki-ai-review');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).first().click();
   await expect.poll(() => review.locator('.mewiki-ai-review-scroll').evaluate(element => element.scrollTop)).toBeLessThan(200);
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).nth(2).click();
   await expect(review.getByRole('tab', { name: '改名后的第二页', exact: true })).toHaveAttribute('aria-selected', 'true');
   await expect.poll(() => review.locator('.mewiki-ai-review-scroll').evaluate(element => element.scrollTop)).toBeGreaterThan(300);
   await review.getByRole('tab', { name: '通信事件', exact: true }).click();
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).nth(2).click();
   await expect(review.getByRole('tab', { name: '改名后的第二页', exact: true })).toHaveAttribute('aria-selected', 'true');
   await expect(review.getByRole('tabpanel')).toContainText('这段继续保留。');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).last().click();
   await expect(review.locator('ins strong').filter({ hasText: '目标页末尾新增' })).toBeInViewport();
 });
@@ -220,13 +308,15 @@ test('reviews hidden-tab text in one container and keeps tab navigation out of s
     { operation: 'replace-text', noteId: 'fixture-definition', blockId: 'event-3:text', content: '**执行事件**的新说明。' },
     { operation: 'delete-text', noteId: 'fixture-definition', blockId: 'event-4:text', content: '' },
   ]);
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).first().click();
   const review = page.getByTestId('mewiki-ai-review');
   await expect(review.getByRole('tablist', { name: '标签切换', exact: true })).toHaveCount(1);
   await expect(review.getByRole('tabpanel')).toHaveCount(1);
   await expect(review.locator('.research-examples-label')).toHaveCount(1);
   await expect(review.getByRole('tab', { name: '输入执行事件', exact: true })).toHaveAttribute('aria-selected', 'true');
-  await expect(review.locator('del')).toHaveText('保留事件 4 的说明。');
+  await expect(review.locator('[data-review-block-id="event-3:text"] .mewiki-ai-diff-row[data-kind="remove"]')).toContainText('保留事件 4 的说明。');
+  await expect(review.locator('del.mewiki-ai-inline-change')).toHaveText(['保留', ' 4 ']);
   await expect(review.locator('ins strong')).toHaveText('执行事件');
   await review.getByRole('tab', { name: '中继调度事件', exact: true }).click();
   await expect(review.locator('.mewiki-ai-native-tab-body')).toBeEmpty();
@@ -237,29 +327,33 @@ test('reviews hidden-tab text in one container and keeps tab navigation out of s
   await expect(review.locator('del')).toHaveText('保留事件 5 的说明。');
   expect(await page.evaluate(() => localStorage.getItem('mewiki:research-example-tab:events'))).toBe('event-0');
   await expect(review.getByRole('button', { name: '下一个目标', exact: true })).toHaveCount(0);
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).last().click();
   await expect(review.getByRole('tab', { name: '状态更新事件', exact: true })).toHaveAttribute('aria-selected', 'true');
   await expect(review.locator('del')).toHaveText('保留事件 5 的说明。');
   await expect(review.locator('ins')).toHaveCount(0);
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).first().click();
   await expect(review.getByRole('tab', { name: '输入执行事件', exact: true })).toHaveAttribute('aria-selected', 'true');
   await review.getByRole('button', { name: '查看源码差异', exact: true }).click();
-  await expect(review.locator('ins')).toContainText('**执行事件**');
+  await expect(review.locator('.mewiki-ai-diff-row[data-kind="add"] .mewiki-ai-diff-text')).toHaveText('**执行事件**的新说明。');
   await expect(review.getByRole('tablist')).toHaveCount(1);
   await review.getByRole('button', { name: '查看渲染差异', exact: true }).click();
   await page.screenshot({ path: info.outputPath('ai-single-tab-review.png') });
-  await page.setViewportSize({ width: 390, height: 680 });
+  await useNarrowReview(page);
   await expect(review.getByRole('tab', { name: '输入执行事件', exact: true })).toBeInViewport();
   expect(await review.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('ai-single-tab-review-mobile.png') });
   expect(await page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).not.toContain('**执行事件**');
   await page.setViewportSize({ width: 1440, height: 960 });
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '应用建议', exact: true }).first().click();
   const applied = await page.evaluate(() => JSON.parse(localStorage.getItem('mewiki:research-notebook')!).notes.find((note: { id: string }) => note.id === 'fixture-definition').blocks);
   expect(applied).toHaveLength(1);
   expect(applied[0].tabs).toHaveLength(5);
   expect(applied[0].tabs[3].blocks[0].text).toBe('**执行事件**的新说明。');
   expect(applied[0].tabs[4].blocks[0].text).toBe('保留事件 5 的说明。');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).click();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('mewiki:research-notebook')!).notes.find((note: { id: string }) => note.id === 'fixture-definition').blocks)).toEqual(savedBlocks);
 });
@@ -282,7 +376,8 @@ test('keeps one tab container while live text updates preserve a manually select
   await expect(review.getByRole('tab', { name: '状态采样事件', exact: true })).toHaveAttribute('aria-selected', 'true');
   await expect(review.getByRole('tabpanel')).toHaveText('保留事件 1 的说明。');
   await review.getByRole('tab', { name: '输入执行事件', exact: true }).click();
-  await expect(review.locator('ins')).toContainText('继续生成。');
+  await expect(review.locator('.mewiki-ai-diff-row[data-kind="add"]')).toContainText('继续生成。');
+  await expect(review.locator('ins.mewiki-ai-inline-change').last()).toHaveText('，继续生成');
   await expect(review.getByRole('tablist')).toHaveCount(1);
   await expect(review.getByRole('button', { name: '应用建议', exact: true })).toBeDisabled();
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('实时执行');
@@ -301,9 +396,10 @@ test('reviews native changes inside examples, renames a tab and safely restores 
   ]);
   await expect(ai.locator('.mewiki-ai-proposals')).toHaveCount(1);
   await expect(ai.locator('.mewiki-ai-proposals')).toContainText('2 项修改');
-  await expect(ai.locator('.mewiki-ai-proposals')).toContainText('1 个目标');
+  await expect(ai.locator('.mewiki-ai-proposal-count')).toHaveAttribute('title', '1 个目标');
   await expect(ai.locator('.mewiki-ai-proposals')).not.toContainText('**控制闭环**中的通信事件。');
   const review = page.getByTestId('mewiki-ai-review');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).first().click();
   await expect(review.locator('ins strong')).toHaveText('控制闭环');
   await expect(review.getByText('这段继续保留。', { exact: true })).toHaveCount(0);
@@ -311,16 +407,21 @@ test('reviews native changes inside examples, renames a tab and safely restores 
   await expect(review.getByText('这段继续保留。', { exact: true })).toHaveCount(1);
   await review.getByRole('tab', { name: /通信事件/ }).click();
   expect(await page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).not.toContain('**控制闭环**');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '应用建议', exact: true }).first().click();
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).click();
-  await expect(review.getByText('控制闭环通信事件', { exact: true })).toBeVisible();
+  await expect(review.getByRole('tab', { name: '控制闭环通信事件', exact: true })).toBeVisible();
+  await expect(review.getByRole('tabpanel').locator('.mewiki-ai-review-after')).toContainText('控制闭环通信事件');
   await review.getByRole('button', { name: '应用建议', exact: true }).click();
   await expect(ai.getByText('建议已应用并保存。', { exact: true })).toBeVisible();
   await page.evaluate(() => sessionStorage.setItem('mewiki-test-preserve-state', 'true'));
   await page.reload();
   ai = await openAi(page);
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).last().click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).not.toContain('控制闭环通信事件');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).first().click();
   const saved = JSON.parse((await page.evaluate(() => localStorage.getItem('mewiki:research-notebook')))!);
   expect(saved.notes.find((note: { id: string }) => note.id === 'fixture-definition').blocks[0]).toMatchObject({ id: 'tabs', tabs: [
@@ -346,6 +447,7 @@ test('renders a native formula edit and complete symbol fields before approval',
   await page.screenshot({ path: info.outputPath('ai-native-formula-review.png') });
   await review.getByRole('button', { name: '应用建议', exact: true }).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).toContain('E=mc^2');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).click();
   await review.getByRole('button', { name: '应用建议', exact: true }).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).toContain('闭环反馈映射');
@@ -365,6 +467,7 @@ test('reviews map creation and note relations with readable targets and reverses
   await expect(review.locator('ins').getByRole('button', { name: /结果摘要/ })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).not.toContain('以结果摘要作为适用条件');
   await review.getByRole('button', { name: '应用建议', exact: true }).click();
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).click();
   await expect(review.getByRole('heading', { name: '闭环事件图', exact: true })).toBeVisible();
   await review.getByRole('button', { name: '应用建议', exact: true }).click();
@@ -372,9 +475,11 @@ test('reviews map creation and note relations with readable targets and reverses
   await page.getByRole('tab', { name: '理论地图', exact: true }).click();
   await page.getByRole('button', { name: '打开地图 闭环事件图', exact: true }).click();
   await expect(page.getByRole('region', { name: '理论地图文档', exact: true })).toBeVisible();
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).first().click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).not.toContain('闭环事件图');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('mewiki:research-notebook')!).view)).toBe('maps');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).last().click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).not.toContain('以结果摘要作为适用条件');
 });
@@ -395,10 +500,11 @@ test('reviews and approves the global map with ordinary library scope while keep
   expect(requests.join('\n')).not.toContain('PRIVATE_MANUAL_CONTENT');
   expect(requests.join('\n')).not.toContain('mewiki-manual-private');
   await expect(review.getByRole('heading', { name: '全局地图', exact: true, level: 1 })).toBeVisible();
-  await expect(review.locator('ins').getByText('控制闭环全局图', { exact: true })).toBeVisible();
+  await expect(review.locator('[data-review-field="title"] .mewiki-ai-diff-row[data-kind="add"]')).toContainText('控制闭环全局图');
   await expect(review.getByRole('button', { name: '应用建议', exact: true })).toBeEnabled();
   await review.getByRole('button', { name: '应用建议', exact: true }).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).toContain('控制闭环全局图');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).not.toContain('控制闭环全局图');
 });
@@ -525,12 +631,13 @@ test('renders a live draft before completion, pauses following and applies only 
   await review.getByRole('button', { name: '查看渲染差异', exact: true }).click();
   await expect(review.getByRole('heading', { name: '新标题', exact: true, level: 2 })).toBeVisible();
   await page.screenshot({ path: info.outputPath('ai-live-rendered-desktop.png') });
-  await page.setViewportSize({ width: 390, height: 680 });
+  await useNarrowReview(page);
   expect(await review.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await expect(review.getByRole('button', { name: '应用建议', exact: true })).toBeInViewport();
   await page.screenshot({ path: info.outputPath('ai-live-rendered-mobile.png') });
   await review.getByRole('button', { name: '应用建议', exact: true }).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).toContain('**实时**');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).not.toContain('**实时**');
 });
@@ -557,6 +664,7 @@ test('streams a native change inside its tab and requires approval after complet
   await expect(review.getByRole('button', { name: '应用建议', exact: true })).toBeEnabled();
   await review.getByRole('button', { name: '应用建议', exact: true }).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).toContain('实时闭环');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).not.toContain('实时闭环');
 });
@@ -619,6 +727,8 @@ test('reviews inline edits in the central note before applying and safely undoin
   await setup(page, true, 'zh-CN', { notes: state.notes });
   const ai = await suggestEdits(page, [{ operation: 'replace-text', noteId: note.id, blockId: 'edit', content: '系统局部稳定。\n需要检查初始条件。' }]);
   await ai.getByLabel('任务要求', { exact: true }).fill('下一条草稿');
+  await expandAiProposalCards(ai);
+  const documentBounds = (await page.locator('.research-reading-rail').boundingBox())!;
   await ai.getByRole('button', { name: '查看修改', exact: true }).click();
   const review = page.getByTestId('mewiki-ai-review');
   await expect(review).toBeVisible();
@@ -627,21 +737,32 @@ test('reviews inline edits in the central note before applying and safely undoin
   await expect(review.getByText('这里是保留的前文。', { exact: true })).toBeVisible();
   await expect(review.getByText('这里是保留的后文。', { exact: true })).toBeVisible();
   await expect(review.locator('.mewiki-ai-diff-row[data-kind="remove"]').first()).toContainText('系统始终稳定。');
-  await expect(review.locator('del strong').first()).toHaveText('始终');
-  await expect(review.locator('ins strong').first()).toHaveText('局部');
+  await expect(review.locator('del.mewiki-ai-inline-change').first()).toHaveText('始终');
+  await expect(review.locator('ins.mewiki-ai-inline-change').first()).toHaveText('局部');
   await expect(review.locator('[data-review-block-id="math"] .katex')).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).not.toContain('系统局部稳定');
-  const center = (await review.boundingBox())!, side = (await ai.boundingBox())!;
-  expect(center.x + center.width).toBeLessThanOrEqual(side.x + 1);
+  const center = (await review.boundingBox())!;
+  expect(center.x).toBeCloseTo(documentBounds.x, 0);
+  expect(center.x + center.width).toBeCloseTo(documentBounds.x + documentBounds.width, 0);
+  expect(await ai.evaluate(element => getComputedStyle(element).position)).toBe('fixed');
+  for (let index = 0; index < 30; index++) await ai.getByRole('button', { name: '移动AI 面板', exact: true }).press('Shift+ArrowLeft');
+  const formula = review.locator('[data-review-block-id="math"]');
+  const formulaBounds = (await formula.boundingBox())!, copyBounds = (await formula.getByRole('button', { name: '复制公式 LaTeX', exact: true }).boundingBox())!;
+  expect(copyBounds.y).toBeGreaterThanOrEqual(formulaBounds.y);
+  expect(copyBounds.x + copyBounds.width).toBeLessThanOrEqual(formulaBounds.x + formulaBounds.width);
+  await formula.hover();
+  await expect(formula.getByRole('button', { name: '复制公式 LaTeX', exact: true })).toHaveCSS('opacity', '1');
   await page.screenshot({ path: info.outputPath('ai-review-desktop.png') });
   await review.getByRole('button', { name: '返回编辑', exact: true }).click();
   await expect(review).toHaveCount(0);
   await expect(ai.getByLabel('任务要求', { exact: true })).toHaveValue('下一条草稿');
   await expect(page.locator('.research-reading-rail')).toBeVisible();
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).click();
   await review.getByRole('button', { name: '应用建议', exact: true }).click();
   await expect(review).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).toContain('系统局部稳定');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).toContain('系统始终稳定');
 });
@@ -655,6 +776,7 @@ test('previews a nested text deletion with its original context and keeps rich c
   note.blocks.push({ id: 'plugin-kept', type: 'external', provider: 'unknown', contentType: 'record', schemaVersion: 99, title: '原始插件资料', summary: '保留插件摘要', data: { original: 'unchanged' } });
   await setup(page, true, 'zh-CN', { notes: state.notes });
   const ai = await suggestEdits(page, [{ operation: 'delete-text', noteId: note.id, blockId: 'outdated', content: '' }]);
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).click();
   const review = page.getByTestId('mewiki-ai-review');
   await expect(review.locator('del')).toHaveText('需要删除的过时结论。');
@@ -668,6 +790,7 @@ test('previews a nested text deletion with its original context and keeps rich c
   expect(JSON.stringify(savedNote)).not.toContain('需要删除的过时结论');
   expect(JSON.stringify(savedNote)).toContain('formula-kept');
   expect(savedNote.blocks.at(-1).data).toEqual({ original: 'unchanged' });
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).toContain('需要删除的过时结论');
 });
@@ -678,10 +801,12 @@ test('closes the enlarged diagram with Escape before leaving the AI review', asy
   await setup(page, true, 'zh-CN', { notes: state.notes });
   const original = await page.evaluate(() => JSON.parse(localStorage.getItem('mewiki:research-notebook')!).notes.find((note: { id: string }) => note.id === 'fixture-definition').blocks);
   const ai = await suggestEdits(page, [{ operation: 'append', noteId: note.id, content: '尚待批准的补充。' }]);
+  await expandAiProposalCards(ai);
   const reviewTrigger = ai.getByRole('button', { name: '查看修改', exact: true });
   await reviewTrigger.click();
   const review = page.getByTestId('mewiki-ai-review');
   await expect(review).toBeVisible();
+  for (let index = 0; index < 30; index++) await ai.getByRole('button', { name: '移动AI 面板', exact: true }).press('Shift+ArrowLeft');
   const enlarge = review.getByRole('button', { name: '放大流程图', exact: true });
   await enlarge.click();
   const dialog = page.getByRole('dialog', { name: '流程图预览', exact: true });
@@ -705,9 +830,10 @@ test('places appended text at the real end, navigates proposals and fits the mob
   ]);
   await expect(ai.locator('.mewiki-ai-proposals')).toHaveCount(1);
   await expect(ai.locator('.mewiki-ai-proposals')).toContainText('2 项修改');
-  await expect(ai.locator('.mewiki-ai-proposals')).toContainText('2 个目标');
+  await expect(ai.locator('.mewiki-ai-proposal-count')).toHaveAttribute('title', '2 个目标');
   await expect(ai.locator('.mewiki-ai-proposals')).not.toContainText('页尾补充的新条件。');
   await expect(ai.locator('.mewiki-ai-proposals')).not.toContainText('新笔记中的文字。');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).first().click();
   const review = page.getByTestId('mewiki-ai-review');
   await expect(review.locator('[data-review-block-id]').first()).toContainText('通用内容。');
@@ -715,11 +841,13 @@ test('places appended text at the real end, navigates proposals and fits the mob
   await expect(review.locator('del')).toHaveCount(0);
   await review.getByRole('button', { name: '下一个目标', exact: true }).click();
   await expect(review.getByRole('heading', { name: '新建审阅草稿', exact: true })).toBeVisible();
-  await expect(review.locator('.mewiki-ai-review-blocks ins')).toContainText('新笔记中的文字。');
-  await page.setViewportSize({ width: 390, height: 680 });
+  await expect(review.locator('.mewiki-ai-review-after ins')).toContainText('新笔记中的文字。');
+  await useNarrowReview(page);
   await expect(review.getByRole('button', { name: '应用建议', exact: true })).toBeInViewport();
   const box = (await review.boundingBox())!;
-  expect(box.width).toBeGreaterThan(370);
+  expect(box.x).toBeGreaterThanOrEqual(44);
+  expect(box.width).toBeGreaterThan(280);
+  expect(box.x + box.width).toBeLessThanOrEqual(390 - 44);
   expect(await review.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('ai-review-mobile.png') });
   await review.getByRole('button', { name: '返回编辑', exact: true }).click();
@@ -731,10 +859,14 @@ test('places appended text at the real end, navigates proposals and fits the mob
 test('disables outdated previews and clears them when the AI session is cleared', async ({ page }) => {
   await setup(page);
   let ai = await suggestEdits(page, [{ operation: 'replace-text', noteId: 'fixture-definition', blockId: 'fixture-definition:text', content: '不能覆盖手工编辑的旧建议。' }]);
-  await ai.getByRole('button', { name: '关闭AI 工作区', exact: true }).click();
+  await page.getByTestId('mewiki-ai-launcher').click();
   await page.getByLabel('笔记标题', { exact: true }).fill('用户刚修改的标题');
   await page.getByLabel('笔记标题', { exact: true }).press('Tab');
+  const editedText = page.locator('[data-block-id="fixture-definition:text"] .research-editable-text').first();
+  await editedText.click(); await editedText.locator('[contenteditable=true]').fill('用户已手动修改建议涉及的正文。');
+  await page.getByLabel('笔记标题', { exact: true }).click();
   ai = await openAi(page);
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).click();
   const review = page.getByTestId('mewiki-ai-review');
   await expect(review.getByRole('alert')).toContainText('目标内容已变化');
@@ -750,24 +882,28 @@ test('disables outdated previews and clears them when the AI session is cleared'
 test('dismisses central review on note navigation and on closing the AI panel', async ({ page }) => {
   await setup(page);
   let ai = await suggestEdits(page, [{ operation: 'append', noteId: 'fixture-definition', content: '仍待审阅的建议' }]);
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).click();
   const review = page.getByTestId('mewiki-ai-review');
   await expect(review).toBeVisible();
   await page.locator('#research-notebook-sidebar').getByText('结果摘要', { exact: true }).click();
   await expect(review).toHaveCount(0);
   await expect(page.getByLabel('笔记标题', { exact: true })).toHaveValue('结果摘要');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).click();
   await expect(review).toBeVisible();
-  await review.getByRole('button', { name: '收起AI 工作区', exact: true }).click();
+  await page.getByTestId('mewiki-ai-launcher').click();
   await expect(review).toHaveCount(0);
   ai = await openAi(page);
   await expect(review).toHaveCount(0);
+  await expandAiProposalCards(ai);
   await expect(ai.getByRole('button', { name: '查看修改', exact: true })).toBeVisible();
 });
 
 test('renders added formulas natively and marks the whole new block', async ({ page }) => {
   await setup(page);
   const ai = await suggestEdits(page, [{ operation: 'append', noteId: 'fixture-definition', content: '新公式：\n\n$$\nx^2+y^2=1\n$$' }]);
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '查看修改', exact: true }).click();
   const review = page.getByTestId('mewiki-ai-review');
   await expect(review.locator('.mewiki-ai-review-added-block .katex')).toBeVisible();
@@ -790,12 +926,13 @@ test('reviews term fields in English and enforces read-only approval', async ({ 
   await ai.getByLabel('Task instructions', { exact: true }).fill('Clarify this term');
   await ai.getByRole('button', { name: 'Send message', exact: true }).click();
   await expect(ai.getByText('Term suggestion ready.', { exact: true })).toBeVisible();
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: 'Review changes', exact: true }).click();
   const review = page.getByTestId('mewiki-ai-review');
   await expect(review).toHaveAccessibleName('AI change preview');
   await expect(review.getByRole('heading', { name: 'English name', exact: true })).toBeVisible();
-  await expect(review.locator('del').last()).toHaveText('Original definition.');
-  await expect(review.locator('ins').last()).toHaveText('Revised definition.');
+  await expect(review.locator('.mewiki-ai-review-term-field').last().locator('.mewiki-ai-diff-row[data-kind="remove"]')).toContainText('Original definition.');
+  await expect(review.locator('.mewiki-ai-review-term-field').last().locator('.mewiki-ai-diff-row[data-kind="add"]')).toContainText('Revised definition.');
   await expect(review.getByRole('button', { name: 'Apply suggestion', exact: true })).toBeDisabled();
   await page.screenshot({ path: info.outputPath('ai-review-term-en.png') });
   await review.getByRole('button', { name: 'Return to editing', exact: true }).click();
@@ -810,16 +947,18 @@ test('reviews term fields in English and enforces read-only approval', async ({ 
 test('keeps keyboard focus out of the covered workspace and restores its controls', async ({ page }) => {
   await setup(page);
   const ai = await suggestEdits(page, [{ operation: 'append', noteId: 'fixture-definition', content: '键盘审阅内容' }]);
+  await expandAiProposalCards(ai);
   const reviewTrigger = ai.getByRole('button', { name: '查看修改', exact: true });
   await reviewTrigger.click();
   const review = page.getByTestId('mewiki-ai-review');
   expect(await page.locator('.research-reading-rail').evaluate(element => (element as HTMLElement).inert)).toBe(true);
   await page.setViewportSize({ width: 390, height: 680 });
-  await expect.poll(() => page.locator('.research-sidebar-footer').evaluate(element => (element as HTMLElement).inert)).toBe(true);
-  expect(await page.locator('#research-notebook-sidebar').evaluate(element => (element as HTMLElement).inert)).toBe(true);
+  expect(await page.locator('.research-sidebar-footer').evaluate(element => (element as HTMLElement).inert)).toBe(false);
+  expect(await page.locator('#research-notebook-sidebar').evaluate(element => (element as HTMLElement).inert)).toBe(false);
+  await expect(page.locator('.research-notebook-mode-tabs .research-notebook-sidebar-toggle')).toBeVisible();
   for (let i = 0; i < 12; i++) {
     await page.keyboard.press('Tab');
-    expect(await page.evaluate(() => !!document.activeElement?.closest('.research-sidebar-footer, #research-notebook-sidebar, #research-note-outline, .research-reading-rail'))).toBe(false);
+    expect(await page.evaluate(() => !!document.activeElement?.closest('.research-reading-rail, .research-symbol-pane, .research-notebook-editor'))).toBe(false);
   }
   await review.getByRole('button', { name: '返回编辑', exact: true }).click();
   await expect(review).toHaveCount(0);
@@ -856,7 +995,8 @@ test('groups the conversation title and session actions below the composer', asy
     const composer = (await ai.locator('.mewiki-ai-composer').boundingBox())!;
     const bar = (await footer.boundingBox())!;
     expect(bar.y).toBeGreaterThanOrEqual(composer.y + composer.height);
-    for (const name of ['清空会话', 'AI 服务设置', '关闭AI 工作区']) await expect(footer.getByRole('button', { name, exact: true })).toBeInViewport();
+    for (const name of ['清空会话', 'AI 服务设置']) await expect(footer.getByRole('button', { name, exact: true })).toBeInViewport();
+    await expect(page.getByTestId('mewiki-ai-launcher')).toBeInViewport();
     expect(await footer.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath(`ai-session-footer-${viewport.width}.png`) });
   }
@@ -873,6 +1013,7 @@ test('aligns the right panel divider with the document toolbar', async ({ page }
   fixture.notes.find(note => note.id === 'fixture-summary')!.blocks = [{ id: 'summary-reference', type: 'paragraph', text: '[关系定义](#research-note/fixture-definition)' }];
   await setup(page, true, 'zh-CN', { notes: fixture.notes });
   await openAi(page);
+  await page.getByRole('button', { name: '展开文章大纲', exact: true }).click();
   const right = page.locator('#research-note-outline');
   const checkAlignment = async () => {
     const toolbar = (await page.locator('.research-notebook-toolbar:visible').first().boundingBox())!;
@@ -881,7 +1022,9 @@ test('aligns the right panel divider with the document toolbar', async ({ page }
     expect(Math.abs(tabs.y + tabs.height - toolbar.y - toolbar.height)).toBeLessThan(1);
   };
   await checkAlignment();
-  for (const name of ['大纲', '反向链接', 'AI']) {
+  // The floating conversation is independent of the document's right panel.
+  await page.getByTestId('mewiki-ai-workspace').getByRole('button', { name: '移动AI 面板', exact: true }).press('ArrowLeft');
+  for (const name of ['大纲', '反向链接']) {
     await right.getByRole('tab', { name, exact: true }).click();
     await checkAlignment();
     if (name === '反向链接') {
@@ -935,7 +1078,7 @@ test('renders assistant Markdown with contained tables, code and safe links', as
     await markdown.getByRole('heading', { name: '审阅结果', exact: true }).scrollIntoViewIfNeeded();
     await page.screenshot({ path: info.outputPath(`ai-markdown-${viewport.width}.png`) });
   }
-  await ai.getByRole('button', { name: '关闭AI 工作区', exact: true }).click();
+  await page.getByTestId('mewiki-ai-launcher').click();
   ai = await openAi(page);
   await expect(ai.locator('.mewiki-ai-message[data-role=assistant]').getByRole('heading', { name: '审阅结果', exact: true })).toBeVisible();
 });
@@ -1031,7 +1174,7 @@ test('preserves newlines and IME confirmation and lets the user draft while a re
   expect(requests).toHaveLength(1);
 });
 
-test('docks AI in the right panel and keeps a running task while switching tabs', async ({ page }, info) => {
+test('floats AI independently and keeps a running task while using the document outline', async ({ page }, info) => {
   await setup(page);
   let release!: () => void;
   const pending = new Promise<void>(resolve => { release = resolve; });
@@ -1040,50 +1183,52 @@ test('docks AI in the right panel and keeps a running task while switching tabs'
     await route.fulfill({ contentType: 'application/x-ndjson', body: JSON.stringify({ type: 'done', result: { message: { role: 'assistant', content: '切换标签后任务完成。' }, usage: { inputTokens: 1, outputTokens: 1 } } }) + '\n' });
   });
   const ai = await openAi(page);
+  await page.getByRole('button', { name: '展开文章大纲', exact: true }).click();
   const right = page.locator('#research-note-outline');
-  await expect(right.getByTestId('mewiki-ai-workspace')).toBeVisible();
+  await expect(right.getByTestId('mewiki-ai-workspace')).toHaveCount(0);
   expect(await ai.evaluate(element => element.tagName)).not.toBe('DIALOG');
-  await expect(right.getByRole('tab', { name: 'AI', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(right.getByRole('tab', { name: '智能助理', exact: true })).toHaveCount(0);
   await page.getByLabel('笔记标题', { exact: true }).fill('AI 旁边仍可编辑正文');
   await ai.getByLabel('任务要求', { exact: true }).fill('在侧栏中执行任务');
   await ai.getByRole('button', { name: '发送消息', exact: true }).click();
   await expect(ai.getByRole('button', { name: '停止任务', exact: true })).toBeVisible();
+  await ai.getByRole('button', { name: '移动AI 面板', exact: true }).press('Shift+ArrowLeft');
   await right.getByRole('tab', { name: '大纲', exact: true }).click();
-  await expect(ai).toBeHidden();
-  await right.getByRole('tab', { name: 'AI', exact: true }).click();
+  await expect(ai).toBeVisible();
   await expect(ai.getByRole('button', { name: '停止任务', exact: true })).toBeVisible();
   release();
   await expect(ai.getByText('切换标签后任务完成。', { exact: true })).toBeVisible();
-  const source = await page.getByLabel('笔记标题', { exact: true }).boundingBox();
-  const panel = await right.boundingBox();
-  expect(panel!.x).toBeGreaterThan(source!.x + source!.width);
+  const panel = await ai.boundingBox();
   expect(panel!.width).toBeLessThan(500);
-  await page.screenshot({ path: info.outputPath('ai-right-panel-desktop.png') });
+  await page.screenshot({ path: info.outputPath('ai-independent-panel-desktop.png') });
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await right.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
-  await page.screenshot({ path: info.outputPath('ai-right-panel-mobile.png') });
+  expect(await ai.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath('ai-independent-panel-mobile.png') });
 });
 
-for (const view of ['dictionary', 'maps'] as const) test(`opens the AI right panel from the ${view} view and retains its draft across tabs`, async ({ page }) => {
+for (const view of ['dictionary', 'maps'] as const) test(`opens a floating AI panel from the ${view} view and retains its draft across tabs`, async ({ page }) => {
   await setup(page, true, 'zh-CN', { view, activeSymbolId: 'example-matrix', activeTermId: undefined });
   const ai = await openAi(page);
   const right = page.locator('#research-note-outline');
   await ai.getByLabel('任务要求', { exact: true }).fill('保留侧栏任务草稿');
   if (view === 'dictionary') {
+    await page.getByRole('button', { name: '展开反向链接', exact: true }).click();
+    // Move the floating panel clear of the right panel's tabs.
+    for (let index = 0; index < 10; index++) await ai.getByRole('button', { name: '移动AI 面板', exact: true }).press('Shift+ArrowLeft');
     await right.getByRole('tab', { name: '反向链接', exact: true }).click();
-    await expect(ai).toBeHidden();
+    await expect(ai).toBeVisible();
     await right.getByRole('tab', { name: '变量配方', exact: true }).click();
     await expect(right.getByRole('tab', { name: '变量配方', exact: true })).toHaveAttribute('aria-selected', 'true');
-    await right.getByRole('tab', { name: 'AI', exact: true }).click();
-    await expect(right.getByRole('tab', { name: '变量配方', exact: true })).toHaveAttribute('aria-selected', 'false');
+    await expect(ai).toBeVisible();
+    await right.getByRole('tab', { name: '反向链接', exact: true }).click();
   } else {
-    await expect(right.getByRole('tab')).toHaveCount(1);
+    await expect(right).toHaveCount(0);
   }
   await expect(ai.getByLabel('任务要求', { exact: true })).toHaveValue('保留侧栏任务草稿');
-  await expect(right.getByRole('tab', { name: 'AI', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(ai).toBeVisible();
 });
 
-test('interrupts a running task when the right panel is collapsed and restores its record', async ({ page }) => {
+test('interrupts a running task on explicit floating panel close and restores its record', async ({ page }) => {
   await setup(page);
   let release!: () => void;
   const pending = new Promise<void>(resolve => { release = resolve; });
@@ -1096,7 +1241,7 @@ test('interrupts a running task when the right panel is collapsed and restores i
   const sent = page.waitForRequest('**/api/mewiki/ai/chat');
   await ai.getByRole('button', { name: '发送消息', exact: true }).click();
   await sent;
-  await page.getByRole('button', { name: '收起AI 工作区', exact: true }).click();
+  await page.getByTestId('mewiki-ai-launcher').click();
   await expect(ai).toHaveCount(0);
   release();
   ai = await openAi(page);
@@ -1145,11 +1290,15 @@ test('reads a scoped note, proposes edits, applies once and safely undoes them',
   await ai.locator('.mewiki-ai-sources').getByRole('button', { name: '关系定义', exact: true }).click();
   await expect(ai).toBeVisible();
   await expect(page.getByLabel('笔记标题', { exact: true })).toHaveValue('关系定义');
+  await expandAiProposalCards(ai);
   await expect(ai.getByRole('button', { name: '应用建议', exact: true })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).not.toContain('AI 审阅补充');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '应用建议', exact: true }).click();
+  await expandAiProposalCards(ai);
   await expect(ai.getByRole('button', { name: '撤回此修改', exact: true })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).toContain('AI 审阅补充');
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '撤回此修改', exact: true }).click();
   expect(await page.evaluate(() => localStorage.getItem('mewiki:research-notebook'))).not.toContain('AI 审阅补充');
   await ai.screenshot({ path: info.outputPath('ai-workspace-desktop.png') });
@@ -1173,7 +1322,7 @@ test('cancels pending work and restores the library session without accepting la
   release();
   await expect(ai.getByText('任务已停止，已生成的结果仍可查看。', { exact: true })).toBeVisible();
   await expect(ai.getByRole('button', { name: '应用建议', exact: true })).toHaveCount(0);
-  await ai.getByRole('button', { name: '关闭AI 工作区', exact: true }).click();
+  await page.getByTestId('mewiki-ai-launcher').click();
   await openAi(page);
   await expect(ai.getByText('任务已停止，已生成的结果仍可查看。', { exact: true })).toBeVisible();
 });
@@ -1219,7 +1368,7 @@ test('reuses conversation only for the same service, model and authorized notes'
   await expect(ai.getByText('OUT_OF_SCOPE_LIBRARY_HISTORY', { exact: true })).toHaveCount(0);
 });
 
-test('rejects applying a suggestion after the user edits its original note', async ({ page }) => {
+test('rejects a structural append after the user edits the original note content', async ({ page }) => {
   await setup(page);
   let turn = 0;
   await page.route('**/api/mewiki/ai/chat', route => {
@@ -1232,11 +1381,16 @@ test('rejects applying a suggestion after the user edits its original note', asy
   let ai = await openAi(page);
   await ai.getByLabel('任务要求', { exact: true }).fill('提出建议');
   await ai.getByRole('button', { name: '发送消息', exact: true }).click();
+  await expandAiProposalCards(ai);
   await expect(ai.getByRole('button', { name: '应用建议', exact: true })).toBeEnabled();
-  await ai.getByRole('button', { name: '关闭AI 工作区', exact: true }).click();
+  await page.getByTestId('mewiki-ai-launcher').click();
   await page.getByLabel('笔记标题', { exact: true }).fill('用户修改过的新标题');
   await page.getByLabel('笔记标题', { exact: true }).press('Tab');
+  const editedText = page.locator('[data-block-id="fixture-definition:text"] .research-editable-text').first();
+  await editedText.click(); await editedText.locator('[contenteditable=true]').fill('用户已改变追加内容所依赖的正文。');
+  await page.getByLabel('笔记标题', { exact: true }).click();
   ai = await openAi(page);
+  await expandAiProposalCards(ai);
   await ai.getByRole('button', { name: '应用建议', exact: true }).click();
   await expect(ai.getByText('目标内容已变化，请重新生成建议。', { exact: true })).toBeVisible();
   const data = await page.evaluate(() => localStorage.getItem('mewiki:research-notebook'));
@@ -1258,13 +1412,13 @@ test('keeps restored conversations in their own library', async ({ page }) => {
   await ai.getByRole('button', { name: '发送消息', exact: true }).click();
   await expect(ai.getByText('只属于默认库的对话', { exact: true })).toBeVisible();
   await ai.getByLabel('任务要求', { exact: true }).fill('默认库的未发送追问');
-  await ai.getByRole('button', { name: '关闭AI 工作区', exact: true }).click();
+  await page.getByTestId('mewiki-ai-launcher').click();
   await page.goto('/?library=ai-other');
   ai = await openAi(page);
   await expect(ai.getByText('只属于默认库的对话', { exact: true })).toHaveCount(0);
   await expect(ai.getByLabel('任务要求', { exact: true })).toHaveValue('');
   await ai.getByLabel('任务要求', { exact: true }).fill('另一个库的独立草稿');
-  await ai.getByRole('button', { name: '关闭AI 工作区', exact: true }).click();
+  await page.getByTestId('mewiki-ai-launcher').click();
   await page.goto('/?library=default');
   ai = await openAi(page);
   await expect(ai.getByText('只属于默认库的对话', { exact: true })).toBeVisible();
@@ -1288,6 +1442,7 @@ test('renders AI settings and the workspace in English on a narrow screen', asyn
   await expect(ai.getByRole('button', { name: 'Send message', exact: true })).toBeVisible();
   const footer = ai.locator('.mewiki-ai-session-bar');
   await expect(footer.locator('.mewiki-ai-session-title')).toHaveText('AI chat');
-  for (const name of ['Clear session', 'AI service settings', 'Close AI workspace']) await expect(footer.getByRole('button', { name, exact: true })).toBeInViewport();
+  for (const name of ['Clear session', 'AI service settings']) await expect(footer.getByRole('button', { name, exact: true })).toBeInViewport();
+  await expect(page.getByTestId('mewiki-ai-launcher')).toBeInViewport();
   expect(await ai.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
 });

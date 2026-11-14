@@ -13,7 +13,7 @@ test("opens MeWiki with complete manuals and follows a built-in page link withou
   page.on("pageerror", error => errors.push(error.message));
   page.on("request", request => requests.push(request.url()));
   await page.goto("/");
-  await expect(page).toHaveTitle("MeWiki");
+  await expect(page).toHaveTitle("觅维");
   const panel = page.getByTestId("research-notebook");
   await expect(panel).toBeVisible();
   await expect(panel.getByLabel("笔记标题", { exact: true })).toHaveValue("MeWiki 使用手册");
@@ -73,8 +73,9 @@ test("shows generic sample content and keeps panel switches accessible in a narr
   await expect(page.locator(".research-reading-rail")).toContainText("开始整理自己的知识");
   await page.setViewportSize({ width: 720, height: 900 });
   const header = page.getByRole("toolbar", { name: "笔记管理", exact: true });
-  await expect(header.locator(".research-notebook-sidebar-toggle")).toBeVisible();
-  await expect(header.locator(".research-outline-toggle")).toBeVisible();
+  await expect(header.locator(".research-notebook-sidebar-toggle, .research-outline-toggle")).toHaveCount(0);
+  await expect(page.locator(".research-notebook-mode-tabs .research-notebook-sidebar-toggle")).toBeVisible();
+  await expect(page.locator("#research-note-outline header .research-outline-toggle")).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath("mewiki-examples.png"), fullPage: true });
 });

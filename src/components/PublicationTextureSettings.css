@@ -1,6 +1,7 @@
 .mewiki-publication-texture { min-width: 0; margin: 12px 0 20px; padding-top: 4px; border-top: 1px solid #e0e4ea; }
 .mewiki-publication-texture h3 { margin: 12px 0; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); font-weight: 650; }
 .mewiki-texture-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mewiki-texture-heading > h3 { flex: 1; }
 .mewiki-texture-layer-actions { display: flex; align-items: center; gap: 2px; }
 .mewiki-texture-layers { display: grid; gap: 4px; margin: 0 0 8px; padding: 4px; border: 1px solid #dce2e9; border-radius: 4px; }
 .mewiki-texture-layers > button { width: 100%; min-width: 0; justify-content: flex-start; gap: 8px; }

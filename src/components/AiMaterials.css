@@ -1,0 +1,35 @@
+.mewiki-ai-materials { min-width: 0; margin-bottom: 8px; border-radius: 4px; }
+.mewiki-ai-materials[data-dragging=true] { background: var(--mewiki-ui-selected); }
+.mewiki-ai-material-list { display: flex; align-items: center; flex-wrap: wrap; min-width: 0; max-height: 100px; overflow: auto; gap: 5px; scrollbar-width: thin; }
+.mewiki-ai-material-list button { display: inline-flex; min-width: 0; align-items: center; gap: 5px; min-height: 28px; border: 0; border-radius: 4px; padding: 3px 6px; background: transparent; color: inherit; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); cursor: pointer; }
+.mewiki-ai-material-list button:hover:not(:disabled) { background: var(--mewiki-ui-hover); }
+.mewiki-ai-material-list button:disabled { opacity: .55; cursor: default; }
+.mewiki-ai-material-list > .mewiki-ai-material-add { flex: 0 0 auto; color: var(--mewiki-ui-muted); box-shadow: none; }
+.mewiki-ai-material-list > .mewiki-ai-material-add:is(:hover, :active):not(:disabled) { background: transparent; color: var(--mewiki-ui-ink); box-shadow: none; filter: none; }
+.mewiki-ai-material-chip { display: inline-flex; min-width: 0; max-width: 100%; align-items: center; border: 1px solid var(--mewiki-ui-border); border-radius: 4px; color: var(--mewiki-ui-ink); }
+.mewiki-ai-material-chip > button:first-child { min-width: 0; }
+.mewiki-ai-material-chip > button:last-child { flex: 0 0 auto; }
+.mewiki-ai-material-chip svg { flex: 0 0 auto; }
+.mewiki-ai-material-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-ai-material-chip[data-missing=true] { color: #a12837; }
+.mewiki-ai-materials p { margin: 5px 0 0; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.6; overflow-wrap: anywhere; }
+.mewiki-ai-material-disclosure { color: var(--mewiki-ui-muted); }
+.mewiki-ai-material-progress { display: flex; min-width: 0; align-items: center; gap: 5px; color: var(--mewiki-ui-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 11); }
+.mewiki-ai-material-progress > span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-ai-material-preview .device-record-modal-content { padding: 16px; }
+.mewiki-ai-material-preview pre { margin: 0; color: var(--mewiki-ui-ink); white-space: pre-wrap; overflow-wrap: anywhere; font: calc(var(--mewiki-interface-unit, 1px) * 13)/1.8 var(--mewiki-interface-font-family, sans-serif); }
+.mewiki-ai-material-section { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.mewiki-ai-material-section select { max-width: 100%; min-width: 0; flex: 1; padding: 6px; border: 1px solid var(--mewiki-ui-field-border); border-radius: 4px; background: white; color: inherit; font: inherit; }
+.mewiki-ai-message-materials { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 6px; }
+.mewiki-ai-message-materials > button { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; min-height: 26px; border: 1px solid var(--mewiki-ui-border); border-radius: 4px; padding: 2px 6px; background: white; color: var(--mewiki-ui-muted); font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); cursor: pointer; }
+.mewiki-ai-message-materials > button > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-ai-message-materials svg { flex: 0 0 auto; }
+/* The panel's transform contains this overlay in both floating and docked modes. */
+.mewiki-ai-material-notice { --ai-material-notice-top: 36px; position: fixed; z-index: 8; inset: var(--ai-material-notice-top) 8px auto; display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: start; gap: 9px; box-sizing: border-box; max-height: min(280px, calc(100% - var(--ai-material-notice-top) - 8px)); margin: 0; border: 1px solid #d6d1c8; border-radius: 4px; padding: 12px 40px 12px 12px; overflow: hidden; background: #fff0cf; color: #713b0f; box-shadow: 0 4px 16px #6b3e1a26; font: 500 calc(var(--mewiki-interface-unit, 1px) * 13)/1.7 var(--mewiki-interface-font-family, "Noto Sans SC Variable", sans-serif); }
+.mewiki-ai-floating-panel[data-placement=right] .mewiki-ai-material-notice { --ai-material-notice-top: 52px; }
+.mewiki-ai-material-notice > svg { margin-top: 1px; color: #b95500; }
+.mewiki-ai-material-notice-content { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.mewiki-ai-material-notice .mewiki-ai-material-notice-content > p { margin: 0; color: inherit; font: inherit; overflow-wrap: anywhere; }
+.mewiki-ai-material-notice .mewiki-ai-material-notice-content > p + p { margin-top: 8px; }
+:root .mewiki-ai-material-notice [data-ui="icon-action"][aria-label] { --action-size: 24px; --action-ink: #713b0f; --action-hover: #f7dda5; position: absolute; top: 6px; right: 6px; }
+@media (pointer: coarse) { .mewiki-ai-material-list button, .mewiki-ai-message-materials > button { min-height: 36px; } .mewiki-ai-material-notice { padding-right: 52px; } :root .mewiki-ai-material-notice [data-ui="icon-action"][aria-label] { --action-size: 36px; } }

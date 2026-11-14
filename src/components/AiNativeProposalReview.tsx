@@ -4,7 +4,7 @@ import type { AiProposal } from '../ai/proposals.ts';
 import type { AiReviewLocation } from '../ai/reviewDecisions.ts';
 import { flattenResearchBlocks } from '../domain/researchBlockTree.ts';
 import { diffAiText } from '../ai/diff.ts';
-import { isTextBlock, textOf } from '../ai/reviewContent.ts';
+import { isTextBlock } from '../ai/reviewContent.ts';
 import { nativeFingerprint, type AiNativeEntity } from '../ai/nativeEdits.ts';
 import { aiMapFields, aiNoteFields, aiSymbolFields, aiTermFields } from '../ai/nativeSchema.ts';
 import type { ResearchNote, ResearchNotebookBlock, ResearchNotebookState } from '../domain/researchNotebook.ts';
@@ -21,7 +21,7 @@ import ResearchMarkdown from './ResearchMarkdown.tsx';
 import ResearchMathText from './ResearchMathText.tsx';
 import ResearchReadOnlyContent from './ResearchReadOnlyContent.tsx';
 import ResearchExamples from './ResearchExamples.tsx';
-import { RenderedChange, TextDiff } from './AiReviewChanges.tsx';
+import { AiReviewPair, RenderedChange, RenderedTextDiff, TextDiff, type AiReviewComparison, type AiReviewPresentation } from './AiReviewChanges.tsx';
 import './AiNativeProposalReview.css';
 
 function fieldLabel(field: string) {
@@ -132,37 +132,42 @@ interface FieldsProps {
   before: Record<string, unknown>; after: Record<string, unknown>; keys: string[]; state: ResearchNotebookState; originalState: ResearchNotebookState; source: boolean; onOpenNote: OpenNote;
   beforeSymbol?: ResearchSymbolEntry; afterSymbol?: ResearchSymbolEntry; sourceNoteId?: string;
   renderActions?: (location: AiReviewLocation) => ReactNode; blockId?: string;
+  renderComparison?: AiReviewComparison;
+  hasReview?: (location: AiReviewLocation) => boolean;
 }
-function Fields({ before, after, keys, state, originalState, source, onOpenNote, beforeSymbol, afterSymbol, sourceNoteId = '', renderActions, blockId }: FieldsProps) {
+function Fields({ before, after, keys, state, originalState, source, onOpenNote, beforeSymbol, afterSymbol, sourceNoteId = '', renderActions, renderComparison, hasReview, blockId }: FieldsProps) {
   const display = (value: unknown, field: string, viewState: ResearchNotebookState, symbol?: ResearchSymbolEntry) => <ResearchNoteLinkContext.Provider value={{ notes: viewState.notes, symbols: viewState.symbols, terms: viewState.terms ?? [], state: viewState, sourceNoteId, openNote: onOpenNote }}>
     {source ? <pre>{JSON.stringify(value, null, 2)}</pre> : <DisplayValue value={value} state={viewState} field={field} symbol={symbol} onOpenNote={onOpenNote} />}
   </ResearchNoteLinkContext.Provider>;
-  return keys.filter(key => nativeFingerprint(before[key]) !== nativeFingerprint(after[key]) || (key === 'notation' && beforeSymbol && afterSymbol && symbolTex(beforeSymbol) !== symbolTex(afterSymbol))).map(key => {
+  return keys.filter(key => nativeFingerprint(before[key]) !== nativeFingerprint(after[key]) || (key === 'notation' && beforeSymbol && afterSymbol && symbolTex(beforeSymbol) !== symbolTex(afterSymbol)) || hasReview?.({ kind: 'field', field: key, ...(blockId ? { blockId } : {}) })).map(key => {
     const left = before[key], right = after[key];
-    return <section key={key} className="mewiki-ai-review-term-field" data-review-field={key} data-review-changed="true">{renderActions?.({ kind: 'field', field: key, ...(blockId ? { blockId } : {}) })}<h2>{fieldLabel(key)}</h2>
-      {!source && (Array.isArray(left) || Array.isArray(right)) ? <ul className="mewiki-ai-native-values">{pairEntries(Array.isArray(left) ? left : [], Array.isArray(right) ? right : [], entryIdentity).map(pair => <li key={pair.key} data-review-entry-id={pair.id}>
-        {nativeFingerprint(pair.before) === nativeFingerprint(pair.after) ? display(pair.after, key, state, afterSymbol) : <>
-          {pair.before !== undefined && <Change kind="remove">{display(pair.before, key, originalState, beforeSymbol)}</Change>}
-          {pair.after !== undefined && <Change kind="add">{display(pair.after, key, state, afterSymbol)}</Change>}
-        </>}
-      </li>)}</ul> : <>
-        {left !== undefined && <Change kind="remove">{display(left, key, originalState, beforeSymbol)}</Change>}
-        {right !== undefined && <Change kind="add">{display(right, key, state, afterSymbol)}</Change>}
-      </>}
+    const location: AiReviewLocation = { kind: 'field', field: key, ...(blockId ? { blockId } : {}) };
+    const compare = (a: ReactNode, b: ReactNode) => renderComparison ? renderComparison(location, a, b) : <AiReviewPair before={a} after={b} />;
+    return <section key={key} className="mewiki-ai-review-term-field" data-review-field={key} data-review-changed="true">{!renderComparison && renderActions?.(location)}<h2>{fieldLabel(key)}</h2>
+      {!source && typeof left === 'string' && typeof right === 'string' && !(key === 'notation' && afterSymbol) && !['noteId', 'noteIds', 'basisNoteIds', 'expandedNoteIds', 'selectedNodeId'].includes(key)
+        ? <RenderedTextDiff before={valueLabel(key, left)} after={valueLabel(key, right)} state={state} originalState={originalState} onOpenNote={onOpenNote} sourceNoteId={sourceNoteId} renderPair={renderComparison ? compare : undefined} />
+        : !renderComparison && !source && (Array.isArray(left) || Array.isArray(right)) ? <ul className="mewiki-ai-native-values">{pairEntries(Array.isArray(left) ? left : [], Array.isArray(right) ? right : [], entryIdentity).map(pair => <li key={pair.key} data-review-entry-id={pair.id}>
+        {nativeFingerprint(pair.before) === nativeFingerprint(pair.after) ? display(pair.after, key, state, afterSymbol) : <AiReviewPair
+          before={pair.before !== undefined && <Change kind="remove">{display(pair.before, key, originalState, beforeSymbol)}</Change>}
+          after={pair.after !== undefined && <Change kind="add">{display(pair.after, key, state, afterSymbol)}</Change>} />}
+      </li>)}</ul> : compare(left !== undefined && <Change kind="remove">{display(left, key, originalState, beforeSymbol)}</Change>,
+        right !== undefined && <Change kind="add">{display(right, key, state, afterSymbol)}</Change>)}
     </section>;
   });
 }
-export default function AiNativeProposalReview({ proposal, before, after, state, originalState, source, onOpenNote, operations = [], selectedTabs, onSelectTab, renderActions }: {
+export default function AiNativeProposalReview({ proposal, before, after, state, originalState, source, onOpenNote, operations = [], selectedTabs, onSelectTab, renderActions, renderComparison, hasReview }: {
   proposal: Pick<AiNativeProposal, 'target' | 'targetId' | 'title'> & Partial<Pick<AiNativeProposal, 'edit'>>;
   before: AiNativeEntity | null; after: AiNativeEntity | null; state: ResearchNotebookState; originalState: ResearchNotebookState; source: boolean; onOpenNote: OpenNote;
   operations?: AiProposal[]; selectedTabs?: Record<string, string>; onSelectTab?: (blockId: string, tabId: string) => void;
   renderActions?: (location: AiReviewLocation) => ReactNode;
+  renderComparison?: AiReviewComparison;
+  hasReview?: (location: AiReviewLocation) => boolean;
 }) {
   useLocale();
   const [localTabs, setLocalTabs] = useState<Record<string, string>>({});
   const edits = [...operations.flatMap(operation => operation.kind === 'native' ? [operation.edit] : []), ...(proposal.edit ? [proposal.edit] : [])];
   const movedBlocks = new Set(edits.filter(edit => edit.action === 'block-move').map(edit => edit.blockId!));
-  const fieldProps = { state, originalState, source, onOpenNote, renderActions, sourceNoteId: proposal.target === 'note' ? proposal.targetId : '' };
+  const fieldProps = { state, originalState, source, onOpenNote, renderActions, renderComparison, hasReview, sourceNoteId: proposal.target === 'note' ? proposal.targetId : '' };
   const afterBlockIds = new Set(proposal.target === 'note' && after ? flattenResearchBlocks((after as ResearchNote).blocks).map(block => block.id) : []);
   const renderBlock = (block: ResearchNotebookBlock, note: ResearchNote, viewState: ResearchNotebookState) => <ResearchNoteLinkContext.Provider value={{ notes: viewState.notes, symbols: viewState.symbols, terms: viewState.terms ?? [], state: viewState, sourceNoteId: note.id, openNote: onOpenNote }}>
     <ResearchReadOnlyContent block={block} note={note} state={viewState} onOpenNote={onOpenNote} staticView selectedTabs={selectedTabs} onSelectTab={onSelectTab} />
@@ -172,16 +177,19 @@ export default function AiNativeProposalReview({ proposal, before, after, state,
     const nested = (a?.type === 'examples' && (!b || b.type === 'examples')) || (!a && b?.type === 'examples');
     const changed = nested ? !a || !b : nativeFingerprint(a) !== nativeFingerprint(b);
     const textDiff = changed && a && b && isTextBlock(a) && isTextBlock(b)
-      && nativeFingerprint({ ...a, text: undefined }) === nativeFingerprint({ ...b, text: undefined })
-      && (source || isPlainResearchText(a.text) && isPlainResearchText(b.text));
+      && nativeFingerprint({ ...a, text: undefined }) === nativeFingerprint({ ...b, text: undefined });
     const tabs = nested ? renderTabs(a as ResearchExamplesBlock | undefined, b as ResearchExamplesBlock | undefined, previous, current, viewState, showMoves) : null;
+    const location: AiReviewLocation = { kind: 'block', blockId: pair.id };
+    const decisionsHere = !!b || !afterBlockIds.has(pair.id);
+    const compare = (before: ReactNode, after: ReactNode, presentation?: AiReviewPresentation) => renderComparison && decisionsHere ? renderComparison(location, before, after, presentation) : presentation ? presentation.render(undefined, content => content) : <AiReviewPair before={before} after={after} />;
     return <div key={pair.key} className="mewiki-ai-review-block" data-review-block-id={pair.id} data-review-changed={changed}>
-      {(b || !afterBlockIds.has(pair.id)) && renderActions?.({ kind: 'block', blockId: pair.id })}
-      {nested ? a && b ? tabs : <RenderedChange kind={b ? 'add' : 'remove'} added={!!b}>{tabs}</RenderedChange>
-        : !changed && b ? renderBlock(b, current!, viewState) : textDiff ? <TextDiff lines={diffAiText(textOf(a), textOf(b))} block={source ? undefined : b} /> : <>
-        {a && <RenderedChange kind="remove">{source ? <pre>{JSON.stringify(a, null, 2)}</pre> : renderBlock(a, previous!, originalState)}</RenderedChange>}
-        {b && (source && isTextBlock(b) && !a ? <TextDiff lines={diffAiText('', b.text)} /> : <RenderedChange kind="add" added={!a}>{source ? <pre>{JSON.stringify(b, null, 2)}</pre> : renderBlock(b, current!, viewState)}</RenderedChange>)}
-      </>}
+      {!renderComparison && (b || !afterBlockIds.has(pair.id)) && renderActions?.(location)}
+      {nested ? a && b ? tabs : compare(a && <RenderedChange kind="remove">{tabs}</RenderedChange>, b && <RenderedChange kind="add" added>{tabs}</RenderedChange>)
+        : !changed && b ? hasReview?.(location) ? compare(<RenderedChange kind="remove">{renderBlock(b, current!, originalState)}</RenderedChange>, <RenderedChange kind="add">{renderBlock(b, current!, viewState)}</RenderedChange>) : renderBlock(b, current!, viewState) : textDiff ? source || isPlainResearchText(a.text) && isPlainResearchText(b.text)
+          ? <TextDiff lines={diffAiText(a.text, b.text)} block={source ? undefined : b} renderPair={renderComparison ? compare : undefined} />
+          : <RenderedTextDiff before={a.text} after={b.text} block={b} state={viewState} originalState={originalState} onOpenNote={onOpenNote} sourceNoteId={current?.id} renderPair={renderComparison ? compare : undefined} /> : compare(
+        a && <RenderedChange kind="remove">{source ? <pre>{JSON.stringify(a, null, 2)}</pre> : renderBlock(a, previous!, originalState)}</RenderedChange>,
+        b && (source && isTextBlock(b) && !a ? <TextDiff lines={diffAiText('', b.text)} /> : <RenderedChange kind="add" added={!a}>{source ? <pre>{JSON.stringify(b, null, 2)}</pre> : renderBlock(b, current!, viewState)}</RenderedChange>))}
     </div>;
   });
   function renderTabs(previous: ResearchExamplesBlock | undefined, current: ResearchExamplesBlock | undefined, previousNote: ResearchNote | null, currentNote: ResearchNote | null, viewState: ResearchNotebookState, showMoves: boolean): ReactNode {
@@ -200,25 +208,38 @@ export default function AiNativeProposalReview({ proposal, before, after, state,
           const a = pair.before, b = pair.after;
           const renamed = !!a && !!b && a.title !== b.title;
           return <span className="mewiki-ai-review-tab-label" data-review-tab-id={pair.id} data-review-tab-changed={nativeFingerprint(a) !== nativeFingerprint(b) || movedTabs.has(pair.id)} data-review-tab-moved={movedTabs.has(pair.id) || undefined}>
-            {!b ? <del aria-label={t('删除的内容')}>{a!.title}</del> : !a ? <ins aria-label={t('新增的内容')}>{b.title}</ins> : renamed ? <><del aria-label={t('删除的内容')}>{a.title}</del><ins aria-label={t('新增的内容')}>{b.title}</ins></> : b.title}
+            {!a || !b || renamed ? <AiReviewPair inline before={a && <del aria-label={t('删除的内容')}>{a.title}</del>} after={b && <ins aria-label={t('新增的内容')}>{b.title}</ins>} /> : b.title}
             {movedTabs.has(pair.id) && <span aria-hidden="true">↔</span>}
           </span>;
         }}
         renderBlocks={(_, container) => {
           const pair = pairs.find(pair => pair.id === container.tabId)!;
           const a = pair.before, b = pair.after;
-          const tabChanged = !a || !b || a.title !== b.title || movedTabs.has(pair.id);
+          const tabLocation: AiReviewLocation = { kind: 'tab', blockId: block.id, tabId: pair.id };
+          const tabChanged = !a || !b || a.title !== b.title || movedTabs.has(pair.id) || !!hasReview?.(tabLocation);
           const whole = !previous || !current;
           const body = a && b ? renderBlocks(a.blocks, b.blocks, previousNote, currentNote, viewState, showMoves)
             : b ? renderBlocks(b.blocks, b.blocks, currentNote, currentNote, viewState, false)
               : renderBlocks(a!.blocks, a!.blocks, previousNote, previousNote, originalState, false);
-          const content = <section className="mewiki-ai-native-tab-body" data-review-tab-id={pair.id} data-review-changed={tabChanged}>{renderActions?.({ kind: 'tab', blockId: block.id, tabId: pair.id })}{body}</section>;
+          if (renderComparison && tabChanged && !whole) {
+            return <section className="mewiki-ai-native-tab-body" data-review-tab-id={pair.id} data-review-changed="true">{renderComparison(tabLocation,
+              a && <Change kind="remove"><ResearchMathText text={a.title} />{!b && body}</Change>,
+              b && <Change kind="add"><ResearchMathText text={b.title} />{!a && body}</Change>)}{a && b && body}</section>;
+          }
+          const decision = !renderComparison && renderActions?.(tabLocation);
+          const content = <section className="mewiki-ai-native-tab-body" data-review-tab-id={pair.id} data-review-changed={tabChanged}>{decision}{body}</section>;
           return whole || a && b ? content : <RenderedChange kind={b ? 'add' : 'remove'}>{content}</RenderedChange>;
         }} />
     </div>;
   }
   if (proposal.target === 'note') {
     const previous = before as ResearchNote | null, current = after as ResearchNote | null;
+    if (renderComparison && (!previous || !current)) {
+      const page = (note: ResearchNote, viewState: ResearchNotebookState, kind: 'remove' | 'add') => <RenderedChange kind={kind}>
+        <h1>{note.title}</h1><div className="mewiki-ai-review-blocks">{note.blocks.map(block => <div key={block.id} data-review-block-id={block.id}>{renderBlock(block, note, viewState)}</div>)}</div>
+      </RenderedChange>;
+      return <div className="mewiki-ai-native-review" data-native-review="note">{renderComparison({ kind: 'page' }, previous && page(previous, originalState, 'remove'), current && page(current, state, 'add'))}</div>;
+    }
     const metadata = (note: ResearchNote | null) => note ? { ...getResearchNoteMetadata(note), frontmatter: note.frontmatter, annotations: note.theory?.annotations, relations: note.theory?.relations } : {};
     return <div className="mewiki-ai-native-review" data-native-review="note"><h1 className={!previous && current ? 'mewiki-ai-review-new-title' : undefined}>{current?.title ?? previous?.title ?? proposal.title}</h1>
       {renderActions?.({ kind: 'page' })}

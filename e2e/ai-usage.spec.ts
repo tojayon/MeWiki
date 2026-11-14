@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createNotebookFixture } from '../src/domain/testUtils/notebook.ts';
+import { openAiWorkspace as openAi } from './helpers/ai.ts';
 
 async function setup(page: Page, locale = 'zh-CN') {
   const state = createNotebookFixture();
@@ -15,12 +16,6 @@ async function setup(page: Page, locale = 'zh-CN') {
   ] } }));
   page.on('pageerror', error => { throw error; });
   await page.goto('/');
-}
-async function openAi(page: Page, english = false) {
-  await page.getByRole('button', { name: english ? 'AI workspace' : 'AI 工作区', exact: true }).first().click();
-  const ai = page.getByTestId('mewiki-ai-workspace');
-  await expect(ai).toBeVisible();
-  return ai;
 }
 
 test('opens usage from one footer icon and dismisses it with Escape and outside clicks', async ({ page }) => {
@@ -90,7 +85,7 @@ test('retains older replies while showing five usage rows and restores and clear
   await expect(button).toBeInViewport();
   await page.screenshot({ path: info.outputPath('ai-usage-mobile.png') });
   await button.press('Escape');
-  await ai.getByRole('button', { name: '关闭AI 工作区', exact: true }).click();
+  await page.getByTestId('mewiki-ai-launcher').click();
   ai = await openAi(page);
   await ai.getByRole('button', { name: 'Token 使用记录', exact: true }).click();
   await expect(ai.getByRole('dialog', { name: 'Token 使用记录', exact: true }).getByRole('listitem')).toHaveCount(7);
@@ -123,7 +118,7 @@ test('keeps the reported partial usage once after a task is stopped', async ({ p
   await expect(row.locator('.mewiki-ai-usage-input')).toHaveText('12');
   await ai.getByRole('button', { name: '停止任务', exact: true }).click();
   release();
-  await ai.getByRole('button', { name: '关闭AI 工作区', exact: true }).click();
+  await page.getByTestId('mewiki-ai-launcher').click();
   ai = await openAi(page);
   await ai.getByRole('button', { name: 'Token 使用记录', exact: true }).click();
   const restored = ai.getByRole('dialog', { name: 'Token 使用记录', exact: true }).getByRole('listitem');

@@ -1,6 +1,8 @@
 .research-note-outline { display: flex; grid-column: 3; grid-row: 1 / -1; min-width: 0; min-height: 0; flex-direction: column; border-left: 1px solid #d3ddea; background: #f7f9fc; color: #26354b; box-sizing: border-box; }
+.research-note-outline[hidden] { display: none; }
 .research-note-outline > header, .research-note-outline > footer { display: flex; box-sizing: border-box; flex: 0 0 42px; min-width: 0; align-items: center; padding: 5px 12px; }
-.research-note-outline > header { flex-basis: 44px; height: 44px; border-bottom: 1px solid #d3ddea; background: #fbfcfe; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); }
+.research-note-outline > header { flex-basis: 44px; height: 44px; gap: 8px; border-bottom: 1px solid #d3ddea; padding: 0 8px 0 0; background: #fbfcfe; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); }
+.research-note-outline > header > .research-sidebar-panel-toggle { margin-left: auto; }
 .research-note-outline > footer { border-top: 1px solid #d3ddea; color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-note-outline > nav { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 5px; }
 .research-note-outline > :where(nav) ol, .research-symbol-backlinks-content ol { margin: 0; padding: 0; list-style: none; }
@@ -9,13 +11,9 @@
 .research-note-outline > :where(nav) li button:hover, .research-symbol-backlinks-content li button:hover { background: #eaf0f8; }
 .research-note-outline > :where(nav) li button[aria-current="location"] { background: #e6eefb; color: #123c9b; font-weight: 700; }
 .research-outline-number { white-space: nowrap; font-variant-numeric: tabular-nums; }
-.research-outline-tabs { display: flex; min-width: 0; height: 100%; gap: 8px; overflow-x: auto; scrollbar-width: thin; }
-.research-outline-tabs > button { flex: 0 0 auto; border: 0; border-bottom: 2px solid transparent; padding: 0 2px; background: transparent; color: #52627a; font: inherit; white-space: nowrap; cursor: pointer; }
-.research-outline-tabs > button[aria-selected="true"] { border-bottom-color: #1547c0; color: #123c9b; font-weight: 700; }
+.research-outline-tabs { display: flex; flex: 1 1 auto; min-width: 0; height: 100%; gap: 3px; overflow-x: auto; scrollbar-width: thin; }
 .research-outline-recipe-panel { display: flex; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; }
 .research-outline-recipe-panel[hidden], .research-symbol-backlinks-content[hidden] { display: none; }
-.research-outline-ai-panel { display: flex; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; }
-.research-outline-ai-panel[hidden] { display: none; }
 .research-note-backlinks li button { display: flex; flex-direction: column; gap: 5px; padding: 9px 7px; }
 .research-note-backlinks strong { display: flex; align-items: center; gap: 4px; color: #1547c0; }
 .research-note-backlinks strong > svg { flex: 0 0 auto; }
@@ -28,14 +26,8 @@
 .research-symbol-backlinks-content > nav + nav { margin-top: 12px; border-top: 1px solid #d3ddea; padding-top: 4px; }
 .research-symbol-backlink-result { display: block; max-width: 100%; overflow-x: auto; }
 .research-symbol-backlinks-name { margin: 0 7px 8px; color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.6; overflow-wrap: anywhere; }
-.research-page-trailing-actions { display: flex; flex: 0 0 auto; align-items: center; align-self: stretch; margin-left: 3px; border-left: 1px solid #d3ddea; padding-left: 7px; }
-:root .research-page-trailing-actions button[data-ui="icon-action"][aria-label] { --action-ink: #172033; --action-accent: #172033; --action-hover: #e9edf2; }
 @container research-notebook (max-width: 999px) {
   .research-notebook-layout.has-outline { --research-right-column: 0px; }
   .research-note-outline { position: absolute; z-index: 6; grid-column: 1 / -1; top: 44px; right: 0; bottom: 42px; width: min(var(--research-outline-width, 300px), calc(100% - 44px)); border-block: 1px solid #d3ddea; box-shadow: -6px 0 18px #1735561a; }
   .research-notebook-divider.is-right { display: none; }
-}
-@media (max-width: 720px) {
-  .research-page-trailing-actions { margin-left: 1px; padding-left: 4px; }
-  :root .research-outline-toggle[data-ui="icon-action"][aria-label] { --action-size: 24px; }
 }

@@ -2,6 +2,9 @@ import { createNoteProposal, createTermProposal, type AiProposal } from './propo
 import type { AiToolContext } from './tools.ts';
 import { createNativeProposal } from './nativeProposals.ts';
 import { assertNativeEditAccess } from './nativeTools.ts';
+import { aiSelectionRanges, assertAiSelectionEdit } from './textSelection.ts';
+import { completeAiSelectedDraft } from './selectionRanges.ts';
+import { findResearchBlock } from '../domain/researchBlockTree.ts';
 
 interface StringObject { values: Record<string, string>; closed: Set<string>; fields?: StringObject }
 
@@ -87,6 +90,20 @@ export function createAiDraft(context: AiToolContext, call: { name: string; argu
   if (!parsed) return null;
   const { values, closed } = parsed;
   try {
+    // A partial JSON string has not generated its protected suffix yet. Keep that
+    // suffix visible, and switch to strict validation as soon as the string closes.
+    if (context.selection && context.selection.kind !== 'block' && values.blockId) {
+      const note = context.state.notes.find(note => note.id === context.selection!.noteId);
+      const block = note && findResearchBlock(note.blocks, values.blockId)?.block;
+      const range = aiSelectionRanges(context.state, context.selection, values.blockId).find(range => range.field === 'text');
+      if (block && 'text' in block && typeof block.text === 'string' && range) {
+        if (call.name === 'propose_note' && 'content' in values && !closed.has('content')) values.content = completeAiSelectedDraft(block.text, values.content, range);
+        if (call.name === 'propose_edit' && parsed.fields && 'text' in parsed.fields.values && !parsed.fields.closed.has('text')) {
+          parsed.fields.values.text = completeAiSelectedDraft(block.text, parsed.fields.values.text, range);
+        }
+      }
+    }
+    assertAiSelectionEdit(context.state, context.selection, call.name, { ...values, fields: parsed.fields?.values });
     if (call.name === 'propose_edit') {
       if (!['block-update', 'note-update', 'symbol-save', 'term-save'].includes(values.action) || !parsed.fields ||
         Object.keys(values).some(key => !['action', 'noteId', 'blockId', 'entryId'].includes(key) || !closed.has(key))) return null;

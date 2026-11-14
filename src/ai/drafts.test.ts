@@ -2,11 +2,23 @@ import { describe, expect, it } from 'vitest';
 import { createNotebookFixture } from '../domain/testUtils/notebook.ts';
 import { createAiToolContext, executeAiTool } from './tools.ts';
 import { createAiDraft } from './drafts.ts';
+import { createAiTextSelection } from './textSelection.ts';
 
 const context = () => createAiToolContext(createNotebookFixture(), 'a', ['fixture-definition']);
 const draft = (ctx: ReturnType<typeof context>, args: string, name = 'propose_note') => createAiDraft(ctx, { name, arguments: args }, 'draft-1');
 
 describe('in-memory streaming AI drafts', () => {
+  it('withholds out-of-selection incremental proposals just like final tool execution', () => {
+    const state = createNotebookFixture(), note = state.notes.find(note => note.id === 'fixture-definition')!;
+    note.blocks.push({ id: 'outside', type: 'paragraph', text: '选择范围外' });
+    const selection = createAiTextSelection(state, 'a', note.id, [note.blocks[0].id], '通用');
+    const ctx = createAiToolContext(state, 'a', [note.id], selection);
+    executeAiTool(ctx, 'read_note', { noteId: note.id });
+    executeAiTool(ctx, 'read_block', { noteId: note.id, blockId: 'outside' });
+    expect(draft(ctx, '{"operation":"replace-text","noteId":"fixture-definition","blockId":"outside","content":"不能预览')).toBeNull();
+    expect(draft(ctx, '{"operation":"replace-text","noteId":"fixture-definition","blockId":"fixture-definition:text","content":"允许预览')).toMatchObject({ content: '允许预览内容。' });
+    expect(draft(ctx, '{"action":"block-update","noteId":"fixture-definition","blockId":"outside","fields":{"text":"不能预览', 'propose_edit')).toBeNull();
+  });
   it('previews incomplete content after authorized target metadata without executing a tool or saving', () => {
     const ctx = context();
     const args = '{"operation":"replace-text","noteId":"fixture-definition","blockId":"fixture-definition:text","content":"正在写 **解释**';

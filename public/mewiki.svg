@@ -2,11 +2,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="17.5 17.5 157 157" role="img" aria-labelledby="title desc">
   <title id="title">MeWiki 图标</title>
   <desc id="desc">黑白蓝三色 MeWiki 圆形矢量标志。</desc>
-  <defs><clipPath id="emblem-clip"><circle cx="145" cy="104.5" r="78.5"/></clipPath></defs>
+  <defs><mask id="emblem-mask" maskUnits="userSpaceOnUse" x="66.5" y="26" width="157" height="157"><circle cx="145" cy="104.5" r="78.5" fill="#fff"/></mask></defs>
   <g transform="translate(-49 -8.5)">
-  <g id="emblem">
-    <circle cx="145" cy="104.5" r="78.5" fill="#060606"/>
-    <g clip-path="url(#emblem-clip)">
+  <g id="emblem" mask="url(#emblem-mask)">
+    <rect x="66.5" y="26" width="157" height="157" fill="#060606"/>
+    <g>
       <path id="white-ribbon" fill="#fff" d="M 66.7 121.8
         C 72.4 99.9 90.8 70.2 116.8 58.4
         C 128.2 53.2 137.1 54.1 140.1 62.2

@@ -88,7 +88,7 @@ test("chooses full names, abbreviations and individual aliases from the term ins
   const picker = page.getByRole("dialog", { name: "插入术语", exact: true });
   await expect(picker.getByRole("option", { name: "均方误差", exact: true })).toBeVisible();
   await editor.press("Escape");
-  await expectEditorSource(editor, "#均误");
+  await expectEditorSource(editor, "\\#均误");
 });
 
 test("keeps the chosen reference form keyboard accessible on a phone", async ({ page }, info) => {
@@ -160,7 +160,7 @@ test("composes independent references to one term using names, abbreviations and
   await page.keyboard.insertText("）");
   const references = editor.locator('[data-reference-kind="term"]');
   await expect(references).toHaveText(["均误", "Mean squared error", "MSE", "Mean square error"]);
-  await references.first().click();
+  await references.first().press("F2");
   const popup = page.getByRole("dialog", { name: "编辑引用", exact: true });
   const forms = popup.getByLabel("术语引用形式", { exact: true });
   await expect(forms.locator('option[value="chinese-abbreviation"]')).toHaveText("仅中文缩写 · 均误");
@@ -183,7 +183,9 @@ test("composes independent references to one term using names, abbreviations and
 test("identifies unfilled term name fields instead of hiding the supported display modes", async ({ page }) => {
   const panel = await openTermWorkspace(page, false, { englishName: undefined, englishAbbreviation: undefined, chineseAbbreviation: undefined, aliases: [], aliasEntries: [] });
   await panel.getByRole("button", { name: "切换为编辑模式", exact: true }).click();
-  await panel.locator('[data-block-id="bilingual-body"] .research-dictionary-term-reference').first().click();
+  const block = panel.locator('[data-block-id="bilingual-body"]');
+  await block.getByRole("textbox").focus();
+  await block.locator('[data-reference-kind="term"]').first().press("F2");
   const popup = page.getByRole("dialog", { name: "编辑引用", exact: true });
   const form = popup.getByLabel("术语引用形式", { exact: true });
   for (const value of ["english", "english-abbreviation", "chinese-abbreviation", "alias"]) {
@@ -203,7 +205,8 @@ test("changes a single reference form with keyboard controls on a narrow screen"
   await panel.getByRole("button", { name: "收起笔记左侧面板", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 800 });
   const block = panel.locator('[data-block-id="bilingual-body"]');
-  await block.locator(".research-dictionary-term-reference").first().click();
+  await block.getByRole("textbox").focus();
+  await block.locator('[data-reference-kind="term"]').first().press("F2");
   const popup = page.getByRole("dialog", { name: "编辑引用", exact: true });
   const form = popup.getByLabel("术语引用形式", { exact: true });
   await form.focus();
@@ -225,7 +228,9 @@ test("changes a single reference form with keyboard controls on a narrow screen"
 test("localizes form types while preserving each selected term name", async ({ page }, info) => {
   const panel = await openTermWorkspace(page, false, {}, "en");
   await panel.getByRole("button", { name: "Switch to edit mode", exact: true }).click();
-  await panel.locator('[data-block-id="bilingual-body"] .research-dictionary-term-reference').first().click();
+  const block = panel.locator('[data-block-id="bilingual-body"]');
+  await block.getByRole("textbox").focus();
+  await block.locator('[data-reference-kind="term"]').first().press("F2");
   const popup = page.getByRole("dialog", { name: "Edit reference", exact: true });
   const form = popup.getByLabel("Term reference form", { exact: true });
   await expect(form.locator('option[value="chinese-abbreviation"]')).toHaveText("Chinese abbreviation only · 均误");

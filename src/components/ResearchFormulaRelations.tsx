@@ -110,7 +110,7 @@ export function FormulaSymbolPopover({ state, owner, part, target, instanceTex, 
   part: SymbolPart;
   target: HTMLElement;
   instanceTex?: string;
-  onCancel: (restoreFocus?: boolean) => void;
+  onCancel: (restoreFocus?: boolean, nextTarget?: EventTarget | null) => void;
   onOpenFormula: (address: FormulaAddress) => void;
   onOpenRecipe?: () => void;
 }) {
@@ -121,7 +121,7 @@ export function FormulaSymbolPopover({ state, owner, part, target, instanceTex, 
   useLayoutEffect(() => { if (!owner) ref.current?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true }); }, [owner]);
   const entry = state.symbols.find((item) => item.id === part.entryId);
   const definitions = owner ? [] : listFormulaOutputs(state, part.entryId);
-  return <InlineSymbolDetailsContext.Provider value={false}><div ref={ref} className="research-formula-inline-editor research-formula-symbol-popover" popover="manual" role="dialog" aria-label={t("符号含义与推导来源")}>
+  return <InlineSymbolDetailsContext.Provider value={false}><div ref={ref} className="research-formula-inline-editor research-formula-symbol-popover" popover="manual" role="dialog" tabIndex={-1} aria-label={t("符号含义与推导来源")}>
     <header className="research-formula-symbol-heading">
       <strong className="research-formula-settings-heading">{entry?.name ?? t("未知符号")}</strong>
       {entry && <button data-ui="icon-action" className="research-formula-dictionary-button" aria-label={t("打开词典词条")} title={t("打开词典词条")}

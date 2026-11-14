@@ -7,7 +7,8 @@ import { withExportProfileLock } from './exportProfileLock.ts';
 
 export class AiServiceError extends Error {
   readonly status: number;
-  constructor(message: string, status = 400) { super(message); this.status = status; }
+  readonly failure?: import('../src/ai/failures.ts').AiFailure;
+  constructor(message: string, status = 400, failure?: import('../src/ai/failures.ts').AiFailure) { super(message); this.status = status; this.failure = failure; }
 }
 export interface AiSecretProtector {
   protect: (value: string) => Promise<string>;

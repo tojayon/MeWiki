@@ -5,8 +5,8 @@
   "collectedOnPlatform": "win32",
   "collectionScope": "lockfile metadata and locally installed notice texts",
   "counts": {
-    "packages": 406,
-    "noticeFiles": 342,
+    "packages": 422,
+    "noticeFiles": 358,
     "pendingLicenseFields": 1,
     "uninstalled": 77,
     "installedWithoutNoticeFiles": 5
@@ -1618,6 +1618,32 @@
       "optional": false
     },
     {
+      "name": "@types/linkify-it",
+      "version": "5.0.0",
+      "location": "node_modules/@types/linkify-it",
+      "scope": "runtime-transitive",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/linkify-it",
+      "optional": false
+    },
+    {
+      "name": "@types/markdown-it",
+      "version": "14.2.0",
+      "location": "node_modules/@types/markdown-it",
+      "scope": "runtime-transitive",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/markdown-it",
+      "optional": false
+    },
+    {
       "name": "@types/mdast",
       "version": "4.0.4",
       "location": "node_modules/@types/mdast",
@@ -1628,6 +1654,19 @@
         "LICENSE"
       ],
       "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/mdast",
+      "optional": false
+    },
+    {
+      "name": "@types/mdurl",
+      "version": "2.0.0",
+      "location": "node_modules/@types/mdurl",
+      "scope": "runtime-transitive",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/mdurl",
       "optional": false
     },
     {
@@ -1862,6 +1901,19 @@
         "LICENSE"
       ],
       "homepage": "https://ajv.js.org/",
+      "optional": false
+    },
+    {
+      "name": "argparse",
+      "version": "2.0.1",
+      "location": "node_modules/argparse",
+      "scope": "runtime-transitive",
+      "license": "Python-2.0",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "",
       "optional": false
     },
     {
@@ -3315,6 +3367,19 @@
       "optional": true
     },
     {
+      "name": "linkify-it",
+      "version": "5.0.2",
+      "location": "node_modules/linkify-it",
+      "scope": "runtime-transitive",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "",
+      "optional": false
+    },
+    {
       "name": "lodash-es",
       "version": "4.18.1",
       "location": "node_modules/lodash-es",
@@ -3390,6 +3455,32 @@
         "LICENSE"
       ],
       "homepage": "https://github.com/Rich-Harris/magic-string",
+      "optional": false
+    },
+    {
+      "name": "markdown-it",
+      "version": "14.3.3",
+      "location": "node_modules/markdown-it",
+      "scope": "runtime-transitive",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "",
+      "optional": false
+    },
+    {
+      "name": "entities",
+      "version": "4.5.0",
+      "location": "node_modules/markdown-it/node_modules/entities",
+      "scope": "runtime-transitive",
+      "license": "BSD-2-Clause",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "",
       "optional": false
     },
     {
@@ -3624,6 +3715,19 @@
         "license"
       ],
       "homepage": "",
+      "optional": false
+    },
+    {
+      "name": "mdurl",
+      "version": "2.1.0",
+      "location": "node_modules/mdurl",
+      "scope": "runtime-transitive",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://github.com/markdown-it/mdurl",
       "optional": false
     },
     {
@@ -4369,6 +4473,19 @@
       "optional": false
     },
     {
+      "name": "prosemirror-commands",
+      "version": "1.7.2",
+      "location": "node_modules/prosemirror-commands",
+      "scope": "runtime-direct",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://code.haverbeke.berlin/prosemirror/prosemirror-commands",
+      "optional": false
+    },
+    {
       "name": "prosemirror-history",
       "version": "1.5.1",
       "location": "node_modules/prosemirror-history",
@@ -4382,6 +4499,45 @@
       "optional": false
     },
     {
+      "name": "prosemirror-inputrules",
+      "version": "1.5.1",
+      "location": "node_modules/prosemirror-inputrules",
+      "scope": "runtime-direct",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "",
+      "optional": false
+    },
+    {
+      "name": "prosemirror-keymap",
+      "version": "1.2.3",
+      "location": "node_modules/prosemirror-keymap",
+      "scope": "runtime-direct",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "",
+      "optional": false
+    },
+    {
+      "name": "prosemirror-markdown",
+      "version": "1.13.9",
+      "location": "node_modules/prosemirror-markdown",
+      "scope": "runtime-direct",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://code.haverbeke.berlin/prosemirror/prosemirror-markdown",
+      "optional": false
+    },
+    {
       "name": "prosemirror-model",
       "version": "1.25.13",
       "location": "node_modules/prosemirror-model",
@@ -4392,6 +4548,19 @@
         "LICENSE"
       ],
       "homepage": "https://code.haverbeke.berlin/prosemirror/prosemirror-model",
+      "optional": false
+    },
+    {
+      "name": "prosemirror-schema-list",
+      "version": "1.6.0",
+      "location": "node_modules/prosemirror-schema-list",
+      "scope": "runtime-direct",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://code.haverbeke.berlin/prosemirror/prosemirror-schema-list",
       "optional": false
     },
     {
@@ -4431,6 +4600,19 @@
         "LICENSE"
       ],
       "homepage": "https://code.haverbeke.berlin/prosemirror/prosemirror-view",
+      "optional": false
+    },
+    {
+      "name": "punycode.js",
+      "version": "2.3.1",
+      "location": "node_modules/punycode.js",
+      "scope": "runtime-transitive",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE-MIT.txt"
+      ],
+      "homepage": "https://mths.be/punycode",
       "optional": false
     },
     {
@@ -4887,6 +5069,19 @@
       "optional": false
     },
     {
+      "name": "uc.micro",
+      "version": "2.1.0",
+      "location": "node_modules/uc.micro",
+      "scope": "runtime-transitive",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE.txt"
+      ],
+      "homepage": "",
+      "optional": false
+    },
+    {
       "name": "undici-types",
       "version": "7.24.6",
       "location": "node_modules/undici-types",
@@ -5066,6 +5261,19 @@
         "LICENSE.md"
       ],
       "homepage": "https://vitest.dev/",
+      "optional": false
+    },
+    {
+      "name": "w3c-keyname",
+      "version": "2.2.8",
+      "location": "node_modules/w3c-keyname",
+      "scope": "runtime-transitive",
+      "license": "MIT",
+      "installed": true,
+      "noticeFiles": [
+        "LICENSE"
+      ],
+      "homepage": "https://github.com/marijnh/w3c-keyname#readme",
       "optional": false
     },
     {

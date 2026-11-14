@@ -9,9 +9,10 @@ import type { AiStreamEvent } from '../src/ai/types.ts';
 
 const resources: { root: string; server: Server; upstream: Server }[] = [];
 const marker = { 'Content-Type': 'application/json', 'X-MeWiki-Request': 'ai' };
-async function fixture(options: { keepStreamOpen?: boolean; onClose?: () => void; onChat?: (response: ServerResponse) => void } = {}) {
+async function fixture(options: { keepStreamOpen?: boolean; onClose?: () => void; onChat?: (response: ServerResponse) => void; upstreamStatus?: number } = {}) {
   const root = await mkdtemp(path.join(tmpdir(), 'mewiki-ai-http-'));
   const upstream = createServer((request, response) => {
+    if (options.upstreamStatus) { response.writeHead(options.upstreamStatus, { 'Retry-After': '3' }); response.end('PRIVATE_UPSTREAM_BODY'); return; }
     if (request.url === '/v1/models') { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify({ data: [{ id: 'fake-model' }] })); return; }
     response.writeHead(200, { 'Content-Type': 'text/event-stream' });
     if (options.onChat) { options.onChat(response); return; }
@@ -39,6 +40,17 @@ afterEach(async () => {
   }
 });
 describe('local AI service API', () => {
+  it('forwards typed rate-limit recovery over NDJSON and request validation over JSON', async () => {
+    const { url, baseUrl } = await fixture({ upstreamStatus: 429 });
+    const settings = await (await fetch(url + '/settings', { headers: marker })).json();
+    await fetch(url + '/settings', { method: 'PUT', headers: marker, body: JSON.stringify({ revision: settings.revision, defaultProviderId: 'fake', providers: [{ id: 'fake', name: '虚构服务', baseUrl, model: 'fixture', protocol: 'openai-chat' }] }) });
+    const result = await fetch(url + '/chat', { method: 'POST', headers: marker, body: JSON.stringify({ providerId: 'fake', messages: [{ role: 'user', content: '只读虚构资料' }] }) });
+    const text = await result.text(), event = JSON.parse(text.trim());
+    expect(event).toMatchObject({ type: 'error', failure: { kind: 'rate-limit', recovery: 'retry', status: 429, retryAt: expect.any(Number) } });
+    expect(text).not.toContain('PRIVATE_UPSTREAM_BODY');
+    const bad = await fetch(url + '/chat', { method: 'POST', headers: marker, body: JSON.stringify({ providerId: 'fake', messages: [] }) });
+    expect(await bad.json()).toMatchObject({ failure: { kind: 'request', recovery: 'revise' } });
+  });
   it('protects every route with local same-origin checks and a request marker, including reads', async () => {
     const { url } = await fixture();
     expect((await fetch(url + '/settings')).status).toBe(403);

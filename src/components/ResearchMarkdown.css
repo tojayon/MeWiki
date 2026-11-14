@@ -21,6 +21,7 @@
 }
 :root :is(.research-dictionary-term-reference, .research-dictionary-symbol-reference):is(:hover, :focus-visible) { cursor: help; }
 :root .research-dictionary-term-reference:is(:hover, :focus-visible) { color: #1547c0; text-decoration: underline dotted; text-underline-offset: 3px; }
+:root .research-dictionary-term-reference { white-space: normal; overflow-wrap: anywhere; word-break: normal; box-decoration-break: slice; -webkit-box-decoration-break: slice; }
 :root .research-dictionary-symbol-reference:is(:hover, :focus-visible) { text-decoration: underline dashed; text-underline-offset: 3px; }
 .research-dictionary-term-reference.is-missing, .research-dictionary-symbol-reference.is-missing { color: #9a5a22; text-decoration: underline wavy; text-decoration-thickness: 1px; }
 .research-code-toolbar { display: flex; min-height: 27px; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #30363d; padding: 1px 6px 1px 10px; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.4; }

@@ -396,7 +396,7 @@ export default function PublicationDialog({ session, libraryId, directory, onClo
             const value = event.target.value;
             if (value.startsWith('font:')) update('fontAssetId', value.slice(5));
             else { setOptions(current => { const next = { ...current, fontFamily: value as PublicationOptions['fontFamily'] }; delete next.fontAssetId; return next; }); invalidate(); }
-          }}><optgroup label={t('内置字体')}><option value="sans">{t(options.style === 'document' ? 'MeWiki 正文字体' : '思源风格黑体')}</option><option value="serif">{t('思源风格宋体')}</option></optgroup>
+          }}><optgroup label={t('内置字体')}><option value="sans">{t(options.style === 'document' ? '觅维正文字体' : '思源风格黑体')}</option><option value="serif">{t('思源风格宋体')}</option></optgroup>
             <optgroup label={t('资料库字体')}>{fonts.map(item => <option key={item.id} value={`font:${item.id}`}>{item.name.replace(/\.(?:ttf|otf|woff2?)$/i, '')}</option>)}</optgroup>
             {options.fontAssetId && !fonts.some(item => item.id === options.fontAssetId) && <option value={`font:${options.fontAssetId}`}>{t('所选字体未在当前资料库找到')}</option>}
           </select></label><button type="button" data-ui="icon-action" aria-label={t('导入字体')} title={t('导入字体')} onClick={() => fontFile.current?.click()}><Upload size={16} /></button>

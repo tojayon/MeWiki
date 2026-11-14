@@ -1,0 +1,112 @@
+.research-notebook-layout.has-right-ribbon {
+  --research-right-column: 44px;
+  --research-right-ribbon: 44px;
+}
+:root .research-notebook-layout .research-sidebar-ribbon {
+  display: flex;
+  z-index: 8;
+  box-sizing: border-box;
+  grid-column: 1;
+  grid-row: 1 / -1;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 0;
+  width: 44px;
+  padding: 4px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  border-right: 1px solid var(--mewiki-ui-border, #d3ddea);
+  background: var(--mewiki-ui-surface-muted, #f7f9fc);
+}
+:root .research-notebook-layout .research-sidebar-ribbon.is-right {
+  grid-column: 3;
+  border-right: 0;
+  border-left: 1px solid var(--mewiki-ui-border, #d3ddea);
+}
+:root .research-sidebar-panel-toggle[data-ui=icon-action][aria-label] {
+  --action-size: 28px;
+  --action-ink: #172033;
+  --action-accent: #172033;
+  --action-hover: #e9edf2;
+  flex: 0 0 28px;
+  align-self: center;
+  border: 0;
+  border-radius: 4px;
+  padding: 0;
+}
+.research-note-outline > header > .research-outline-tabs { flex: 1 1 auto; }
+:root .research-sidebar-ribbon > .research-sidebar-panel-toggle[data-ui=icon-action][aria-label] { --action-size: 36px; flex-basis: 36px; }
+:root .research-notebook-layout .research-sidebar-ribbon > button {
+  display: inline-flex;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  border: 0;
+  border-radius: 4px;
+  padding: 0;
+  background: transparent;
+  color: var(--mewiki-ui-muted, #52627a);
+  cursor: pointer;
+}
+:root .research-notebook-layout .research-sidebar-ribbon > button:hover {
+  background: var(--mewiki-ui-hover, #e9edf2);
+  color: var(--mewiki-ui-ink, #172033);
+}
+:root .research-notebook-layout .research-sidebar-ribbon > button[aria-expanded=true] {
+  background: var(--mewiki-ui-selected, #eaf0ff);
+  color: var(--mewiki-ui-accent, #1547c0);
+}
+.research-notebook-layout[data-left-peek] :is(.research-notebook-sidebar, .research-dictionary-sidebar),
+.research-notebook-layout[data-right-peek] :is(.research-note-outline, .mewiki-ai-floating-panel[data-placement=right]) {
+  position: absolute;
+  z-index: 7;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  box-sizing: border-box;
+  top: 0;
+  min-width: 0;
+  border: 1px solid var(--mewiki-ui-border, #d3ddea);
+  border-radius: 4px;
+  box-shadow: 0 4px 18px #1720331c;
+}
+.research-notebook-layout.is-sidebar-collapsed[data-left-peek] :is(.research-notebook-sidebar, .research-dictionary-sidebar) {
+  display: flex;
+  left: 44px;
+  right: auto;
+  bottom: 42px;
+  width: min(var(--research-sidebar-preferred-width, 300px), calc(100% - 44px - var(--research-right-ribbon, 0px)));
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
+}
+.research-notebook-layout.is-sidebar-collapsed[data-left-peek] .research-sidebar-footer {
+  position: absolute;
+  display: flex;
+  z-index: 7;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  box-sizing: border-box;
+  left: 44px;
+  bottom: 0;
+  width: min(var(--research-sidebar-preferred-width, 300px), calc(100% - 44px - var(--research-right-ribbon, 0px)));
+  height: 42px;
+  border: 1px solid var(--mewiki-ui-border, #d3ddea);
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 8px 18px #17203314;
+}
+.research-notebook-layout[data-right-peek] :is(.research-note-outline, .mewiki-ai-floating-panel[data-placement=right]) {
+  left: auto;
+  right: 44px;
+  bottom: 0;
+  width: min(var(--research-outline-preferred-width, 300px), calc(100% - 44px - var(--research-left-ribbon, 0px)));
+}
+.research-notebook-layout[data-right-peek] .research-notebook-divider.is-right { display: none; }
+.research-sidebar-footer [data-ui=icon-action] { flex: 0 0 28px; --action-size: 28px; }
+@container research-notebook (max-width: 719px) {
+  .research-sidebar-footer { gap: 2px; padding-inline: 4px; }
+}

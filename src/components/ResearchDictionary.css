@@ -30,7 +30,7 @@
 .research-dictionary-consistency { display: grid; gap: 8px; margin: 18px 20px 20px; border: 1px solid #c8d5e6; border-radius: 4px; padding: 10px; background: #f8faff; }
 .research-dictionary-consistency-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #173454; }
 .research-dictionary-consistency-header > div { display: flex; align-items: center; gap: 6px; }
-.research-dictionary-consistency-header > div > span { min-width: 18px; border-radius: 10px; padding: 1px 5px; background: #e1ebfb; color: #1547c0; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); text-align: center; }
+.research-dictionary-consistency-header > div > span:not(.mewiki-ui-info) { min-width: 18px; border-radius: 4px; padding: 1px 5px; background: var(--mewiki-ui-surface-muted); color: var(--mewiki-ui-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 11); text-align: center; font-variant-numeric: tabular-nums; }
 .research-dictionary-consistency-help, .research-dictionary-consistency-empty { margin: 0; color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.55; }
 .research-dictionary-consistency-list { display: grid; gap: 7px; max-height: 300px; margin: 0; padding: 0; overflow: auto; list-style: none; }
 .research-dictionary-consistency-hit { display: grid; gap: 5px; border-top: 1px solid #dbe3ed; padding-top: 7px; }
@@ -41,12 +41,12 @@
 .research-dictionary-consistency-meta > span:last-child { flex: 0 0 auto; color: #9c4a07; }
 .research-dictionary-consistency-actions { display: flex; flex-wrap: wrap; gap: 5px; }
 .research-dictionary-consistency-actions .research-small-button { display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding-inline: 7px; }
-.research-symbol-detail.research-term-editing { background: #f5f7fa; }
+.research-symbol-detail.research-term-editing { background: var(--mewiki-ui-surface); }
 .research-term-editor {
-  --term-editor-border: #d6deea;
-  --term-editor-ink: #1f334d;
-  --term-editor-muted: #5c6e85;
-  --term-editor-accent: #1547c0;
+  --term-editor-border: var(--mewiki-ui-border);
+  --term-editor-ink: var(--mewiki-ui-ink);
+  --term-editor-muted: var(--mewiki-ui-muted);
+  --term-editor-accent: var(--mewiki-ui-accent);
   display: grid;
   width: 100%;
   min-width: 0;
@@ -57,10 +57,10 @@
   line-height: 1.5;
 }
 .research-term-editor-columns { display: grid; min-width: 0; gap: 20px; }
-.research-term-editor-section { display: grid; min-width: 0; align-content: start; gap: 18px; border: 1px solid var(--term-editor-border); border-radius: 4px; padding: 20px; background: #fff; }
+.research-term-editor-section { display: grid; min-width: 0; align-content: start; gap: 18px; border-top: 1px solid var(--term-editor-border); padding: 18px 0; background: #fff; }
 .research-term-section-heading { display: flex; min-width: 0; align-items: center; gap: 10px; }
-.research-term-section-heading > svg { color: var(--term-editor-accent); }
-.research-term-section-heading h3 { margin: 0; color: var(--term-editor-ink); font-size: calc(var(--mewiki-interface-unit, 1px) * 15); font-weight: 650; }
+.research-term-section-heading > svg { color: var(--term-editor-muted); }
+.research-term-section-heading h3 { margin: 0; color: var(--term-editor-ink); font-size: calc(var(--mewiki-interface-unit, 1px) * 14); font-weight: 600; }
 .research-term-section-heading p { margin: 3px 0 0; color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.6; }
 .research-term-field { display: grid; min-width: 0; gap: 7px; color: var(--term-editor-ink); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 600; }
 .research-term-field-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -79,6 +79,8 @@
 .research-term-reference-preview output { overflow-wrap: anywhere; line-height: 1.7; }
 .research-term-alias-editor { display: grid; gap: 10px; border-top: 1px solid #e7ecf3; padding-top: 16px; }
 .research-term-alias-heading, .research-term-atom-editor-heading { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 10px; }
+.research-term-alias-heading > .research-term-add-button { margin-left: auto; }
+.research-symbol-slots-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .research-term-alias-heading h4 { margin: 0; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); font-weight: 600; }
 .research-term-alias-editor > p { margin: 0; color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.6; }
 .research-term-alias-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 8px 12px; }
@@ -87,15 +89,16 @@
 .research-term-alias-row button { flex: 0 0 auto; }
 .research-term-editor .research-term-add-button { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; min-height: 30px; border-color: #cddbf1; padding: 4px 8px; color: #21498e; font-weight: 500; }
 :root .research-term-editor button[data-ui="icon-action"][aria-label] { --action-size: 32px; }
-.research-term-editor-empty { margin: 0; border: 1px dashed var(--term-editor-border); border-radius: 4px; padding: 12px; color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.7; }
+.research-term-editor-empty { margin: 0; padding: 8px 0; color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.7; }
 .research-term-alias-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .research-term-atom-editor { gap: 14px; }
 .research-term-atom-hint { margin: 0; color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.7; }
 .research-term-atom-fields { display: grid; min-width: 0; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); align-items: start; gap: 14px; }
-.research-term-atom-field { display: grid; min-width: 0; gap: 12px; margin: 0; border: 1px solid #dce4ee; border-radius: 4px; padding: 14px; background: #f9fbfd; }
+.research-term-atom-field { display: grid; min-width: 0; gap: 12px; margin: 0; border: 1px solid var(--term-editor-border); border-radius: 4px; padding: 14px; background: var(--mewiki-ui-surface); }
 .research-term-atom-field-heading { display: flex; min-width: 0; align-items: center; gap: 8px; }
 .research-term-atom-field-heading h4 { flex: 1; margin: 0; color: var(--term-editor-ink); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 600; }
-.research-term-atom-number { display: grid; min-width: 26px; height: 26px; place-items: center; border-radius: 4px; background: #eaf0fc; color: #28519a; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); font-weight: 600; font-variant-numeric: tabular-nums; }
+.research-term-atom-number { display: grid; min-width: 26px; height: 26px; place-items: center; border-radius: 4px; background: var(--mewiki-ui-surface-muted); color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 11); font-weight: 600; font-variant-numeric: tabular-nums; }
+.research-term-atom-field-heading > button { margin-left: auto !important; }
 .research-term-atom-field textarea { min-height: 100px; }
 .research-term-atom-composition { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; border-top: 1px solid #e7ecf3; padding-top: 14px; color: var(--term-editor-muted); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-term-atom-composition output { display: flex; min-width: 0; flex-wrap: wrap; gap: 6px; }
@@ -122,7 +125,7 @@
 @container research-symbol-pane (max-width: 560px) {
   .research-symbol-detail.research-term-editing { padding: 12px; }
   .research-term-editor, .research-term-editor-columns { gap: 14px; }
-  .research-term-editor-section { gap: 16px; padding: 14px; }
+  .research-term-editor-section { gap: 16px; padding: 14px 0; }
   .research-term-editor :is(input:not([type="checkbox"]), textarea) { min-height: 42px; font-size: calc(var(--mewiki-interface-unit, 1px) * 16); }
   .research-term-editor input.research-term-name-input { font-size: calc(var(--mewiki-interface-unit, 1px) * 17); }
   .research-term-editor .research-term-add-button { min-height: 38px; }

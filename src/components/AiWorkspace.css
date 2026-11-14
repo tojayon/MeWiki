@@ -6,8 +6,9 @@
 .mewiki-ai-history-shell { position: relative; display: flex; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; }
 .mewiki-ai-history { flex: 1 1 auto; min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; overflow-anchor: none; }
 .mewiki-ai-history-content { display: flex; flex-direction: column; box-sizing: border-box; min-width: 0; min-height: 100%; gap: 18px; padding: 16px 12px; }
-.mewiki-ai-jump-latest { position: absolute; right: 12px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; max-width: calc(100% - 24px); border: 1px solid #dce1e8; border-radius: 4px; padding: 7px 10px; background: #fff; color: #38485f; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); cursor: pointer; }
-.mewiki-ai-task-form { position: relative; flex: 0 0 auto; min-width: 0; margin: 0; padding: 10px 10px 6px; background: #fff; }
+.mewiki-ai-jump-latest { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; max-width: calc(100% - 24px); border: 1px solid #253b58; border-radius: 4px; padding: 7px 10px; background: #253b58; color: #fff; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); cursor: pointer; }
+.mewiki-ai-task-form { position: relative; flex: 0 0 auto; min-width: 0; margin: 0; padding: 10px 4px 6px; background: #fff; }
+.mewiki-ai-task-form > .mewiki-ai-materials { margin-bottom: 0; }
 .mewiki-ai-composer { position: relative; min-width: 0; border: 1px solid #cbd3df; border-radius: 4px; background: #fff; }
 .mewiki-ai-task-form fieldset { display: grid; grid-template-columns: minmax(0, 1fr); gap: 11px; min-width: 0; margin: 0; border: 0; padding: 0; }
 .mewiki-ai-task-form fieldset > label { display: grid; min-width: 0; gap: 6px; }
@@ -15,28 +16,49 @@
 .mewiki-ai-task-form :is(input, select, textarea) { box-sizing: border-box; min-width: 0; width: 100%; border: 1px solid #cbd3df; border-radius: 4px; padding: 7px 9px; background: #fff; color: #192436; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .mewiki-ai-task-form :is(input, select) { min-height: 32px; }
 .mewiki-ai-task-form textarea { display: block; min-height: 68px; max-height: min(160px, 25dvh); overflow-y: auto; border: 0; padding: 10px; resize: none; line-height: 1.7; }
+.mewiki-ai-workspace :is(#mewiki-ai-task-prompt, .mewiki-ai-message-editor textarea):is(:focus, :focus-visible) { outline: none; box-shadow: none; }
 .mewiki-ai-task-form :is(input, select, textarea):disabled { background: #f5f6f8; color: #687588; }
 .mewiki-ai-composer-controls { display: flex; align-items: center; min-width: 0; gap: 6px; padding: 4px 7px 7px; }
-.mewiki-ai-model-menu { flex: 1 1 0; min-width: 0; }
+.mewiki-ai-model-menu { flex: 1 1 0; min-width: 41px; }
 .mewiki-ai-model-menu > summary { display: flex; align-items: center; min-width: 0; min-height: 30px; gap: 5px; border-radius: 4px; padding: 0 3px; color: #536176; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); list-style: none; cursor: pointer; }
 .mewiki-ai-model-menu > summary::-webkit-details-marker { display: none; }
 .mewiki-ai-model-menu > summary > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mewiki-ai-model-menu > summary > svg { flex: 0 0 auto; }
 .mewiki-ai-model-menu > summary:hover { background: #f2f4f7; }
-.mewiki-ai-model-options { position: absolute; z-index: 3; left: -1px; right: -1px; bottom: calc(100% + 8px); box-sizing: border-box; max-height: min(340px, calc(100dvh - 300px)); overflow: auto; overscroll-behavior: contain; border: 1px solid #cbd3df; border-radius: 4px; padding: 12px; background: #fff; }
-.mewiki-ai-model-options > p { margin: 9px 0 0; color: #687588; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.7; overflow-wrap: anywhere; }
-.mewiki-ai-task-form .mewiki-ai-scope { flex: 0 1 104px; width: 104px; min-height: 30px; border: 0; padding: 4px 2px; background: #fff; color: #536176; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); text-overflow: ellipsis; }
+.mewiki-ai-model-options { position: absolute; z-index: 3; left: -1px; right: -1px; bottom: calc(100% + 8px); box-sizing: border-box; max-height: min(260px, var(--ai-model-max-height, calc(100dvh - 230px))); overflow: auto; overscroll-behavior: contain; border: 1px solid #dce1e8; border-radius: 4px; padding: 10px; background: #fff; }
+.mewiki-ai-model-options fieldset { gap: 8px; }
+.mewiki-ai-model-options fieldset > label { grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 8px; }
+.mewiki-ai-model-options label > span { color: #687588; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); }
+.mewiki-ai-model-scope { display: flex; align-items: center; min-width: 0; gap: 6px; margin-top: 10px; border-top: 1px solid #edf0f4; padding-top: 8px; color: #718094; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.6; }
+.mewiki-ai-model-scope > svg { flex: 0 0 auto; }
+.mewiki-ai-model-scope > span:first-of-type { flex: 1 1 auto; min-width: 0; }
+.mewiki-ai-model-scope > [role=img] { display: inline-flex; flex: 0 0 auto; cursor: help; }
+.mewiki-ai-scope-control { position: relative; display: inline-flex; flex: 0 0 auto; min-width: 0; max-width: 100%; align-items: center; border-radius: 4px; color: var(--mewiki-ui-muted); }
+.mewiki-ai-scope-control > svg { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.mewiki-ai-scope-control:has(select:enabled):is(:hover, :active) { color: var(--mewiki-ui-ink); }
+.mewiki-ai-scope-control:has(select:disabled) { opacity: .55; }
+.mewiki-ai-task-form .mewiki-ai-scope, .mewiki-ai-task-form .mewiki-ai-scope:disabled { appearance: none; width: auto; max-width: 100%; min-height: 28px; border: 0; border-radius: 4px; padding: 3px 6px 3px 24px; background: transparent; color: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); text-overflow: ellipsis; opacity: 1; cursor: pointer; }
+.mewiki-ai-task-form .mewiki-ai-scope:disabled { cursor: default; }
 .mewiki-ai-composer-controls > .mewiki-ai-send { display: inline-flex; flex: 0 0 30px; width: 30px; height: 30px; align-items: center; justify-content: center; border: 0; border-radius: 4px; padding: 0; background: #204fba; color: #fff; cursor: pointer; }
 .mewiki-ai-composer-controls > .mewiki-ai-send:hover:not(:disabled) { background: #1944a5; }
 .mewiki-ai-composer-controls > .mewiki-ai-send:disabled { background: #e8ecf2; color: #9aa5b5; cursor: default; }
 .mewiki-ai-composer-controls > .mewiki-ai-stop { background: #f4e9eb; color: #a12837; }
 .mewiki-ai-composer-controls > .mewiki-ai-stop:hover { background: #eddbdf; }
-.mewiki-ai-session-bar { display: flex; align-items: center; min-width: 0; gap: 8px; margin-top: 5px; }
+.mewiki-ai-footer-controls { display: flex; flex: 0 0 auto; flex-direction: column; min-width: 0; }
+.mewiki-ai-footer-handle { display: grid; place-items: center; align-self: center; flex: 0 0 14px; box-sizing: border-box; width: 40px; height: 14px; min-height: 0; margin: 0; border: 0; border-radius: 4px; padding: 0; background: transparent; color: #8795a8; cursor: pointer; }
+.mewiki-ai-footer-handle > span { width: 24px; height: 3px; border-radius: 4px; background: currentColor; }
+.mewiki-ai-footer-handle:hover { background: #e5ebf3; color: #536176; }
+.mewiki-ai-footer-handle:active { color: #253b58; }
+.mewiki-ai-session-bar { display: flex; align-items: center; min-width: 0; gap: 4px; }
+.mewiki-ai-session-bar[hidden] { display: none; }
+.mewiki-ai-session-navigation { display: flex; flex: 1 1 auto; align-items: center; min-width: 0; gap: 4px; }
+.mewiki-ai-session-navigation[hidden] { display: none; }
 .mewiki-ai-session-title { flex: 1 1 0; min-width: 0; padding-left: 2px; overflow: hidden; color: #718094; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.6; text-overflow: ellipsis; white-space: nowrap; }
 .mewiki-ai-session-bar [role=toolbar] { display: flex; flex: 0 0 auto; align-items: center; gap: 2px; }
 :root .mewiki-ai-session-bar [data-ui="icon-action"][aria-label] { --action-size: 26px; --action-ink: #718094; --action-accent: #38485f; --action-hover: #f2f4f7; }
-.mewiki-ai-workspace .mewiki-ai-proposal-actions > button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px; min-height: 31px; border: 1px solid #cbd3df; border-radius: 4px; padding: 6px 10px; background: #fff; color: #2c415e; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); cursor: pointer; }
-.mewiki-ai-workspace .mewiki-ai-proposal-actions > button:hover:not(:disabled) { background: #edf1f7; }
+.mewiki-ai-workspace .mewiki-ai-proposal-actions > button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 26px; height: 26px; min-height: 26px; border: 0; border-radius: 4px; padding: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.mewiki-ai-workspace .mewiki-ai-proposal-actions > button:hover:not(:disabled) { background: #e9edf2; }
+:root .mewiki-ai-proposal-actions > [data-ui="icon-action"][aria-label] { --action-size: 26px; --action-ink: currentColor; --action-accent: currentColor; --action-hover: #e9edf2; }
 .mewiki-ai-workspace .mewiki-ai-proposal-actions > button:disabled { opacity: .5; cursor: default; }
 .mewiki-ai-task-status { display: grid; min-width: 0; gap: 6px; color: #536176; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.7; }
 .mewiki-ai-task-status:empty { display: none; }
@@ -46,41 +68,85 @@
 .mewiki-ai-conversation { min-width: 0; }
 .mewiki-ai-conversation:has(.mewiki-ai-welcome) { display: flex; flex: 1 1 auto; flex-direction: column; }
 .mewiki-ai-welcome { margin: auto 0; padding: 24px 10px; color: #718094; text-align: center; }
-.mewiki-ai-welcome > svg { margin-bottom: 12px; color: #7b8ba5; }
-.mewiki-ai-proposals > h3, .mewiki-ai-welcome > h3 { margin: 0 0 6px; color: #192436; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); font-weight: 600; }
+.mewiki-ai-welcome > .mewiki-ai-mascot { margin-bottom: 12px; }
+.mewiki-ai-welcome > h3 { margin: 0 0 6px; color: #192436; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); font-weight: 600; }
 .mewiki-ai-welcome h3 { display: block; }
 .mewiki-ai-messages { display: flex; flex-direction: column; min-width: 0; gap: 22px; }
 .mewiki-ai-message { flex: 0 0 auto; min-width: 0; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); line-height: 1.8; }
 .mewiki-ai-message > .mewiki-ai-assistant-header { display: flex; min-width: 0; align-items: center; gap: 7px; margin-bottom: 10px; }
-.mewiki-ai-avatar { display: inline-flex; flex: 0 0 26px; align-items: center; justify-content: center; box-sizing: border-box; width: 26px; height: 26px; border: 1px solid #dce1e8; border-radius: 4px; background: #f2f4f7; color: #38485f; }
+.mewiki-ai-avatar { display: inline-flex; flex: 0 0 32px; align-items: center; justify-content: center; width: 32px; height: 32px; }
 .mewiki-ai-assistant-name { display: inline-flex; align-items: center; min-height: 22px; box-sizing: border-box; border-radius: 4px; padding: 2px 7px; background: #192436; color: #fff; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); font-weight: 600; line-height: 1.5; }
-.mewiki-ai-message[data-role=user] { align-self: flex-end; box-sizing: border-box; max-width: 94%; border-radius: 4px; padding: 9px 11px; background: #f2f4f7; }
+.mewiki-ai-message[data-role=user] { align-self: flex-end; box-sizing: border-box; max-width: 94%; }
+.mewiki-ai-user-bubble { min-width: 0; border-radius: 4px; padding: 9px 11px; background: #f2f4f7; }
+.mewiki-ai-message[data-role=user] > .mewiki-ai-message-actions { justify-content: flex-end; }
 .mewiki-ai-text-output { min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 .mewiki-ai-text-output.research-markdown { --mewiki-document-font-size: calc(var(--mewiki-interface-unit, 1px) * 13); --mewiki-document-unit: calc(var(--mewiki-interface-unit, 1px) * .9); color: inherit; font-family: inherit; font-size: inherit; line-height: inherit; white-space: normal; }
 .mewiki-ai-tool-progress { margin: 0 0 12px; border: 1px solid #dce1e8; border-radius: 4px; padding: 8px 10px; color: #536176; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.8; }
 .mewiki-ai-tool-progress summary { cursor: pointer; }
 .mewiki-ai-tool-progress ol { margin: 8px 0 0; padding-left: 20px; overflow-wrap: anywhere; }
-.mewiki-ai-sources { min-width: 0; margin-bottom: 6px; }
+.mewiki-ai-tool-progress li > button { display: inline; border: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.mewiki-ai-tool-progress li > button:hover { text-decoration: underline; }
+.mewiki-ai-tool-progress li > button > svg { margin-left: 4px; vertical-align: middle; }
+.mewiki-ai-tool-progress li[data-status=error] { color: #a12837; }
+.mewiki-ai-load-history { align-self: center; border: 1px solid #dce1e8; border-radius: 4px; padding: 4px 9px; background: transparent; color: #536176; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); cursor: pointer; }
+.mewiki-ai-retry-wait { display: block; font-variant-numeric: tabular-nums; }
+.mewiki-ai-current-progress { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-ai-sources { flex: 0 0 auto; box-sizing: border-box; min-width: 0; padding: 6px 10px; }
 .mewiki-ai-sources > div { display: flex; min-width: 0; gap: 6px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
 .mewiki-ai-sources button { display: inline-flex; flex: 0 0 auto; min-width: 0; max-width: min(220px, 85%); align-items: center; gap: 5px; border: 1px solid #dce1e8; border-radius: 4px; padding: 4px 7px; background: #fff; color: #345a95; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.5; cursor: pointer; }
 .mewiki-ai-sources button:hover:not(:disabled) { background: #f5f7fa; }
 .mewiki-ai-sources button:disabled { opacity: .5; cursor: default; }
 .mewiki-ai-sources button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mewiki-ai-sources button > svg { flex: 0 0 auto; }
-.mewiki-ai-proposals { min-width: 0; border: 1px solid #dce1e8; border-radius: 4px; padding: 10px; background: #fff; }
-.mewiki-ai-message > .mewiki-ai-proposals { margin-top: 14px; }
-.mewiki-ai-proposal-stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; color: #687588; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.7; }
-.mewiki-ai-proposal { min-width: 0; margin-top: 10px; border-top: 1px solid #e5e8ed; padding-top: 10px; }
-.mewiki-ai-proposal > header { display: flex; min-width: 0; align-items: baseline; gap: 7px; }
-.mewiki-ai-proposal > header > small { flex: 0 0 auto; color: #687588; font-size: calc(var(--mewiki-interface-unit, 1px) * 10); }
-.mewiki-ai-proposal > header > strong { min-width: 0; overflow: hidden; color: #192436; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.7; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-ai-proposals { min-width: 0; }
+.mewiki-ai-message > .mewiki-ai-proposals { margin-top: 12px; }
+.mewiki-ai-proposal-card { min-width: 0; overflow: hidden; border: 1px solid #dce1e8; border-radius: 4px; background: #fff; color: #536176; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.6; }
+.mewiki-ai-proposal-card > summary { display: flex; align-items: center; gap: 6px; min-height: 34px; box-sizing: border-box; padding: 6px 8px; list-style: none; cursor: pointer; }
+.mewiki-ai-proposal-card > summary::-webkit-details-marker { display: none; }
+.mewiki-ai-proposal-card > summary:hover { background: #f8f9fb; }
+.mewiki-ai-proposal-card > summary > svg { flex: 0 0 auto; }
+.mewiki-ai-proposal-card > summary > svg:first-child { transform: rotate(-90deg); }
+.mewiki-ai-proposal-card[open] > summary > svg:first-child { transform: rotate(0); }
+.mewiki-ai-proposal-count { margin-left: auto; color: #718094; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mewiki-ai-proposal { display: flex; align-items: center; justify-content: space-between; min-width: 0; min-height: 38px; box-sizing: border-box; gap: 6px; border-top: 1px solid #edf0f4; padding: 5px 6px 5px 10px; }
+.mewiki-ai-proposal > header { display: flex; flex: 1 1 auto; min-width: 0; align-items: center; gap: 6px; }
+.mewiki-ai-proposal > header > svg { flex: 0 0 auto; opacity: .75; }
+.mewiki-ai-proposal > header > strong { min-width: 0; overflow: hidden; color: inherit; font-size: inherit; font-weight: 500; line-height: 1.7; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-ai-proposal[data-status=applied] { color: #237348; }
+.mewiki-ai-proposal[data-status=undone] { color: #a12837; }
+.mewiki-ai-proposal[data-status=rejected] { color: #718094; }
 .mewiki-ai-proposal-actions > button[aria-pressed=true] { background: #edf1f7; }
-.mewiki-ai-proposal-actions { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 7px; margin-top: 8px; }
-.mewiki-ai-proposal-actions > span { display: inline-flex; align-items: center; gap: 4px; margin-right: auto; color: #687588; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); }
-.mewiki-ai-proposal-actions > .mewiki-ai-applied { color: #32634c; }
+.mewiki-ai-proposal-actions { display: flex; flex: 0 0 auto; min-width: 0; align-items: center; justify-content: flex-end; gap: 3px; }
+.mewiki-ai-proposal-actions > span { display: inline-flex; align-items: center; gap: 4px; font-size: calc(var(--mewiki-interface-unit, 1px) * 10); white-space: nowrap; }
+.mewiki-ai-message-actions { display: flex; align-items: center; min-height: 26px; gap: 5px; margin-top: 5px; color: #718094; font-size: calc(var(--mewiki-interface-unit, 1px) * 10); }
+.mewiki-ai-message-actions:empty { display: none; }
+:root .mewiki-ai-message-actions [data-ui="icon-action"][aria-label] { --action-size: 26px; --action-ink: #718094; --action-hover: #e9edf2; }
+.mewiki-ai-message-quote { display: grid; gap: 3px; margin: 0 0 8px; border-left: 2px solid #cbd3df; padding: 0 0 0 8px; color: #536176; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); overflow-wrap: anywhere; }
+.mewiki-ai-message-quote > span { max-height: 160px; overflow: auto; white-space: pre-wrap; }
+.mewiki-ai-selection { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; row-gap: 2px; margin: 7px 8px 0; border-radius: 4px; padding: 4px 8px; background: #edf0f4; color: #536176; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.5; }
+.mewiki-ai-selection-source { display: flex; grid-column: 1; grid-row: 1; align-items: center; min-width: 0; gap: 5px; border: 0; padding: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.mewiki-ai-selection-source > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-ai-selection-source > svg { flex: 0 0 auto; }
+:root .mewiki-ai-selection [data-ui="icon-action"][aria-label] { --action-size: 24px; --action-ink: #718094; grid-column: 2; grid-row: 1 / span 2; }
+.mewiki-ai-selection > blockquote { grid-column: 1; grid-row: 2; min-width: 0; overflow: hidden; margin: 0; border: 0; padding: 0; white-space: nowrap; text-overflow: ellipsis; }
+.mewiki-ai-quick-menu { flex: 0 0 auto; }
+:root .mewiki-ai-quick-menu > [data-ui="icon-action"][aria-label] { --action-size: 26px; --action-ink: #718094; --action-hover: #f2f4f7; }
+.mewiki-ai-quick-options { position: absolute; z-index: 3; left: 0; right: 0; bottom: calc(100% + 8px); display: grid; max-height: min(220px, 38dvh); overflow: auto; border: 1px solid #dce1e8; border-radius: 4px; padding: 4px; background: #fff; }
+.mewiki-ai-quick-options > button { display: flex; align-items: center; min-width: 0; gap: 8px; border: 0; border-radius: 4px; padding: 8px; background: #fff; color: #38485f; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); text-align: left; cursor: pointer; }
+.mewiki-ai-quick-options > button:hover { background: #f2f4f7; }
+.mewiki-ai-quick-options > button > svg { flex: 0 0 auto; }
 @media (pointer: coarse) {
   .mewiki-ai-task-form :is(input, select) { min-height: 40px; }
-  .mewiki-ai-model-menu > summary, .mewiki-ai-workspace .mewiki-ai-proposal-actions > button { min-height: 40px; }
+  .mewiki-ai-model-menu > summary, .mewiki-ai-proposal-card > summary { min-height: 40px; }
+  :root .mewiki-ai-proposal-actions > [data-ui="icon-action"][aria-label] { --action-size: 34px; width: 34px; height: 34px; }
   .mewiki-ai-composer-controls > .mewiki-ai-send { flex-basis: 40px; width: 40px; height: 40px; }
   :root .mewiki-ai-session-bar [data-ui="icon-action"][aria-label] { --action-size: 34px; }
 }
+.mewiki-ai-message[data-role=user]:has(.mewiki-ai-message-editor) { width: 94%; }
+.mewiki-ai-message-editor { display: grid; min-width: 0; gap: 8px; margin: 0; }
+.mewiki-ai-message-editor textarea { box-sizing: border-box; width: 100%; min-width: 0; max-height: 240px; min-height: 80px; resize: vertical; border: 1px solid #b8c4d4; border-radius: 4px; padding: 8px; background: #fff; color: #192436; font: inherit; line-height: 1.7; }
+.mewiki-ai-message-editor > div { display: flex; justify-content: flex-end; gap: 6px; }
+.mewiki-ai-message-editor button { border: 1px solid #cbd3df; border-radius: 4px; padding: 4px 8px; background: #fff; color: #38485f; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); cursor: pointer; }
+.mewiki-ai-message-editor button[type=submit] { border-color: #204fba; background: #204fba; color: #fff; }
+.mewiki-ai-message-editor button:disabled { opacity: .5; cursor: default; }
+.mewiki-ai-message-editor p { margin: 0; color: #a12837; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); }

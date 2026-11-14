@@ -6,8 +6,8 @@ MeWiki 自有源码和文档采用 [MIT](LICENSE)。依赖、字体、原生库�
 
 ## 范围
 
-- 锁定依赖安装位置：**406**；直接运行依赖：**32**；直接开发依赖：**15**。
-- 本机已安装位置：**329**；归档声明文件：**342**。
+- 锁定依赖安装位置：**422**；直接运行依赖：**37**；直接开发依赖：**15**。
+- 本机已安装位置：**345**；归档声明文件：**358**。
 - 锁定但本机未安装的位置：**77**，这些位置未收集声明原文。
 - 许可证字段需人工核对：**1**；已安装但未找到根目录声明文件的位置：**5**，均详见完整清单。
 
@@ -44,8 +44,13 @@ MeWiki 自有源码和文档采用 [MIT](LICENSE)。依赖、字体、原生库�
 | pdfjs-dist | 6.5.438 | 运行 | Apache-2.0 |
 | playwright-core | 1.64.1 | 运行 | Apache-2.0 |
 | prettier | 3.9.10 | 开发 | MIT |
+| prosemirror-commands | 1.7.2 | 运行 | MIT |
 | prosemirror-history | 1.5.1 | 运行 | MIT |
+| prosemirror-inputrules | 1.5.1 | 运行 | MIT |
+| prosemirror-keymap | 1.2.3 | 运行 | MIT |
+| prosemirror-markdown | 1.13.9 | 运行 | MIT |
 | prosemirror-model | 1.25.13 | 运行 | MIT |
+| prosemirror-schema-list | 1.6.0 | 运行 | MIT |
 | prosemirror-state | 1.4.4 | 运行 | MIT |
 | prosemirror-view | 1.42.9 | 运行 | MIT |
 | react | 19.3.1 | 运行 | MIT |

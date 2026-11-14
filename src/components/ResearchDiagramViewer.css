@@ -1,0 +1,11 @@
+.research-diagram-preview-dialog { width: min(1440px, calc(100vw - 32px)); height: min(900px, calc(100dvh - 32px)); max-height: calc(100dvh - 32px); }
+.research-diagram-preview-dialog[open] { display: flex; flex-direction: column; }
+.research-diagram-preview-dialog > .device-record-modal-content { flex: 1; min-height: 0; max-height: none; padding: 0; overflow: hidden; display: flex; }
+.research-diagram-viewer { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; }
+.research-diagram-viewer-toolbar { display: flex; flex: 0 0 44px; height: 44px; align-items: center; gap: 3px; padding: 0 8px 0 12px; border-bottom: 1px solid #d3ddea; background: #f8fafc; }
+.research-diagram-viewer-toolbar > strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); color: #172033; }
+.research-diagram-viewer-toolbar [data-ui="diagram-scale"] { flex: 0 0 auto; min-width: 58px; height: 28px; padding: 0 5px; border: 0; border-radius: 4px; background: transparent; color: #172033; font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
+.research-diagram-viewer-toolbar [data-ui="diagram-scale"]:hover { background: #e6edfa; }
+.research-diagram-viewer-canvas { position: relative; flex: 1; min-width: 0; min-height: 0; overflow: hidden; touch-action: none; user-select: none; overscroll-behavior: contain; cursor: grab; background-color: #f8fafc; background-image: radial-gradient(#cbd5e1 0.8px, transparent 0.8px); background-size: 20px 20px; }
+.research-diagram-viewer-canvas[data-dragging="true"] { cursor: grabbing; }
+.research-diagram-viewer-canvas img { position: absolute; top: 0; left: 0; display: block; max-width: none; max-height: none; margin: 0; background: #fff; pointer-events: none; }

@@ -1,0 +1,18 @@
+.mewiki-ai-review-stage { position: relative; display: flex; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; }
+.mewiki-ai-review-stage > .mewiki-ai-review-scroll { width: 100%; }
+.mewiki-ai-review-stage[data-cannon-active=true] .mewiki-ai-review-page { padding-bottom: 156px; }
+.mewiki-ai-cannon-layer { position: absolute; z-index: 2; inset: 0; overflow: hidden; pointer-events: none; user-select: none; }
+.mewiki-ai-cannon-dock { position: absolute; bottom: 0; left: 50%; width: 144px; height: 144px; transform: translateX(-50%); }
+.mewiki-ai-cannon-dock > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.mewiki-ai-cannon-projectile { position: absolute; top: 0; left: 0; box-sizing: border-box; max-width: 140px; overflow: hidden; border: 1px solid #a9cfe2; border-radius: 12px; padding: 3px 7px; background: #edf7fc; color: #185b7c; font-family: var(--mewiki-interface-font-family, inherit); font-size: 11px; line-height: 1.35; white-space: nowrap; text-overflow: ellipsis; }
+.mewiki-ai-cannon-impact { position: absolute; top: 0; left: 0; width: 28px; height: 28px; border-radius: 50%; background: #8ccbe7; }
+.mewiki-ai-review .mewiki-ai-review-pair[data-cannon-phase] .mewiki-ai-diff-row { background: #fff; color: #192436; }
+.mewiki-ai-review .mewiki-ai-review-pair[data-cannon-phase] :is(.mewiki-ai-inline-change, [data-ai-change], ins, del) { background: transparent; color: inherit; text-decoration: none; --mewiki-ai-change-background: transparent; }
+.mewiki-ai-cannon-laser { position: absolute; top: 0; left: 0; width: 1px; height: 2px; border-radius: 1px; transform-origin: left center; background: #fcf5ed; box-shadow: 0 1px #ef8b67, 0 -1px #ef8b67; }
+.mewiki-ai-cannon-laser-tip { position: absolute; top: 0; left: 0; width: 6px; height: 6px; border-radius: 50%; background: #fff8ef; box-shadow: 0 0 0 2px #ef8b67; }
+@media (max-height: 480px) {
+  .mewiki-ai-review-stage[data-cannon-active=true] .mewiki-ai-review-page { padding-bottom: 100px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mewiki-ai-cannon-layer:not([data-replay=true]) :is(.mewiki-ai-cannon-projectile, .mewiki-ai-cannon-laser, .mewiki-ai-cannon-laser-tip) { display: none; }
+}

@@ -1,0 +1,10 @@
+/* The mascot has transparent top/bottom padding; the wider visible half balances its ink. */
+/* Keep the capsule above the floating chat, including when the panel fills the viewport. */
+.mewiki-ai-launcher[hidden] { display: none; }
+.mewiki-ai-launcher { position: fixed; z-index: 34; left: 0; top: 0; display: grid; place-items: center; box-sizing: border-box; width: 62px; height: 56px; isolation: isolate; border: 0; border-radius: 28px; padding: 0; background: transparent; color: #192436; font: inherit; line-height: 1; touch-action: none; user-select: none; cursor: pointer; }
+.mewiki-ai-launcher::before { content: ''; position: absolute; z-index: -1; left: 0; top: 0; width: 200%; height: 100%; border-radius: 28px; background: #fff; box-shadow: 0 2px 10px #172d4833; pointer-events: none; }
+.mewiki-ai-launcher[data-edge=left]::before { left: auto; right: 0; }
+.mewiki-ai-launcher[data-dragging=true] { cursor: grabbing; will-change: transform; }
+.mewiki-ai-launcher:disabled { opacity: .55; cursor: wait; }
+@media (hover: hover) and (pointer: fine) { .mewiki-ai-launcher:hover:not(:disabled) > .mewiki-ai-mascot { filter: brightness(1.08); } }
+.mewiki-ai-launcher:active:not([data-dragging=true]):not(:disabled) > .mewiki-ai-mascot { filter: brightness(.95); }

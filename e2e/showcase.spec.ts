@@ -9,6 +9,9 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { FormulaPart, ResearchSymbolEntry } from '../src/domain/researchDictionary.ts';
 import type { ResearchNote, ResearchNotebookBlock, ResearchNotebookState } from '../src/domain/researchNotebook.ts';
+import { createAiSession } from '../src/ai/session.ts';
+import { createNoteProposal } from '../src/ai/proposals.ts';
+import { expandAiProposalCards, openAiWorkspace } from './helpers/ai.ts';
 
 test.skip(process.env.MEWIKI_UPDATE_GALLERY !== '1', 'Run npm run docs:screenshots to refresh the public gallery.');
 
@@ -179,7 +182,15 @@ function localizedShowcase(activeNoteId: string, view: ResearchNotebookState['vi
   return state;
 }
 
-async function seed(page: Page, activeNoteId = 'studio-home', view: ResearchNotebookState['view'] = 'notes', language: 'en' | 'zh-CN' = 'en') {
+async function seed(page: Page, activeNoteId = 'studio-home', view: ResearchNotebookState['view'] = 'notes', language: 'en' | 'zh-CN' = 'en', aiDemo = false) {
+  await page.route('**/api/mewiki/ai/**', route => {
+    if (new URL(route.request().url()).pathname === '/api/mewiki/ai/settings' && route.request().method() === 'GET') {
+      return route.fulfill({ json: { revision: '0', defaultProviderId: aiDemo ? 'showcase-model' : null, providers: aiDemo ? [
+        { id: 'showcase-model', name: '演示服务', baseUrl: 'http://127.0.0.1:9/v1', protocol: 'openai-chat', model: 'demo', hasApiKey: false },
+      ] : [] } });
+    }
+    return route.fulfill({ status: 405, json: { error: 'The gallery uses preset AI examples and never calls a model.' } });
+  });
   // Prevent the showcase from reaching any library registered by a real user.
   await page.route('**/api/research-library**', route => {
     const url = new URL(route.request().url());
@@ -194,15 +205,15 @@ async function seed(page: Page, activeNoteId = 'studio-home', view: ResearchNote
     if (url.pathname === '/api/research-library') return route.fulfill({ json: { directory: null, file: null } });
     return route.fulfill({ status: 404, json: { error: 'This gallery does not access saved library data.' } });
   });
-  await page.addInitScript(({ serializedState, language }) => {
+  await page.addInitScript(({ serializedState, language, aiDemo }) => {
     if (sessionStorage.getItem('mewiki:showcase-seeded')) return;
     localStorage.setItem('mewiki:locale', language);
     localStorage.setItem('mewiki:research-notebook', serializedState);
-    localStorage.setItem('mewiki:research-notebook-mode', 'read');
+    localStorage.setItem('mewiki:research-notebook-mode', aiDemo ? 'edit' : 'read');
     localStorage.setItem('mewiki:research-notebook-sidebar-collapsed', 'false');
     localStorage.setItem('mewiki:research-notebook-outline-collapsed', 'false');
     sessionStorage.setItem('mewiki:showcase-seeded', '1');
-  }, { serializedState: JSON.stringify(localizedShowcase(activeNoteId, view, language)), language });
+  }, { serializedState: JSON.stringify(localizedShowcase(activeNoteId, view, language)), language, aiDemo });
   await page.goto('/');
   expect(new URL(page.url()).hostname).toBe('127.0.0.1');
   expect(new URL(page.url()).port).toBe('5282');
@@ -259,6 +270,66 @@ test('gallery · Chinese workspace', async ({ page }) => {
   await expect(page.getByLabel('笔记标题', { exact: true })).toHaveValue('让知识彼此连接');
   await expect(page.getByRole('tab', { name: '符号', exact: true })).toBeVisible();
   await capture(page, 'workspace-zh.png');
+});
+
+test('gallery · rendered text editing', async ({ page }) => {
+  await seed(page);
+  await noteAction(page, 'Switch to edit mode');
+  const block = page.locator('[data-block-id="home:intro"]');
+  await block.locator('strong').click();
+  const editor = block.locator('[contenteditable="true"]');
+  await expect(editor).toBeFocused();
+  await expect(editor.locator('strong')).toContainText('connected notes');
+  await expect(editor).not.toContainText('**');
+  await capture(page, 'rendered-editing.png');
+});
+
+async function seedAiDemo(page: Page) {
+  const state = localizedShowcase('studio-home', 'notes', 'zh-CN');
+  const proposal = createNoteProposal(state, 'default', {
+    operation: 'replace-text', noteId: 'studio-home', blockId: 'home:explanation',
+    content: '变量 $x_i(t)$ 表示第 $i$ 个样本在时刻 $t$ 的输入，$a$ 是斜率，$b$ 是截距。改变 $a$ 会改变斜率，改变 $b$ 会平移输出。点击符号，无需离开页面即可查看定义与来源。',
+  });
+  const output = '已阅读[线性模型](#research-note/studio-linear)，并核对当前笔记中的符号说明。\n\n- $a$ 和 $b$ 分别控制斜率与截距。\n- 建议补充样本索引 $i$ 与时间变量 $t$ 的含义，让读者更容易理解公式。\n\n已生成 **1 项修改建议**，可在原文中查看差异，调整后再决定是否应用。';
+  const session = { ...createAiSession('default'), status: 'complete', output,
+    conversationTitle: '补充线性模型的符号说明', providerName: '演示服务', model: '预设示例',
+    sourceIds: ['studio-linear'], proposals: [proposal], history: [
+      { role: 'user', content: '阅读当前笔记，结合线性模型的定义，补充符号说明并标明来源。' },
+      { role: 'assistant', content: output, status: 'complete', providerName: '演示服务', model: '预设示例', activity: { tools: [], proposalIds: [proposal.id] } },
+    ],
+  };
+  await page.addInitScript(value => {
+    localStorage.setItem('mewiki:library:default:ai-session:v1', JSON.stringify(value));
+    localStorage.setItem('mewiki:library:default:ai-floating-panel:v1', JSON.stringify({ x: 930, y: 70, width: 630, height: 900 }));
+  }, session);
+  await seed(page, 'studio-home', 'notes', 'zh-CN', true);
+  const ai = await openAiWorkspace(page);
+  await expect(ai.locator('.mewiki-ai-message[data-role="assistant"]')).toContainText('已阅读');
+  await expandAiProposalCards(ai);
+  return ai;
+}
+
+test('gallery · AI assistant with sources', async ({ page }) => {
+  const ai = await seedAiDemo(page);
+  await ai.getByRole('button', { name: '嵌入右侧栏', exact: true }).click();
+  const separator = page.getByRole('separator', { name: '调整右侧栏宽度', exact: true });
+  await separator.focus();
+  for (let i = 0; i < 8; i++) await separator.press('ArrowLeft');
+  await expect(ai).toHaveAttribute('data-placement', 'right');
+  await expect(ai.getByRole('button', { name: '查看修改', exact: true })).toBeVisible();
+  await capture(page, 'ai-assistant.png');
+});
+
+test('gallery · AI review in the original note', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1040 });
+  const ai = await seedAiDemo(page);
+  await ai.getByRole('button', { name: '嵌入右侧栏', exact: true }).click();
+  await ai.getByRole('button', { name: '查看修改', exact: true }).click();
+  const review = page.getByTestId('mewiki-ai-review');
+  await expect(review.locator('.mewiki-ai-review-before').first()).toBeVisible();
+  await expect(review.locator('.mewiki-ai-review-after').first()).toBeVisible();
+  await review.locator('.mewiki-ai-review-scroll').evaluate(element => { element.scrollTop = 0; });
+  await capture(page, 'ai-review.png');
 });
 
 test('gallery · visual formula editing and operator keyboard', async ({ page }) => {
@@ -335,7 +406,8 @@ test('gallery · knowledge map and connected notes', async ({ page }) => {
 
 test('gallery · separate libraries', async ({ page }) => {
   await seed(page);
-  await noteAction(page, 'Switch library');
+  await page.locator('.research-sidebar-footer .mewiki-library-switcher').click();
+  await page.getByRole('button', { name: 'Manage libraries', exact: true }).click();
   const dialog = page.getByTestId('mewiki-library-manager');
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('listitem')).toHaveCount(3);

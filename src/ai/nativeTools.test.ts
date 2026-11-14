@@ -95,6 +95,9 @@ describe('native Agent tool contract and review lifecycle', () => {
     const second = applyAiProposal(first.state, ctx.proposals[1], 'a', [first.change]);
     expect(second.state.notes.find(note => note.id === 'fixture-definition')!.blocks).toMatchObject([{ text: '修改第一段' }, { text: '修改第二段' }]);
     const user = structuredClone(first.state); user.notes.find(note => note.id === 'fixture-definition')!.title = '用户后来更改';
+    expect(() => applyAiProposal(user, ctx.proposals[1], 'a', [first.change])).not.toThrow();
+    const target = user.notes.find(note => note.id === 'fixture-definition')!.blocks[1];
+    if ('text' in target) target.text = '用户修改同一字段';
     expect(() => applyAiProposal(user, ctx.proposals[1], 'a', [first.change])).toThrow(/变化/);
   });
 

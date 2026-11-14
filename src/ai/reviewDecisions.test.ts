@@ -18,6 +18,8 @@ describe('inline AI review decisions', () => {
     expect(JSON.stringify(accepted.state.notes.find(note => note.id === id))).toContain('用户进一步修改');
     expect(undoAiChange(accepted.state, accepted.changes[0], 'a').notes).toEqual(state.notes);
     state.notes.find(note => note.id === id)!.title = '批准前的手动变化';
+    expect(() => reviseAiProposal(state, proposal, { content: '允许调整。' }, 'a')).not.toThrow();
+    state.notes.find(note => note.id === id)!.blocks[0] = { id: `${id}:text`, type: 'paragraph', text: '同字段的手动变化' };
     expect(() => reviseAiProposal(state, proposal, { content: '不能覆盖。' }, 'a')).toThrow(/变化/);
     expect(() => reviseAiProposal(source, proposal, { content: '跨库。' }, 'b')).toThrow(/资料库/);
   });
@@ -45,7 +47,7 @@ describe('inline AI review decisions', () => {
     const rebased = rebaseAiReviewProposals(state, accepted.state, pending, 'a');
     expect(() => applyAiProposalGroup(accepted.state, rebased.slice(0, 2), 'a', accepted.changes)).not.toThrow();
     expect(() => applyAiProposal(accepted.state, rebased[2], 'a', accepted.changes)).toThrow(/变化/);
-    const manuallyEdited = structuredClone(state); manuallyEdited.notes.find(note => note.id === id)!.title = '之前手动变化';
+    const manuallyEdited = structuredClone(state); manuallyEdited.notes.find(note => note.id === id)!.blocks = [];
     expect(rebaseAiReviewProposals(manuallyEdited, accepted.state, pending, 'a')).toEqual(pending);
   });
 
@@ -56,6 +58,9 @@ describe('inline AI review decisions', () => {
     expect(readAiSession('a', storage).rejectedIds).toEqual([proposal.id]);
     expect(readAiSession('b', storage).rejectedIds ?? []).toEqual([]);
     writeAiSession({ ...createAiSession('a'), proposals: [proposal], appliedIds: [proposal.id], rejectedIds: [proposal.id] }, storage);
+    expect(readAiSession('a', storage).rejectedIds).toEqual([proposal.id]);
+    const approved = applyAiProposalGroup(state, [proposal], 'a');
+    writeAiSession({ ...createAiSession('a'), proposals: [proposal], appliedIds: [proposal.id], rejectedIds: [proposal.id], changes: approved.changes }, storage);
     expect(readAiSession('a', storage).rejectedIds).toEqual([]);
   });
 
@@ -88,5 +93,35 @@ describe('inline AI review decisions', () => {
     const removed = applyAiProposalGroup(state, [deletion], 'a');
     expect(rebaseAiReviewProposals(state, removed.state, [replace], 'a')[0]).toBe(replace);
     expect(() => applyAiProposal(removed.state, replace, 'a', removed.changes)).toThrow();
+  });
+
+  it('keeps a moved selection and implicit formula dependencies conflicted after another approval', () => {
+    const state = createNotebookFixture(), id = 'fixture-definition', note = state.notes.find(note => note.id === id)!;
+    note.blocks = [{ id: 'tabs', type: 'examples', tabs: [{ id: 'a', title: 'A', blocks: [{ id: 'inside', type: 'paragraph', text: '原文' }] }, { id: 'b', title: 'B', blocks: [] }] },
+      { id: 'formula', type: 'formula', tex: 'x', parts: [{ type: 'latex', tex: 'x' }] }];
+    const pending = [createNoteProposal(state, 'a', { operation: 'replace-text', noteId: id, blockId: 'inside', content: '修改' }),
+      createNativeProposal(state, 'a', { action: 'block-update', noteId: id, blockId: 'inside', fields: { text: '原生修改' } }),
+      createNativeProposal(state, 'a', { action: 'block-update', noteId: id, blockId: 'formula', fields: { tex: 'y' } })];
+    const movement = createNativeProposal(state, 'a', { action: 'block-move', noteId: id, blockId: 'inside', container: { exampleBlockId: 'tabs', tabId: 'b' } });
+    const formulaParts = createNativeProposal(state, 'a', { action: 'block-update', noteId: id, blockId: 'formula', fields: { parts: [{ type: 'latex', tex: 'z' }] } });
+    const accepted = applyAiProposalGroup(state, [movement, formulaParts], 'a');
+    const rebased = rebaseAiReviewProposals(state, accepted.state, pending, 'a');
+    for (let index = 0; index < pending.length; index++) {
+      expect(() => applyAiProposal(accepted.state, rebased[index], 'a', accepted.changes)).toThrow(/变化/);
+      expect(rebased[index]).toBe(pending[index]);
+    }
+  });
+  it('keeps a nested insertion reviewable after approving only the tab title', () => {
+    const state = createNotebookFixture(), id = 'fixture-definition';
+    state.notes.find(note => note.id === id)!.blocks = [{ id: 'tabs', type: 'examples', tabs: [{ id: 'a', title: '原标题', blocks: [{ id: 'inside', type: 'paragraph', text: '保留原文' }] }] }];
+    const rename = createNativeProposal(state, 'a', { action: 'tab-update', noteId: id, blockId: 'tabs', tabId: 'a', title: '新标题' });
+    const insert = createNativeProposal(state, 'a', { action: 'block-insert', noteId: id, container: { exampleBlockId: 'tabs', tabId: 'a' }, blockType: 'paragraph', fields: { text: '新段落' } });
+    const approved = applyAiProposalGroup(state, [rename], 'a');
+    const [rebased] = rebaseAiReviewProposals(state, approved.state, [insert], 'a');
+    expect(() => reviseAiProposal(approved.state, rebased, { fields: { text: '调整后新段落' } }, 'a', approved.changes)).not.toThrow();
+    const changedStructure = structuredClone(approved.state), tabs = changedStructure.notes.find(note => note.id === id)!.blocks[0];
+    if (tabs.type !== 'examples') throw new Error('fixture');
+    tabs.tabs[0].blocks = [];
+    expect(() => applyAiProposal(changedStructure, insert, 'a')).toThrow(/变化/);
   });
 });

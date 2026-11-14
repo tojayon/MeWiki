@@ -12,6 +12,7 @@ import type { PublicationFont } from '../domain/researchFonts.ts';
 import { capturePublicationSurface } from '../state/publicationDomCapture.ts';
 import { documentTheme } from '../styles/documentTheme.ts';
 import PublicationReadingSurface from './PublicationReadingSurface.tsx';
+import UiInfo from './UiInfo.tsx';
 import sansCss from '@fontsource-variable/noto-sans-sc/index.css?inline';
 import serifCss from '@fontsource-variable/noto-serif-sc/index.css?inline';
 import mathCss from 'katex/dist/katex.min.css?inline';
@@ -32,7 +33,7 @@ function samplePageStyles(): Promise<string> {
 function sampleNotebook(locale: Locale): ResearchNotebookState {
   const sample = (message: string) => translate(message, [], locale);
   return { version: 8, open: true, view: 'notes', activeSymbolId: '', symbols: [], terms: [], activeNoteId: 'publication-sample', notes: [{
-    id: 'publication-sample', title: sample('MeWiki 样板笔记'), createdAt: '2026-11-11', updatedAt: '2026-11-11', blocks: [
+    id: 'publication-sample', title: sample('觅维样板笔记'), createdAt: '2026-11-11', updatedAt: '2026-11-11', blocks: [
       { id: 'sample-heading', type: 'heading', level: 2, text: sample('把知识分享得更清晰') },
       { id: 'sample-paragraph', type: 'paragraph', text: sample('这是一段样板内容。**重点文字**、行内代码 `MeWiki` 与行内公式 $E=mc^2$，展示当前字体、配色与留白。') },
       { id: 'sample-callout', type: 'callout', title: sample('分享提示'), text: sample('先调整样式，再选择原文内容；生成后即可下载图片。'), appearance: { ...defaultCalloutAppearance } },
@@ -116,7 +117,7 @@ export default function PublicationSamplePreview({ options, font }: { options: P
   const scale = Math.min(1, availableWidth / size.width);
   return <div className="mewiki-publication-sample" ref={container}>
     {createPortal(<PublicationReadingSurface state={state} noteId={note.id} directory={null} selected={note.blocks.map(block => block.id)} options={options} selectedTabs={{}} allTabs={false} surfaceRef={surface} />, document.body)}
-    <p className="mewiki-publication-hint">{t('样板随配置自动更新。实际内容与分页请生成预览后查看。')}</p>
+    <div className="mewiki-publication-sample-tools"><UiInfo label={t('样板说明')}><p>{t('样板随配置自动更新。实际内容与分页请生成预览后查看。')}</p></UiInfo></div>
     {!!error && <p className="mewiki-publication-error" role="status">{localizePublicationError(error)}</p>}
     <div className="mewiki-publication-sample-canvas" style={{ width: size.width * scale, height: size.height * scale, background: options.background }}>
       {html && (!options.fontAssetId || font?.id === options.fontAssetId) && <iframe title={t('样板内容预览')} sandbox="allow-same-origin" srcDoc={html} width={size.width} height={size.height}

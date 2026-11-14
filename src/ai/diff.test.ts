@@ -1,7 +1,39 @@
 import { describe, expect, it } from 'vitest';
-import { diffAiText } from './diff.ts';
+import { aiDiffRanges, diffAiText } from './diff.ts';
 
 describe('AI text review diff', () => {
+  it('keeps the unchanged middle of a long paragraph between distant word edits', () => {
+    const middle = '保留这一段背景说明与适用条件。'.repeat(100);
+    const before = `系统始终稳定。${middle}响应迅速。`, after = `系统局部稳定。${middle}响应平稳。`;
+    const lines = diffAiText(before, after);
+    expect(lines.filter(line => line.kind === 'remove').flatMap(line => line.parts.filter(part => part.changed).map(part => part.text)).join('')).toBe('始终迅速');
+    expect(lines.filter(line => line.kind === 'add').flatMap(line => line.parts.filter(part => part.changed).map(part => part.text)).join('')).toBe('局部平稳');
+    expect(lines.filter(line => line.kind !== 'add').map(line => line.text).join('\n')).toBe(before);
+    expect(lines.filter(line => line.kind !== 'remove').map(line => line.text).join('\n')).toBe(after);
+  });
+  it('aligns inline changes across reflowed lines instead of pairing unrelated line numbers', () => {
+    const lines = diffAiText('系统始终稳定，\n背景保持，响应迅速。', '系统局部稳定，背景保持，\n响应平稳。');
+    expect(lines.filter(line => line.kind === 'remove').flatMap(line => line.parts.filter(part => part.changed).map(part => part.text)).join('')).toBe('始终迅速');
+    expect(lines.filter(line => line.kind === 'add').flatMap(line => line.parts.filter(part => part.changed).map(part => part.text)).join('')).toBe('局部平稳');
+    for (const line of lines) expect(line.parts.map(part => part.text).join('')).toBe(line.text);
+  });
+  it('preserves both texts and source ranges for repeated lines and sparse emoji changes', () => {
+    let seed = 7;
+    const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed; };
+    const tokens = ['a', 'b', ' ', '中', '文', '\n', '👩🏽‍💻'];
+    for (let sample = 0; sample < 100; sample++) {
+      const before = Array.from({ length: random() % 120 }, () => tokens[random() % tokens.length]).join('');
+      const after = Array.from({ length: random() % 120 }, () => tokens[random() % tokens.length]).join('');
+      const lines = diffAiText(before, after);
+      expect(lines.filter(line => line.kind !== 'add').map(line => line.text).join('\n')).toBe(before);
+      expect(lines.filter(line => line.kind !== 'remove').map(line => line.text).join('\n')).toBe(after);
+      for (const [side, text] of [['remove', before], ['add', after]] as const) {
+        const ranges = aiDiffRanges(lines, side);
+        expect(ranges.every(range => range.start >= 0 && range.end <= text.length && range.end > range.start)).toBe(true);
+        expect(ranges.map(range => text.slice(range.start, range.end)).join('')).toBe(lines.filter(line => line.kind === side).map(line => line.parts.filter(part => part.changed).map(part => part.text).join('') + (line.newlineChanged ? '\n' : '')).join(''));
+      }
+    }
+  });
   it('keeps context and identifies deleted and inserted lines with both line numbers', () => {
     const lines = diffAiText('第一行\n旧定义\n第三行', '第一行\n新定义\n第三行\n补充');
     expect(lines.map(({ kind, text, beforeLine, afterLine }) => ({ kind, text, beforeLine, afterLine }))).toEqual([

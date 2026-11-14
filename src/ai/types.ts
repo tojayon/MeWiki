@@ -70,7 +70,7 @@ export type AiStreamEvent =
   | { type: 'text'; text: string }
   | { type: 'tool'; update: AiToolStreamUpdate }
   | { type: 'done'; result: AiCompletion }
-  | { type: 'error'; error: string };
+  | { type: 'error'; error: string; failure?: import('./failures.ts').AiFailure };
 export interface AiConnectionTest {
   response: boolean;
   stream: boolean;

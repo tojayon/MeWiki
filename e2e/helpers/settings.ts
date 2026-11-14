@@ -9,7 +9,7 @@ const labels = {
   history: /^(历史版本|Version history)$/,
   plugins: /^(插件与集成|Plugins and integrations)$/,
   ai: /^(AI 服务|AI services)$/,
-  about: /^(关于 MeWiki|About MeWiki)$/,
+  about: /^(关于觅维|About MeWiki)$/,
 };
 
 export async function openSettingsSection(page: Page, section: SettingsSection = "general") {

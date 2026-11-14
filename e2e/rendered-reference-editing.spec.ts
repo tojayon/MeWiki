@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { createNotebookFixture } from "../src/domain/testUtils/notebook.ts";
 import { createResearchNote } from "../src/domain/researchNotebook.ts";
 import { createSymbolEntry } from "../src/domain/researchDictionary.ts";
-import { expectEditorSource } from "./helpers/referenceEditor.ts";
+import { expectEditorSource, pasteEditorMarkdown } from "./helpers/referenceEditor.ts";
 
 const source = "前文 [旧术语名](mewiki-term:visual-term) 与 [$x_i$](mewiki-symbol:visual-symbol?x2=i)，参见 [旧笔记名](#research-note/visual-target)，[文献第 3 页](webbench-asset:" + "a".repeat(64) + "#page=3) 后文";
 async function openReferences(page: Page, text = source, activate = true) {
@@ -46,7 +46,7 @@ for (const width of [1440, 390]) for (const [kind, reference] of endingReference
     await page.screenshot({ path: info.outputPath("trailing-reference.png") });
     expect(after.height).toBeLessThanOrEqual(before.height + 2);
     await expectEditorSource(editor, text);
-    await editor.locator(`[data-reference-kind="${kind}"]`).click();
+    await editor.locator(`[data-reference-kind="${kind}"]`).press("F2");
     await page.getByRole("dialog", { name: "编辑引用", exact: true }).getByRole("button", { name: "删除此引用", exact: true }).click();
     await expectEditorSource(editor, prefix);
     await expect(block).toHaveCount(1);
@@ -93,7 +93,7 @@ test("keeps an ending table reference on one row and removes only the selected l
   await block.locator("td").first().click();
   const editor = block.getByRole("textbox", { name: "单元格内容", exact: true });
   await expect.poll(() => editor.evaluate(element => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
-  await editor.locator('[data-reference-kind="note"]').click();
+  await editor.locator('[data-reference-kind="note"]').press("F2");
   await page.getByRole("dialog", { name: "编辑引用", exact: true }).getByRole("button", { name: "删除此引用", exact: true }).click();
   await expectEditorSource(editor, "参见 ");
   await editor.press("Enter");
@@ -113,7 +113,7 @@ test("deletes a term atom once and restores it with undo and redo", async ({ pag
 
 test("edits the selected term reference in a popover while keeping the dictionary intact", async ({ page }) => {
   const { editor } = await openReferences(page);
-  await editor.locator('[data-reference-kind="term"]').click();
+  await editor.locator('[data-reference-kind="term"]').press("F2");
   const popover = page.getByRole("dialog", { name: "编辑引用", exact: true });
   await expect(popover).toContainText("误差平方的均值。");
   await popover.getByLabel("术语引用形式", { exact: true }).selectOption("full");
@@ -126,9 +126,10 @@ test("edits the selected term reference in a popover while keeping the dictionar
   expect(state.terms[0].name).toBe("均方误差");
 });
 
-test("opens reference controls directly from a rendered paragraph and replaces only this occurrence", async ({ page }) => {
+test("replaces only the selected occurrence after explicitly activating paragraph editing", async ({ page }) => {
   const { editor, block } = await openReferences(page, "[一](mewiki-term:visual-term) 与 [二](mewiki-term:visual-term)", false);
-  await block.locator(".research-dictionary-term-reference").nth(1).click();
+  await block.getByRole("textbox", { name: "笔记段落", exact: true }).focus();
+  await editor.locator('[data-reference-kind="term"]').nth(1).press("F2");
   const popup = page.getByRole("dialog", { name: "编辑引用", exact: true });
   await expect(popup).toBeVisible();
   await popup.getByRole("button", { name: "更换引用来源", exact: true }).click();
@@ -144,16 +145,16 @@ test("opens reference controls directly from a rendered paragraph and replaces o
 
 test("keeps cancellation, symbol bindings and file page edits local to the selected reference", async ({ page }, info) => {
   const { editor } = await openReferences(page);
-  await editor.locator('[data-reference-kind="symbol"]').click();
+  await editor.locator('[data-reference-kind="symbol"]').press("F2");
   const popup = page.getByRole("dialog", { name: "编辑引用", exact: true });
   await popup.getByRole("textbox", { name: "本次引用：右下角标 x2", exact: true }).fill("k+1");
   await popup.getByRole("button", { name: "取消", exact: true }).click();
   await expectEditorSource(editor, source);
-  await editor.locator('[data-reference-kind="symbol"]').click();
+  await editor.locator('[data-reference-kind="symbol"]').press("F2");
   await popup.getByRole("textbox", { name: "本次引用：右下角标 x2", exact: true }).fill("k+1");
   await popup.getByRole("button", { name: "应用引用修改", exact: true }).click();
   await expect(editor.locator('[data-reference-kind="symbol"] annotation')).toHaveText("x_{k+1}");
-  await editor.locator('[data-reference-kind="file"]').click();
+  await editor.locator('[data-reference-kind="file"]').press("F2");
   await popup.getByLabel("PDF 页码（可选）", { exact: true }).fill("5");
   await page.screenshot({ path: info.outputPath("file-reference-panel.png") });
   await popup.getByRole("button", { name: "应用引用修改", exact: true }).click();
@@ -191,7 +192,7 @@ test("preserves selected text when the clipboard contains only an unsupported pa
 test("keeps unavailable references whole and lets users repair or remove them on a narrow screen", async ({ page }, info) => {
   await page.setViewportSize({ width: 390, height: 800 });
   const { editor } = await openReferences(page, "前[缺失术语](mewiki-term:missing-id)后");
-  await editor.locator('[data-reference-kind="term"]').click();
+  await editor.locator('[data-reference-kind="term"]').press("F2");
   const popup = page.getByRole("dialog", { name: "编辑引用", exact: true });
   await expect(popup).toContainText("引用来源已移除");
   const box = await popup.boundingBox(); expect(box!.x).toBeGreaterThanOrEqual(0); expect(box!.x + box!.width).toBeLessThanOrEqual(390);
@@ -203,15 +204,15 @@ test("keeps unavailable references whole and lets users repair or remove them on
 
 test("preserves multiline edits, list continuation and a term inserted with #", async ({ page }) => {
   const { editor } = await openReferences(page, "前文");
-  await editor.fill("```text\n#代码中的文字\n```\n\n后文");
+  await pasteEditorMarkdown(editor, "```text\n#代码中的文字\n```\n\n后文");
   await expectEditorSource(editor, "```text\n#代码中的文字\n```\n\n后文");
-  await editor.fill("- 第一项"); await editor.press("Control+End"); await editor.press("Shift+Enter");
+  await pasteEditorMarkdown(editor, "- 第一项"); await editor.press("Control+End"); await editor.press("Shift+Enter");
   await expectEditorSource(editor, "- 第一项\n- ");
   await editor.pressSequentially("#");
   const picker = page.getByRole("dialog", { name: "插入术语", exact: true });
   await picker.getByRole("option", { name: "均方误差", exact: true }).click();
   await expect(editor.locator('[data-reference-kind="term"]')).toHaveText("均方误差");
-  await editor.press("Control+z"); await expectEditorSource(editor, "- 第一项\n- #");
+  await editor.press("Control+z"); await expectEditorSource(editor, "- 第一项\n- \\#");
 });
 
 test("edits atomic references inside a table cell while preserving the table source", async ({ page }) => {
@@ -220,7 +221,7 @@ test("edits atomic references inside a table cell while preserving the table sou
   await block.locator("td").first().click();
   const editor = block.getByRole("textbox", { name: "单元格内容", exact: true });
   await expect(editor.locator('[data-reference-kind="term"]')).toHaveText("均方误差");
-  await editor.locator('[data-reference-kind="term"]').click();
+  await editor.locator('[data-reference-kind="term"]').press("F2");
   const popup = page.getByRole("dialog", { name: "编辑引用", exact: true });
   await popup.getByLabel("术语引用形式", { exact: true }).selectOption("english-abbreviation");
   await popup.getByRole("button", { name: "应用引用修改", exact: true }).click();

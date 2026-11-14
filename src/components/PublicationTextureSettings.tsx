@@ -5,6 +5,7 @@ import { defaultPublicationTexture, nextTextureSeed, publicationTextureBackgroun
 import { textureCrop, type TextureImageMode } from '../domain/publicationTexturePixels.ts';
 import { createTextureCandidates, readTextureSource, type TextureCropSettings, type TextureSource } from '../state/publicationTextureImage.ts';
 import './PublicationTextureSettings.css';
+import UiInfo from './UiInfo.tsx';
 
 const initialCrop: TextureCropSettings = { size: 70, x: 50, y: 50, flatten: true, seamless: true };
 export default function PublicationTextureSettings({ value, layers, background, cover, imageMode = false, disabled, onChange }: {
@@ -23,6 +24,7 @@ export default function PublicationTextureSettings({ value, layers, background, 
   };
   return <section className="mewiki-publication-texture" aria-labelledby="publication-texture-heading">
     <div className="mewiki-texture-heading"><h3 id="publication-texture-heading">{t('笔记背景纹理')}</h3>
+      <UiInfo label={t('纹理说明')}><p>{t('上方图层显示在前，最多叠加 6 层。选择图层后调整其参数。')}</p><p>{t('只铺在四周页面留白，宽度跟随“页面留白”；中央正文区域不铺纹理。')}</p><p>{t('纹理随个人模板保存。建议保持低强度，让正文清晰可读。')}</p></UiInfo>
       <div className="mewiki-texture-layer-actions" role="toolbar" aria-label={t('纹理图层操作')}>
         <button type="button" data-ui="icon-action" aria-label={t('添加纹理图层')} title={t('添加纹理图层')} disabled={disabled || stack.length >= PUBLICATION_MAX_TEXTURE_LAYERS} onClick={() => {
           const existing = stack.length === 1 && stack[0].kind === 'none' ? [] : stack;
@@ -39,7 +41,6 @@ export default function PublicationTextureSettings({ value, layers, background, 
         return <button key={index} type="button" data-ui="menu-action" aria-label={t`编辑纹理图层 ${index + 1}：${name}`} aria-pressed={index === active} disabled={disabled} onClick={() => { if (index !== active) select(index); }}><span className="mewiki-texture-layer-number">{index + 1}</span><span>{name}</span></button>;
       })}
     </div>
-    {!imageMode && <p className="mewiki-publication-hint">{t('上方图层显示在前，最多叠加 6 层。选择图层后调整其参数。')}</p>}
     <PublicationTextureLayerEditor key={editorVersion} value={stack[active]} background={background} cover={cover} imageMode={imageMode} disabled={disabled} onChange={texture => onChange(stack.map((layer, index) => index === active ? texture : layer))} />
   </section>;
 }
@@ -102,7 +103,6 @@ function PublicationTextureLayerEditor({ value, background, cover, imageMode, di
         {['fiber', 'dots', 'grid', 'ruled', 'linen'].includes(texture.kind) && <label>{t('纹理方向')} · {texture.rotation}°<input aria-label={t('纹理方向')} type="range" min={0} max={180} step={15} value={texture.rotation} onChange={event => change('rotation', Number(event.target.value))} /></label>}
         {!imageMode && <label>{t('纹理应用范围')}<select value={texture.scope} onChange={event => change('scope', event.target.value as PublicationTexture['scope'])}><option value="all">{t('全部页面')}</option><option value="body">{t('仅正文页')}</option><option value="cover">{t('仅封面')}</option><option value="margins">{t('仅页面内边距')}</option></select></label>}
         {!imageMode && texture.scope === 'cover' && !cover && <p className="mewiki-publication-hint">{t('仅封面需要在“内容”中开启“单独生成封面”。')}</p>}
-        {!imageMode && texture.scope === 'margins' && <p className="mewiki-publication-hint">{t('只铺在四周页面留白，宽度跟随“页面留白”；中央正文区域不铺纹理。')}</p>}
       </details>
     </>}
     <details className="mewiki-publication-dimensions mewiki-texture-image-editor"><summary>{t('从本地图片制作纹理')}</summary>
@@ -130,6 +130,5 @@ function PublicationTextureLayerEditor({ value, background, cover, imageMode, di
       {processing && !disabled && <p role="status" className="mewiki-publication-hint">{t('正在本地处理纹理…')}</p>}
       {!!error && <p role="alert" className="mewiki-publication-error">{localizeError(error)}</p>}
     </details>
-    {!imageMode && <p className="mewiki-publication-hint">{t('纹理随个人模板保存。建议保持低强度，让正文清晰可读。')}</p>}
   </div>;
 }

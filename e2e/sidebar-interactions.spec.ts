@@ -387,7 +387,7 @@ test("keeps compact settings on the right and reserves account space beside the 
     await expect(settings).toBeInViewport();
     await expect(library).toBeInViewport();
     const bounds = (await footer.boundingBox())!;
-    const action = (await settings.boundingBox())!;
+    const action = (await footer.getByRole('button', { name: '使用手册', exact: true }).boundingBox())!;
     expect(action.width).toBeLessThan(100);
     expect(bounds.x + bounds.width - action.x - action.width).toBeLessThanOrEqual(9);
     const slot = (await footer.locator(".research-sidebar-account-slot").boundingBox())!;

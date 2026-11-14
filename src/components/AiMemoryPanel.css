@@ -1,0 +1,7 @@
+.mewiki-ai-memory-control { display: flex; align-items: center; }
+.mewiki-ai-memory-panel { position: absolute; z-index: 5; right: 10px; bottom: calc(100% + 8px); left: 10px; min-width: 0; overflow: hidden; border: 1px solid #dce1e8; border-radius: 4px; background: #fff; color: #38485f; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+.mewiki-ai-memory-panel > header { display: flex; min-height: 34px; align-items: center; justify-content: space-between; gap: 8px; padding: 3px 8px; border-bottom: 1px solid #e5e8ed; }
+.mewiki-ai-memory-panel > header > strong { font: inherit; }
+.mewiki-ai-memory-content { display: grid; gap: 7px; max-height: min(300px, var(--ai-memory-height, 300px)); overflow-y: auto; overscroll-behavior: contain; padding: 10px; }
+.mewiki-ai-memory-content > p { margin: 0; color: #718094; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.6; }
+.mewiki-ai-memory-content > textarea { box-sizing: border-box; width: 100%; min-height: 68px; resize: vertical; border: 1px solid #dce1e8; border-radius: 4px; padding: 6px; background: #f8f9fb; color: inherit; font: inherit; }

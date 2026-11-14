@@ -11,25 +11,46 @@ import { nativeEditTarget, nativeFingerprint, type AiNativeEffect, type AiNative
 import type { AiNativeProposal } from './nativeProposals.ts';
 import { restoreAiUsageHistory, type AiUsageRecord } from './usage.ts';
 import { normalizeFormulaRecipe } from '../domain/researchRecipeMetadata.ts';
+import { aiRequestScopeKey, restoreAiTextSelection, type AiTextSelection } from './textSelection.ts';
+import type { AiChatRequestRecord } from './chatActions.ts';
+import { aiMaterialContext, restoreAiMaterials, restoreAiMaterialIds, type AiMaterial } from './materials.ts';
+import { restoreAiTaskCheckpoint } from './checkpoint.ts';
+import { AI_CHAT_MESSAGE_LIMIT, AI_SESSION_CHAR_LIMIT } from './memory.ts';
+import { restoreAiFailure, type AiFailure } from './failures.ts';
+import { restoreAiExecutionSteps, restoreAiRunMetrics, type AiExecutionStep } from './execution.ts';
 
-export interface AiReplyActivity { tools: string[]; proposalIds: string[] }
-export type AiConversationMessage = AiMessage & { providerName?: string; model?: string; contextKey?: string; activity?: AiReplyActivity };
+export interface AiReplyActivity { tools: string[]; proposalIds: string[]; steps?: AiExecutionStep[] }
+export type AiConversationMessage = AiMessage & { id?: string; status?: AiSession['status']; selection?: AiTextSelection; materialIds?: string[]; providerName?: string; model?: string; contextKey?: string; activity?: AiReplyActivity };
 export interface AiSession extends AiRunProgress {
-  version: 1; libraryId: string; status: 'idle' | 'running' | 'interrupted' | 'cancelled' | 'complete' | 'error';
+  version: 1; libraryId: string; status: 'idle' | 'running' | 'interrupted' | 'cancelled' | 'complete' | 'partial' | 'error';
   contextKey?: string;
+  conversationId?: string;
+  conversationTitle?: string;
+  updatedAt?: string;
   draft?: string;
+  memoryInstructions?: string;
+  failure?: AiFailure;
+  messageEdit?: { index: number; content: string };
+  selection?: AiTextSelection;
+  materials?: AiMaterial[];
+  activeMaterialIds?: string[];
+  lastRequest?: AiChatRequestRecord;
   usageHistory?: AiUsageRecord[];
   mergedIds?: string[];
   rejectedIds?: string[];
   history: AiConversationMessage[]; changes: AiChange[]; appliedIds: string[]; error: string; providerName: string; model: string;
 }
 /** Reuse natural-language history only within the same configured destination and scope. */
-export function aiHistoryContextKey(provider: Pick<AiProvider, 'id' | 'baseUrl' | 'protocol'>, model: string, noteIds: string[]): string {
-  const bytes = new TextEncoder().encode(JSON.stringify([provider.id, provider.baseUrl, provider.protocol, model, [...new Set(noteIds)].sort()]));
+export function aiHistoryContextKey(provider: Pick<AiProvider, 'id' | 'baseUrl' | 'protocol'>, model: string, noteIds: string[], selection?: AiTextSelection, materials: AiMaterial[] = []): string {
+  const bytes = new TextEncoder().encode(JSON.stringify([provider.id, provider.baseUrl, provider.protocol, model, [...new Set(noteIds)].sort(), ...(selection ? [selection] : []), ...(materials.length ? [aiMaterialContext(materials)] : [])]));
   return [...sha256(bytes)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 export function createAiSession(libraryId: string): AiSession {
   return { version: 1, libraryId, status: 'idle', output: '', tools: [], sourceIds: [], proposals: [], changes: [], appliedIds: [], history: [], usageHistory: [], usage: { inputTokens: 0, outputTokens: 0 }, error: '', providerName: '', model: '' };
+}
+/** appliedIds records past approvals; only a retained change or merge is active. */
+export function isAiProposalApplied(session: Pick<AiSession, 'appliedIds' | 'changes' | 'mergedIds'>, id: string): boolean {
+  return session.appliedIds.includes(id) && (session.changes.some(change => change.proposalId === id) || !!session.mergedIds?.includes(id));
 }
 const key = (libraryId: string) => `mewiki:library:${encodeURIComponent(libraryId)}:ai-session:v1`;
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
@@ -39,7 +60,7 @@ const strings = (value: unknown, max: number, length = 1000): value is string[] 
 function restoredReplyActivity(message: AiConversationMessage, available: Set<string>, claimed: Set<string>): AiReplyActivity | undefined {
   const activity = message.activity;
   if (message.role !== 'assistant' || !record(activity) || !strings(activity.tools, 40) || !strings(activity.proposalIds, 40)) return undefined;
-  return { tools: [...activity.tools], proposalIds: activity.proposalIds.filter(id => {
+  return { tools: [...activity.tools], ...(restoreAiExecutionSteps(activity.steps) ? { steps: restoreAiExecutionSteps(activity.steps) } : {}), proposalIds: activity.proposalIds.filter(id => {
     if (!available.has(id) || claimed.has(id)) return false;
     claimed.add(id); return true;
   }) };
@@ -231,45 +252,83 @@ function storedChange(value: unknown, libraryId: string): value is AiChange {
     return value.target === 'note' && noteSnapshot(after, value.targetId, false) && (value.before === null || noteSnapshot(value.before, value.targetId));
   } catch { return false; }
 }
-export function readAiSession(libraryId: string, storage: Pick<Storage, 'getItem'>): AiSession {
+/** Share the same validation for the active v1 slot and archived conversations. */
+export function restoreAiSession(libraryId: string, value: string): AiSession | null {
   try {
-    const value = storage.getItem(key(libraryId));
-    if (!value || value.length > 2 * 1024 * 1024) return createAiSession(libraryId);
+    if (!value || value.length > AI_SESSION_CHAR_LIMIT) return null;
     const session = JSON.parse(value) as AiSession;
     if (session.version !== 1 || session.libraryId !== libraryId || typeof session.output !== 'string' || session.output.length > 100000 ||
-      !['idle', 'running', 'interrupted', 'cancelled', 'complete', 'error'].includes(session.status) ||
-      !contextKey(session.contextKey) || !Array.isArray(session.history) || session.history.length > 20 || session.history.some(message => !record(message) || !['user', 'assistant'].includes(message.role) || !text(message.content, 100000) || !contextKey(message.contextKey) || (message.providerName !== undefined && !text(message.providerName, 300)) || (message.model !== undefined && !text(message.model, 300))) ||
+      !['idle', 'running', 'interrupted', 'cancelled', 'complete', 'partial', 'error'].includes(session.status) ||
+      !contextKey(session.contextKey) || !Array.isArray(session.history) || session.history.length > AI_CHAT_MESSAGE_LIMIT || session.history.some(message => !record(message) || !['user', 'assistant'].includes(message.role) || !text(message.content, 100000) || !contextKey(message.contextKey) || (message.providerName !== undefined && !text(message.providerName, 300)) || (message.model !== undefined && !text(message.model, 300))) ||
       !Array.isArray(session.proposals) || session.proposals.length > 40 || session.proposals.some(proposal => !storedProposal(proposal, libraryId)) ||
       !Array.isArray(session.changes) || session.changes.length > 40 || session.changes.some(change => !storedChange(change, libraryId)) ||
       !strings(session.appliedIds, 40) || !strings(session.tools, 40) || !strings(session.sourceIds, 1000) ||
       !text(session.error, 1000) || !text(session.providerName, 300) || !text(session.model, 300) ||
-      !Number.isFinite(session.usage?.inputTokens) || session.usage.inputTokens < 0 || !Number.isFinite(session.usage?.outputTokens) || session.usage.outputTokens < 0) return createAiSession(libraryId);
+      !Number.isFinite(session.usage?.inputTokens) || session.usage.inputTokens < 0 || !Number.isFinite(session.usage?.outputTokens) || session.usage.outputTokens < 0) return null;
     if (session.changes.some(change => {
       const proposal = session.proposals.find(item => item.id === change.proposalId);
       return proposal?.kind === 'native' && (change.target !== proposal.target || change.targetId !== proposal.targetId ||
         (change.baseline !== undefined && change.baseline !== nativeFingerprint(proposal.before)));
-    })) return createAiSession(libraryId);
+    })) return null;
     const available = new Set(session.proposals.map(proposal => proposal.id)), claimed = new Set<string>();
-    const history = session.history.map(message => {
+    const history: AiConversationMessage[] = session.history.map(message => {
       const activity = restoredReplyActivity(message, available, claimed);
-      return { role: message.role, content: message.content, ...(message.contextKey ? { contextKey: message.contextKey } : {}), ...(message.providerName ? { providerName: message.providerName } : {}), ...(message.model ? { model: message.model } : {}), ...(activity ? { activity } : {}) };
+      const selection = message.role === 'user' ? restoreAiTextSelection(message.selection, libraryId) : undefined;
+      const materialIds = message.role === 'user' ? restoreAiMaterialIds(message.materialIds) : undefined;
+      return { role: message.role, content: message.content,
+        ...(text(message.id, 100) && /^[\w-]+$/.test(message.id) ? { id: message.id } : {}),
+        ...(message.role === 'assistant' && ['running', 'complete', 'partial', 'error', 'cancelled', 'interrupted'].includes(message.status ?? '') ? { status: message.status === 'running' ? 'interrupted' : message.status } : {}),
+        ...(selection ? { selection } : {}), ...(materialIds ? { materialIds } : {}), ...(message.contextKey ? { contextKey: message.contextKey } : {}), ...(message.providerName ? { providerName: message.providerName } : {}), ...(message.model ? { model: message.model } : {}), ...(activity ? { activity } : {}) };
     });
+    const request = session.lastRequest, lastUser = history.findLast(message => message.role === 'user');
+    const lastRequest = record(request) && text(request.messageId, 100) && lastUser?.id === request.messageId &&
+      text(request.providerId, 300) && !!request.providerId && text(request.model, 300) && !!request.model &&
+      strings(request.noteIds, 1000) && new Set(request.noteIds).size === request.noteIds.length &&
+      text(request.contextKey, 64) && /^[a-f0-9]{64}$/.test(request.contextKey) && request.contextKey === lastUser.contextKey &&
+      request.scopeKey === aiRequestScopeKey(request.noteIds, lastUser.selection) && typeof request.baseline === 'string' && /^[a-f0-9]{64}$/.test(request.baseline) && (!lastUser.selection || request.noteIds.length === 1 && request.noteIds[0] === lastUser.selection.noteId)
+      && (request.memoryInstructions === undefined || text(request.memoryInstructions, 4000))
+      ? { messageId: request.messageId, providerId: request.providerId, model: request.model, noteIds: request.noteIds, contextKey: request.contextKey, scopeKey: request.scopeKey, baseline: request.baseline, ...(text(request.memoryInstructions, 4000) ? { memoryInstructions: request.memoryInstructions } : {}) } : undefined;
+    const checkpoint = lastRequest && restoreAiTaskCheckpoint(session.checkpoint, libraryId, lastRequest, session.proposals.map(item => item.id));
+    const selection = restoreAiTextSelection(session.selection, libraryId);
+    const materials = session.materials === undefined ? undefined : restoreAiMaterials(session.materials, libraryId);
+    const activeMaterialIds = restoreAiMaterialIds(session.activeMaterialIds);
+    const edit = session.messageEdit;
+    const messageEdit = record(edit) && Number.isInteger(edit.index) && typeof edit.index === 'number' && edit.index >= 0 && history[edit.index]?.role === 'user' &&
+      history[edit.index].content.length <= 12000 && text(edit.content, 12000) ? { index: edit.index, content: edit.content } : undefined;
+    const mergedIds = strings(session.mergedIds, 40) ? [...new Set(session.mergedIds)].filter(id => available.has(id) && session.appliedIds.includes(id) && !session.changes.some(change => change.proposalId === id)) : [];
+    const approvals = { appliedIds: session.appliedIds, changes: session.changes, mergedIds };
     return { version: 1, libraryId, status: session.status === 'running' ? 'interrupted' : session.status,
       ...(session.contextKey ? { contextKey: session.contextKey } : {}),
+      ...(text(session.conversationId, 100) && /^[\w-]+$/.test(session.conversationId) ? { conversationId: session.conversationId } : {}),
+      ...(text(session.conversationTitle, 300) ? { conversationTitle: session.conversationTitle } : {}),
+      ...(text(session.updatedAt, 40) && Number.isFinite(Date.parse(session.updatedAt)) ? { updatedAt: session.updatedAt } : {}),
       ...(text(session.draft, 12000) ? { draft: session.draft } : {}),
+      ...(text(session.memoryInstructions, 4000) ? { memoryInstructions: session.memoryInstructions } : {}),
+      ...(restoreAiFailure(session.failure) ? { failure: restoreAiFailure(session.failure) } : {}),
+      ...(restoreAiExecutionSteps(session.steps) ? { steps: restoreAiExecutionSteps(session.steps) } : {}),
+      ...(restoreAiRunMetrics(session.metrics) ? { metrics: restoreAiRunMetrics(session.metrics) } : {}),
+      ...(['thinking', 'tool', 'responding', 'review', 'complete', 'partial'].includes(session.phase ?? '') ? { phase: session.phase } : {}),
+      ...(messageEdit ? { messageEdit } : {}),
+      ...(materials ? { materials } : {}), ...(activeMaterialIds ? { activeMaterialIds } : {}),
+      ...(selection ? { selection } : {}), ...(lastRequest ? { lastRequest } : {}),
+      ...(checkpoint ? { checkpoint } : {}), ...(['complete', 'budget', 'stalled'].includes(session.finishReason ?? '') ? { finishReason: session.finishReason } : {}),
       output: session.output, history,
       tools: session.tools, sourceIds: session.sourceIds, proposals: session.proposals, changes: session.changes, appliedIds: session.appliedIds,
-      ...(session.mergedIds !== undefined ? { mergedIds: strings(session.mergedIds, 40) ? [...new Set(session.mergedIds)].filter(id => available.has(id) && session.appliedIds.includes(id) && !session.changes.some(change => change.proposalId === id)) : [] } : {}),
-      ...(session.rejectedIds !== undefined ? { rejectedIds: strings(session.rejectedIds, 40) ? [...new Set(session.rejectedIds)].filter(id => available.has(id) && !session.appliedIds.includes(id)) : [] } : {}),
+      ...(session.mergedIds !== undefined ? { mergedIds } : {}),
+      ...(session.rejectedIds !== undefined ? { rejectedIds: strings(session.rejectedIds, 40) ? [...new Set(session.rejectedIds)].filter(id => available.has(id) && !isAiProposalApplied(approvals, id)) : [] } : {}),
       error: session.error, providerName: session.providerName, model: session.model,
       usageHistory: restoreAiUsageHistory(session),
       usage: { inputTokens: session.usage.inputTokens, outputTokens: session.usage.outputTokens } };
-  } catch { return createAiSession(libraryId); }
+  } catch { return null; }
+}
+export function readAiSession(libraryId: string, storage: Pick<Storage, 'getItem'>): AiSession {
+  try { return restoreAiSession(libraryId, storage.getItem(key(libraryId)) ?? '') ?? createAiSession(libraryId); }
+  catch { return createAiSession(libraryId); }
 }
 export function writeAiSession(session: AiSession, storage: Pick<Storage, 'setItem'>): void {
   try {
     const text = JSON.stringify(session);
-    if (text.length > 2 * 1024 * 1024) throw new Error('limit');
+    if (text.length > AI_SESSION_CHAR_LIMIT || session.history.length > AI_CHAT_MESSAGE_LIMIT) throw new Error('limit');
     storage.setItem(key(session.libraryId), text);
   } catch { throw new Error('AI 会话未能保存，请保持窗口打开。'); }
 }

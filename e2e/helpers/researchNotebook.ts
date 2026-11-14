@@ -11,6 +11,17 @@ export async function enableNotebookEditing(panel: Locator) {
 /** Narrow reading panes expose the same action in the shared function menu. */
 export async function runNotebookAction(panel: Locator, name: string) {
   await expect(panel.getByRole("toolbar", { name: "笔记管理", exact: true })).toBeVisible();
+  if (["切换资料库", "插件管理", "界面语言", "使用手册"].includes(name)) {
+    const expand = panel.getByRole('button', { name: '展开笔记左侧面板', exact: true });
+    if (await expand.isVisible()) await expand.click();
+    const footer = panel.locator('.research-sidebar-footer');
+    await footer.getByRole('button', { name: name === '切换资料库' ? /当前资料库.*切换资料库/ : name, exact: name !== '切换资料库' }).click();
+    // Management workflows continue from the compact card to the complete manager.
+    if (name === '切换资料库' || name === '插件管理') {
+      await panel.getByRole('dialog', { name, exact: true }).getByRole('button', { name: name === '切换资料库' ? '管理资料库' : '管理插件', exact: true }).click();
+    }
+    return;
+  }
   const direct = panel.getByRole("button", { name, exact: true });
   if (await direct.isVisible()) {
     try {

@@ -2,12 +2,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="3000" height="2900" viewBox="0 0 300 290" role="img" aria-labelledby="title desc">
   <title id="title">MeWiki — 知识链接万物</title>
   <desc id="desc">黑色圆形配白色与蓝色手绘 M 笔画，下方为 ME WIKI 及知识链接万物。图形与文字均为矢量路径。</desc>
-  <defs><clipPath id="emblem-clip"><circle cx="145" cy="104.5" r="78.5"/></clipPath></defs>
+  <defs><mask id="emblem-mask" maskUnits="userSpaceOnUse" x="66.5" y="26" width="157" height="157"><circle cx="145" cy="104.5" r="78.5" fill="#fff"/></mask></defs>
   <rect width="300" height="290" fill="#fff"/>
   <g transform="translate(5.25 0)">
-  <g id="emblem">
-    <circle cx="145" cy="104.5" r="78.5" fill="#060606"/>
-    <g clip-path="url(#emblem-clip)">
+  <g id="emblem" mask="url(#emblem-mask)">
+    <rect x="66.5" y="26" width="157" height="157" fill="#060606"/>
+    <g>
       <path id="white-ribbon" fill="#fff" d="M 66.7 121.8
         C 72.4 99.9 90.8 70.2 116.8 58.4
         C 128.2 53.2 137.1 54.1 140.1 62.2

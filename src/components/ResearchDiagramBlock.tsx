@@ -5,7 +5,7 @@ import { ArrowUpRight, Braces, Circle, Download, Maximize2, Minus, Pencil, Redo2
 import { DRAWING_HEIGHT, DRAWING_WIDTH, MAX_DIAGRAM_CODE, MAX_DRAWING_STROKES, MAX_STROKE_POINTS, drawingSvg, mermaidSourceError, normalizeDiagramBlock, researchDiagramTemplates, type ResearchDiagramBlock as DiagramBlock, type ResearchDrawingPoint, type ResearchDrawingStroke, type ResearchDrawingTool } from "../domain/researchDiagram.ts";
 import { useResearchContentLibrary } from "../state/ResearchContentLibraryContext.ts";
 import { fitDiagramSvgViewport, sanitizeDiagramSvg } from "./researchDiagramSvg.ts";
-import DeviceInspectorModal from "./DeviceInspectorModal.tsx";
+import ResearchDiagramViewer from "./ResearchDiagramViewer.tsx";
 import "./ResearchDiagramBlock.css";
 
 let mermaidLoader: Promise<typeof import("mermaid")["default"]> | undefined;
@@ -209,6 +209,6 @@ export default function ResearchDiagramBlock({ block, readOnly = false, onPatch 
       {canEdit && textEntry?.source === historyKey && <form className="research-drawing-text-entry" onSubmit={event => { event.preventDefault(); if (!textEntry.value.trim()) return; commit({ id: crypto.randomUUID(), kind: "text", points: [textEntry.at], color, width, text: textEntry.value }); setTextEntry(undefined); }}><input autoFocus aria-label={t("草图文字内容")} maxLength={2000} placeholder={t("输入文字…")} value={textEntry.value} onChange={event => setTextEntry({ ...textEntry, value: event.target.value })} /><button type="submit" disabled={!textEntry.value.trim()}>{t("添加文字")}</button><button type="button" onClick={() => setTextEntry(undefined)}>{t("取消")}</button></form>}
       {drawingError && <p className="research-diagram-error" role="alert">{localizeError(drawingError)}</p>}
     </>}
-    <DeviceInspectorModal open={Boolean(expanded)} title={previewTitle} testId={`research-diagram-preview-${componentId}`} className="research-diagram-preview-dialog" onClose={() => setExpanded(undefined)}>{expanded && <img src={expanded} alt={block.title || previewTitle} />}</DeviceInspectorModal>
+    <ResearchDiagramViewer source={expanded} title={previewTitle} imageLabel={block.title || previewTitle} testId={`research-diagram-preview-${componentId}`} onClose={() => setExpanded(undefined)} />
   </div>;
 }

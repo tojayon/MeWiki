@@ -1,4 +1,5 @@
 import { useLocale } from "../i18n/react.ts";
+import UiInfo from './UiInfo.tsx';
 import { t, localizeError } from "../i18n/locale.ts";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useDeleteConfirmation } from "./useDeleteConfirmation.ts";
@@ -46,7 +47,6 @@ function ResearchSymbolDictionary({
   state,
   onChange,
   windowActions,
-  pageControls,
   onOpen,
 }: {
   active: boolean;
@@ -55,7 +55,6 @@ function ResearchSymbolDictionary({
   state: ResearchNotebookState;
   onChange: (next: ResearchNotebookState) => void;
   windowActions: ReactNode;
-  pageControls: ReactNode;
   onOpen: () => void;
 }) {
   useLocale();
@@ -179,7 +178,6 @@ function ResearchSymbolDictionary({
       {showDetail && <div className="research-symbol-pane">
         <div className="research-symbol-definition-actions research-notebook-toolbar research-symbol-header" role="toolbar" aria-label={t("符号管理")}>
           <div className="research-note-header-leading">
-            {pageControls}
             <div className="research-page-tags">
               {!draft && selected?.scope && <span className="research-note-tag">{selected.scope}</span>}
               <div className="research-note-tag-list" aria-label={t("符号层级标签")}>
@@ -214,12 +212,12 @@ function ResearchSymbolDictionary({
         {draft ? (
           <div className="research-symbol-edit">
             <label>{t("词条名称")}<input aria-label={t("符号词条名称")} placeholder={t("输入符号名称")} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
-            <label>{t("符号别名")}<input aria-label={t("符号别名")} placeholder={t("可用顿号或逗号分隔")} value={(draft.aliases ?? []).join("、")} onChange={(event) => setDraft({ ...draft, aliases: aliasesFromInput(event.target.value) })} /><small>{t("旧名称和常见写法会用于一致性检查。")}</small></label>
+            <label>{t("符号别名")}<input aria-label={t("符号别名")} placeholder={t("可用顿号或逗号分隔")} value={(draft.aliases ?? []).join("、")} onChange={(event) => setDraft({ ...draft, aliases: aliasesFromInput(event.target.value) })} /></label>
             <label>{t("符号模板")}<input aria-label={t("符号模板")} value={draft.notation} onChange={(event) => setDraft({ ...draft, notation: event.target.value })} /><small>{t("固定模板：符号主体")}{"^{[x1]}_{[x2]}[x3]"}{t("。三个位置的括号与符号均由输入值完整给出。")}</small></label>
             <label>{t("本体说明")}<textarea aria-label={t("符号含义")} rows={3} value={draft.meaning} onChange={(event) => setDraft({ ...draft, meaning: event.target.value })} /></label>
             <label>{t("单位")}<input aria-label={t("符号单位")} value={draft.unit ?? ""} onChange={(event) => setDraft({ ...draft, unit: event.target.value })} placeholder={t("可留空")} /></label>
             <label>{t("适用范围")}<input aria-label={t("适用范围")} value={draft.scope ?? ""} onChange={(event) => setDraft({ ...draft, scope: event.target.value })} placeholder={t("例如：地球控制器")} /></label>
-            <div className="research-symbol-slots-heading"><strong>{t("各位置的说明与默认值")}</strong></div>
+            <div className="research-symbol-slots-heading"><strong>{t("各位置的说明与默认值")}</strong><UiInfo label={t('符号填写说明')}><p>{t("旧名称和常见写法会用于一致性检查。")}</p><p>{t("默认值可留空，说明会独立保留并显示。基础定义省略环路上标，涉及多个环路时再填写 (p)。时间变量需要括号时请填写完整的 (t)。系统不自动添加括号。")}</p></UiInfo></div>
             <div className="research-symbol-position-fields">
               {draft.slots.map((slot, index) => <fieldset key={slot.key} className="research-symbol-position-field" data-symbol-position={slot.key}>
                 <legend>{t(slot.label)}</legend>
@@ -227,7 +225,6 @@ function ResearchSymbolDictionary({
                 <label>{t("默认值")}<input aria-label={t(slot.label) + t("默认值")} value={slot.defaultValue} onChange={(event) => updateSlot(index, { defaultValue: event.target.value })} placeholder={slot.key === "x1" ? t("例如 (p) 或 p") : slot.key === "x2" ? t("例如 g_h 或 j+1") : t("例如 (t)、[t] 或 t")} /></label>
               </fieldset>)}
             </div>
-            <p className="research-symbol-slot-hint">{t("默认值可留空，说明会独立保留并显示。基础定义省略环路上标，涉及多个环路时再填写 (p)。时间变量需要括号时请填写完整的 (t)。系统不自动添加括号。")}</p>
             {error && <p className="research-symbol-error" role="alert">{localizeError(error)}</p>}
           </div>
         ) : selected ? (
@@ -255,7 +252,6 @@ export default function ResearchDictionary(props: {
   state: ResearchNotebookState;
   onChange: (next: ResearchNotebookState) => void;
   windowActions: ReactNode;
-  pageControls: ReactNode;
 }) {
   useLocale();
   const entryKey = JSON.stringify([props.state.activeSymbolId, props.state.activeTermId]);

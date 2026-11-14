@@ -55,6 +55,7 @@ import {
 import { Formula } from "./Formula.tsx";
 import ResearchMathText from "./ResearchMathText.tsx";
 import ResearchMarkdown from "./ResearchMarkdown.tsx";
+import UiInfo from './UiInfo.tsx';
 import ResearchExamples from "./ResearchExamples.tsx";
 import {
   FormulaReadSurface,
@@ -198,10 +199,8 @@ function TheoryNode({ data, selected }: NodeProps<FlowNode>) {
             {flattenResearchBlocks(node.note?.blocks ?? []).filter((block) => block.type === "callout")
               .length}{" "}
             {t("处条件")}</p>
-        ) : (
-          <p>{t("点击查看内容与关联")}</p>
-        )}
-        <small>{node.ref.blockId ? node.noteTitle : t("笔记")}</small>
+        ) : null}
+        {node.ref.blockId && <small>{node.noteTitle}</small>}
       </div>
       {noteNode && !node.missing && (
         <button
@@ -1114,7 +1113,7 @@ function TheoryMapCanvas({
           </div>
           {showLegend && (
             <div className="theory-map-legend">
-              <strong>{t("内容角色")}</strong>
+              <div className="theory-map-legend-heading"><strong>{t("内容角色")}</strong><UiInfo label={t('地图说明')}><p>{t("公式引用自动生成；条件与适配由用户关联。")}</p></UiInfo></div>
               <div>
                 {theoryRoles.map((role) => (
                   <span key={role.value} className={`role-${role.value}`}>
@@ -1135,7 +1134,6 @@ function TheoryMapCanvas({
                   {t(kind.label)}
                 </p>
               ))}
-              <small>{t("公式引用自动生成；条件与适配由用户关联。")}</small>
             </div>
           )}
         </div>

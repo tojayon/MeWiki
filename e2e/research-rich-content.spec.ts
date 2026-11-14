@@ -361,6 +361,70 @@ test("opens a flowchart in a large preview window and closes it with Escape", as
   expect(await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem("mewiki:research-notebook")!).notes.find((note: { id: string }) => note.id === "rich-note").blocks))).toBe(before);
 });
 
+test("zooms the diagram around the cursor and pans a vector canvas without changing the note", async ({ page }) => {
+  await insert(page, "绘图与流程图");
+  const block = page.locator(".research-diagram-block").last();
+  await expect(block.locator(".research-diagram-preview svg")).toBeVisible({ timeout: 30000 });
+  const original = await page.evaluate(() => JSON.parse(localStorage.getItem("mewiki:research-notebook")!).notes.find((note: { id: string }) => note.id === "rich-note").blocks);
+  await block.getByRole("button", { name: "放大流程图", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "流程图预览", exact: true });
+  await expect(dialog.getByRole("toolbar", { name: "绘图缩放", exact: true })).toBeVisible();
+  const canvas = dialog.getByRole("region", { name: "绘图画布", exact: true });
+  const image = dialog.getByRole("img", { name: "流程图预览", exact: true });
+  await expect.poll(() => image.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  const initial = (await image.boundingBox())!;
+  const anchor = { x: Math.round(initial.x + initial.width * 0.6), y: Math.round(initial.y + initial.height * 0.4) };
+  await page.mouse.move(anchor.x, anchor.y);
+  await page.mouse.wheel(0, -600);
+  await expect.poll(async () => (await image.boundingBox())!.width).toBeGreaterThan(initial.width * 1.5);
+  const enlarged = (await image.boundingBox())!;
+  expect((anchor.x - enlarged.x) / enlarged.width).toBeCloseTo((anchor.x - initial.x) / initial.width, 2);
+  expect((anchor.y - enlarged.y) / enlarged.height).toBeCloseTo((anchor.y - initial.y) / initial.height, 2);
+  await page.mouse.down();
+  await page.mouse.move(anchor.x + 120, anchor.y + 70, { steps: 8 });
+  await page.mouse.up();
+  const moved = (await image.boundingBox())!;
+  expect(moved.x - enlarged.x).toBeCloseTo(120, 0);
+  expect(moved.y - enlarged.y).toBeCloseTo(70, 0);
+  await dialog.getByRole("button", { name: "适应画布", exact: true }).click();
+  await dialog.getByRole("button", { name: "原始大小", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "原始大小", exact: true })).toHaveText("100%");
+  await expect(dialog.getByRole("button", { name: "原始大小", exact: true })).toHaveAccessibleDescription("100%");
+  for (let index = 0; index < 8; index++) await dialog.getByRole("button", { name: "放大绘图", exact: true }).click();
+  expect((await image.boundingBox())!.width).toBeGreaterThan(initial.width * 4);
+  await page.screenshot({ path: test.info().outputPath("diagram-canvas-zoomed.png") });
+  await canvas.focus();
+  await canvas.press("Home");
+  expect((await image.boundingBox())!.width).toBeCloseTo(initial.width, 0);
+  await canvas.press("+");
+  expect((await image.boundingBox())!.width).toBeCloseTo(initial.width * 1.25, 0);
+  const beforeResize = (await image.boundingBox())!;
+  const oldArea = (await canvas.boundingBox())!;
+  const centerX = (oldArea.x + oldArea.width / 2 - beforeResize.x) / beforeResize.width;
+  const centerY = (oldArea.y + oldArea.height / 2 - beforeResize.y) / beforeResize.height;
+  await page.setViewportSize({ width: 900, height: 700 });
+  const resizedArea = (await canvas.boundingBox())!;
+  await expect.poll(async () => {
+    const next = (await image.boundingBox())!;
+    return Math.abs((resizedArea.x + resizedArea.width / 2 - next.x) / next.width - centerX);
+  }).toBeLessThan(0.01);
+  const afterResize = (await image.boundingBox())!;
+  expect(afterResize.width).toBeCloseTo(beforeResize.width, 0);
+  expect((resizedArea.y + resizedArea.height / 2 - afterResize.y) / afterResize.height).toBeCloseTo(centerY, 2);
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.keyboard.press("Escape");
+  await block.getByRole("button", { name: "放大流程图", exact: true }).click();
+  await expect.poll(() => image.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  await expect.poll(async () => (await image.boundingBox())!.width).toBeGreaterThan(0);
+  const reopenedArea = (await canvas.boundingBox())!;
+  const reopened = (await image.boundingBox())!;
+  expect(reopened.x).toBeGreaterThanOrEqual(reopenedArea.x);
+  expect(reopened.y).toBeGreaterThanOrEqual(reopenedArea.y);
+  expect(reopened.x + reopened.width).toBeLessThanOrEqual(reopenedArea.x + reopenedArea.width);
+  await page.keyboard.press("Escape");
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("mewiki:research-notebook")!).notes.find((note: { id: string }) => note.id === "rich-note").blocks)).toEqual(original);
+});
+
 test("disables diagram enlargement for empty or invalid source and restores it after recovery", async ({ page }) => {
   await insert(page, "绘图与流程图");
   const block = page.locator(".research-diagram-block").last();
@@ -382,7 +446,7 @@ test("disables diagram enlargement for empty or invalid source and restores it a
   await page.keyboard.press("Escape");
 });
 
-test("keeps a tall diagram preview scrollable in a narrow English window", async ({ page }) => {
+test("fits and zooms a tall diagram on a narrow English canvas", async ({ page }) => {
   await insert(page, "绘图与流程图");
   const block = page.locator(".research-diagram-block").last();
   const code = `flowchart TB\n${Array.from({ length: 14 }, (_, index) => ` N${index}[Step ${index + 1}] --> N${index + 1}[Step ${index + 2}]`).join("\n")}`;
@@ -408,13 +472,51 @@ test("keeps a tall diagram preview scrollable in a narrow English window", async
   const imageBounds = (await image.boundingBox())!;
   expect(imageBounds.x).toBeGreaterThanOrEqual(bounds.x);
   expect(imageBounds.x + imageBounds.width).toBeLessThanOrEqual(bounds.x + bounds.width);
-  const content = dialog.locator(".device-record-modal-content");
-  expect(await content.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
-  await content.evaluate(element => { element.scrollTop = element.scrollHeight; });
-  expect(await content.evaluate(element => Math.abs(element.scrollTop + element.clientHeight - element.scrollHeight) < 2)).toBe(true);
+  const canvas = dialog.getByRole("region", { name: "Diagram canvas", exact: true });
+  const area = (await canvas.boundingBox())!;
+  expect(imageBounds.y).toBeGreaterThanOrEqual(area.y);
+  expect(imageBounds.y + imageBounds.height).toBeLessThanOrEqual(area.y + area.height + 1);
+  await dialog.getByRole("button", { name: "Actual size", exact: true }).click();
+  expect((await image.boundingBox())!.height).toBe(await image.evaluate(image => (image as HTMLImageElement).naturalHeight));
+  expect((await image.boundingBox())!.height).toBeGreaterThan(imageBounds.height * 1.5);
+  await canvas.focus();
+  const beforeMove = (await image.boundingBox())!;
+  await canvas.press("ArrowDown");
+  expect((await image.boundingBox())!.y).toBeCloseTo(beforeMove.y - 40, 0);
+  await dialog.getByRole("button", { name: "Fit to canvas", exact: true }).click();
+  expect((await image.boundingBox())!.height).toBeCloseTo(imageBounds.height, 0);
   await page.screenshot({ path: test.info().outputPath("diagram-preview-mobile-en.png") });
   await dialog.getByRole("button", { name: "Close Diagram preview", exact: true }).click();
   await expect(dialog).toBeHidden();
+});
+
+test("pinches and drags the diagram on a touch screen", async ({ page, context }) => {
+  await insert(page, "绘图与流程图");
+  const block = page.locator(".research-diagram-block").last();
+  await expect(block.locator(".research-diagram-preview svg")).toBeVisible({ timeout: 30000 });
+  await block.getByRole("button", { name: "放大流程图", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "流程图预览", exact: true });
+  const image = dialog.getByRole("img", { name: "流程图预览", exact: true });
+  await expect.poll(() => image.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  const canvas = dialog.getByRole("region", { name: "绘图画布", exact: true });
+  const box = (await canvas.boundingBox())!, original = (await image.boundingBox())!;
+  const center = { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
+  const touch = await context.newCDPSession(page);
+  await touch.send("Emulation.setTouchEmulationEnabled", { enabled: true });
+  await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ id: 1, x: center.x - 40, y: center.y }, { id: 2, x: center.x + 40, y: center.y }] });
+  await touch.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ id: 1, x: center.x - 100, y: center.y }, { id: 2, x: center.x + 100, y: center.y }] });
+  await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expect.poll(async () => (await image.boundingBox())!.width).toBeGreaterThan(original.width * 2);
+  const enlarged = (await image.boundingBox())!;
+  await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ id: 3, x: center.x, y: center.y }] });
+  await touch.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ id: 3, x: center.x + 60, y: center.y + 40 }] });
+  await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expect.poll(async () => (await image.boundingBox())!.x).toBeCloseTo(enlarged.x + 60, 0);
+  expect((await image.boundingBox())!.y).toBeCloseTo(enlarged.y + 40, 0);
+  await dialog.getByRole("button", { name: "适应画布", exact: true }).click();
+  expect((await image.boundingBox())!.width).toBeCloseTo(original.width, 0);
+  await touch.detach();
+  await page.keyboard.press("Escape");
 });
 
 async function expectCompleteDiagram(svg: Locator) {

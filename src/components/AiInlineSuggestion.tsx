@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Check, Pencil, Plus, RotateCcw, Save, Trash2, X } from 'lucide-react';
 import type { AiProposal } from '../ai/proposals.ts';
 import { canAdjustAiProposal, type AiProposalAdjustment } from '../ai/reviewDecisions.ts';
@@ -12,6 +12,7 @@ import ResearchMarkdown from './ResearchMarkdown.tsx';
 import ResearchReferenceEditor, { type ResearchReferenceEditorHandle } from './ResearchReferenceEditor.tsx';
 import { Formula } from './Formula.tsx';
 import { aiReviewFieldLabel } from './aiReviewFieldLabels.ts';
+import { AiReviewPair, RenderedChange, type AiReviewPresentation } from './AiReviewChanges.tsx';
 import './AiInlineSuggestion.css';
 
 type Schema = { type?: string; enum?: readonly unknown[]; const?: unknown; properties?: Record<string, Schema>; required?: string[]; additionalProperties?: Schema | boolean; items?: Schema; anyOf?: Schema[]; minimum?: number; maximum?: number; maxLength?: number; maxItems?: number; minItems?: number };
@@ -42,10 +43,7 @@ function ReviewTextField({ value, label, path, readers, onChange }: { value: str
   }, [key, readers]);
   useLayoutEffect(() => { if (editing) editor.current?.focus({ preventScroll: true }); }, [editing]);
   return <div className="mewiki-ai-adjust-text research-markdown">{editing ? <ResearchReferenceEditor ref={editor} defaultValue={value} aria-label={label}
-    onBlur={input => { latest.current = input.value; onChange(input.value); setEditing(false); }}
-    onKeyDown={(event, input) => {
-      if (event.key === 'Escape' && !event.isComposing) { event.preventDefault(); event.stopPropagation(); latest.current = input.value; onChange(input.value); setEditing(false); }
-    }} /> : <div role="textbox" aria-label={label} aria-multiline="true" tabIndex={0} className="mewiki-ai-adjust-rendered-text" onFocus={() => setEditing(true)}
+    onBlur={input => { latest.current = input.value; onChange(input.value); setEditing(false); }} /> : <div role="textbox" aria-label={label} aria-multiline="true" tabIndex={0} className="mewiki-ai-adjust-rendered-text" onFocus={() => setEditing(true)}
       onPointerDown={event => { if (!(event.target instanceof Element) || !event.target.closest('button, a')) { event.preventDefault(); setEditing(true); } }}>
       {value ? <ResearchMarkdown text={value} /> : <span>—</span>}
     </div>}</div>;
@@ -76,14 +74,16 @@ function AdjustmentField({ name, value, schema, path, readers, onChange }: { nam
   </div>;
 }
 
-function SuggestionEditor({ proposal, state, disabled, onSave, onCancel }: { proposal: AiProposal; state: ResearchNotebookState; disabled: boolean; onSave: (adjustment: AiProposalAdjustment) => Promise<boolean>; onCancel: () => void }) {
+function SuggestionEditor({ id, proposal, state, disabled, onSave, onCancel, onSavingChange }: { id: string; proposal: AiProposal; state: ResearchNotebookState; disabled: boolean; onSave: (adjustment: AiProposalAdjustment) => Promise<boolean>; onCancel: () => void; onSavingChange: (saving: boolean) => void }) {
   const [draft, setDraft] = useState(() => sourceOf(proposal)), current = useRef(draft);
   const [readers] = useState<Readers>(() => new Map()), [error, setError] = useState(''), [saving, setSaving] = useState(false);
   const fields = fieldsOf(proposal);
+  const root = useRef<HTMLFormElement>(null);
+  useLayoutEffect(() => { root.current?.querySelector<HTMLElement>('input, select, [role=textbox]')?.focus({ preventScroll: true }); }, []);
   const update = (next: AiProposalAdjustment) => { current.current = next; setDraft(next); setError(''); };
   const save = async () => {
     if (saving || disabled) return;
-    setSaving(true); setError('');
+    setSaving(true); onSavingChange(true); setError('');
     const value = structuredClone(current.current);
     for (const { path, read } of readers.values()) {
       let parent = value as unknown as Record<string | number, unknown>;
@@ -92,14 +92,12 @@ function SuggestionEditor({ proposal, state, disabled, onSave, onCancel }: { pro
     }
     try { if (await onSave(value)) onCancel(); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'AI 修改预览不可用。'); }
-    finally { setSaving(false); }
+    finally { setSaving(false); onSavingChange(false); }
   };
-  return <section className="mewiki-ai-adjustment" aria-label={t('调整建议')} onKeyDown={event => {
+  return <form ref={root} id={id} role="region" className="mewiki-ai-adjustment" aria-label={t('调整建议')} onSubmit={event => { event.preventDefault(); void save(); }} onKeyDown={event => {
     if (event.key === 'Escape' && !event.nativeEvent.isComposing && !saving) { event.preventDefault(); event.stopPropagation(); onCancel(); }
-  }}><div className="mewiki-ai-adjustment-toolbar">
-      <button type="button" data-ui="icon-action" aria-label={t('保留调整')} title={t('保留调整')} disabled={disabled || saving} onClick={() => void save()}><Save size={15} /></button>
-      <button type="button" data-ui="icon-action" aria-label={t('取消调整')} title={t('取消调整')} disabled={saving} onClick={onCancel}><RotateCcw size={15} /></button>
-    </div><ResearchNoteLinkContext.Provider value={{ notes: state.notes, symbols: state.symbols, terms: state.terms ?? [], state, sourceNoteId: proposal.kind !== 'term' && (proposal.kind !== 'native' || proposal.target === 'note') ? proposal.targetId : '', openNote: () => {} }}>
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); void save(); }
+  }}><ResearchNoteLinkContext.Provider value={{ notes: state.notes, symbols: state.symbols, terms: state.terms ?? [], state, sourceNoteId: proposal.kind !== 'term' && (proposal.kind !== 'native' || proposal.target === 'note') ? proposal.targetId : '', openNote: () => {} }}>
       <fieldset disabled={disabled || saving} inert={disabled || saving} className="mewiki-ai-adjustment-fields">
         {draft.title !== undefined && <AdjustmentField name="title" value={draft.title} schema={{ type: 'string', maxLength: 1000 }} path={['title']} readers={readers} onChange={title => update({ ...current.current, title: String(title) })} />}
         {draft.content !== undefined && <AdjustmentField name="content" value={draft.content} schema={{ type: 'string', maxLength: 40000 }} path={['content']} readers={readers} onChange={content => update({ ...current.current, content: String(content) })} />}
@@ -107,26 +105,49 @@ function SuggestionEditor({ proposal, state, disabled, onSave, onCancel }: { pro
           onChange={next => update({ ...current.current, fields: { ...current.current.fields, [key]: next } })} />)}
       </fieldset>
     </ResearchNoteLinkContext.Provider>{error && <p role="alert">{localizeError(error)}</p>}
-  </section>;
+  </form>;
 }
 
-export default function AiInlineSuggestion({ proposal, state, disabled, error = '', onApprove, onReject, onRevise, onEditingChange }: {
-  proposal: AiProposal; state: ResearchNotebookState; disabled: boolean; error?: string;
+export default function AiInlineSuggestion({ proposals, before, after, presentation, state, disabled, errors, directEdit = true, onApprove, onReject, onRevise, onEditingChange }: {
+  proposals: AiProposal[]; before?: ReactNode; after?: ReactNode; state: ResearchNotebookState; disabled: boolean; errors: Record<string, string>; directEdit?: boolean;
+  presentation?: AiReviewPresentation;
   onApprove: (proposal: AiProposal) => void; onReject: (proposal: AiProposal) => void;
   onRevise: (proposal: AiProposal, adjustment: AiProposalAdjustment) => Promise<boolean>;
   onEditingChange?: (id: string, editing: boolean) => void;
 }) {
   useLocale();
-  const [editing, setEditing] = useState(false);
-  const adjustButton = useRef<HTMLButtonElement>(null);
-  useEffect(() => { onEditingChange?.(proposal.id, editing); return () => onEditingChange?.(proposal.id, false); }, [proposal.id, editing, onEditingChange]);
-  const cancel = () => { setEditing(false); adjustButton.current?.focus({ preventScroll: true }); };
-  return <div className="mewiki-ai-inline-suggestion" data-ai-review-proposal-id={proposal.id} data-editing={editing || undefined}>
-    <div className="mewiki-ai-inline-actions" role="group" aria-label={t('此处修改操作')}>
-      <button type="button" data-ui="icon-action" aria-label={t('同意此修改')} title={error ? localizeError(error) : t('同意此修改')} disabled={disabled || !!error || editing} onClick={() => onApprove(proposal)}><Check size={15} /></button>
-      <button type="button" data-ui="icon-action" aria-label={t('拒绝此修改')} title={t('拒绝此修改')} disabled={disabled || editing} onClick={() => onReject(proposal)}><X size={15} /></button>
-      {canAdjustAiProposal(proposal) && <button ref={adjustButton} type="button" data-ui="icon-action" aria-label={t('调整此修改')} title={t('调整此修改')} disabled={disabled || !!error} aria-expanded={editing} onClick={() => setEditing(value => !value)}><Pencil size={14} /></button>}
-    </div>
-    {editing && <SuggestionEditor proposal={proposal} state={state} disabled={disabled} onSave={adjustment => onRevise(proposal, adjustment)} onCancel={cancel} />}
+  const [editingId, setEditingId] = useState<string | null>(null), [saving, setSaving] = useState(false);
+  const buttons = useRef(new Map<string, HTMLButtonElement>()), formId = useId();
+  const editing = proposals.find(proposal => proposal.id === editingId);
+  const editable = proposals.filter(proposal => canAdjustAiProposal(proposal) && !errors[proposal.id]);
+  useEffect(() => {
+    if (!editingId) return;
+    onEditingChange?.(editingId, true);
+    return () => onEditingChange?.(editingId, false);
+  }, [editingId, onEditingChange]);
+  const cancel = () => {
+    setEditingId(null);
+    if (editingId) requestAnimationFrame(() => buttons.current.get(editingId)?.focus({ preventScroll: true }));
+  };
+  const canDirectEdit = directEdit && !disabled && editable.length === 1 && !editing;
+  const editableContent = (content: ReactNode) => canDirectEdit && !!content && (!Array.isArray(content) || !!content.length) ? <div className="mewiki-ai-review-editable" role="textbox" aria-label={t('编辑建议内容')} aria-multiline="true" aria-readonly="true" tabIndex={0}
+      onClick={event => { if (!(event.target instanceof Element) || !event.target.closest('a, button, input, select, textarea, [contenteditable=true]')) {
+        if (window.getSelection()?.isCollapsed !== false) setEditingId(editable[0].id);
+      } }} onKeyDown={event => { if (['Enter', 'F2'].includes(event.key) && event.target === event.currentTarget && !event.nativeEvent.isComposing) { event.preventDefault(); setEditingId(editable[0].id); } }}>{content}</div> : content;
+  const content = editing ? <RenderedChange kind="add"><SuggestionEditor key={editing.id} id={formId} proposal={editing} state={state} disabled={disabled}
+    onSave={adjustment => onRevise(editing, adjustment)} onCancel={cancel} onSavingChange={setSaving} /></RenderedChange> : editableContent(after);
+  const decisions = <div className="mewiki-ai-review-decisions">{proposals.map(proposal => <div key={proposal.id} data-ai-review-proposal-id={proposals.length > 1 ? proposal.id : undefined} className="mewiki-ai-inline-actions" role="group" aria-label={t('此处修改操作')}>
+      {editing?.id === proposal.id ? <>
+        <button type="submit" form={formId} data-ui="icon-action" aria-label={t('保留调整')} title={t('保留调整')} disabled={disabled || saving}><Save size={15} /></button>
+        <button type="button" data-ui="icon-action" aria-label={t('取消调整')} title={t('取消调整')} disabled={saving} onClick={cancel}><RotateCcw size={15} /></button>
+      </> : <>
+        <button type="button" data-ui="icon-action" aria-label={t('同意此修改')} title={errors[proposal.id] ? localizeError(errors[proposal.id]) : t('同意此修改')} disabled={disabled || !!errors[proposal.id] || !!editing} onClick={() => onApprove(proposal)}><Check size={15} /></button>
+        <button type="button" data-ui="icon-action" aria-label={t('拒绝此修改')} title={t('拒绝此修改')} disabled={disabled || !!editing} onClick={() => onReject(proposal)}><X size={15} /></button>
+        {canAdjustAiProposal(proposal) && <button ref={button => { if (button) buttons.current.set(proposal.id, button); else buttons.current.delete(proposal.id); }} type="button" data-ui="icon-action" aria-label={t('调整此修改')} title={t('调整此修改')} disabled={disabled || !!errors[proposal.id] || !!editing} onClick={() => setEditingId(proposal.id)}><Pencil size={14} /></button>}
+      </>}
+    </div>)}</div>;
+  return <div className="mewiki-ai-inline-suggestion" data-ai-review-proposal-id={proposals.length === 1 ? proposals[0].id : undefined} data-editing={!!editing || undefined}
+    onKeyDown={event => { if (editing && event.key === 'Escape' && !event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); if (!saving) cancel(); } }}>
+    {presentation && !editing ? presentation.render(decisions, editableContent) : <AiReviewPair before={before} after={content} between={decisions} />}
   </div>;
 }

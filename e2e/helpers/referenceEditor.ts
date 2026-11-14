@@ -1,9 +1,12 @@
 import { expect, type Locator } from "@playwright/test";
+import { referenceDocumentSource, referenceEditorSchema } from "../../src/domain/researchReferenceEditor.ts";
 
 /** Inspect what the visible editor will save, including stable references rather than their current labels. */
 export async function editorSource(editor: Locator): Promise<string> {
-  return editor.evaluate(element => {
+  const result = await editor.evaluate(element => {
     if (element instanceof HTMLTextAreaElement) return element.value;
+    const model = (element as HTMLElement & { pmViewDesc?: { node: { toJSON(): unknown } } }).pmViewDesc?.node;
+    if (model) return model.toJSON();
     const read = (node: Node): string => {
       if (node instanceof HTMLElement && node.dataset.mewikiReference !== undefined) return node.dataset.mewikiReference;
       if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
@@ -11,6 +14,14 @@ export async function editorSource(editor: Locator): Promise<string> {
     };
     return read(element);
   });
+  return typeof result === "string" ? result : referenceDocumentSource(referenceEditorSchema.nodeFromJSON(result));
+}
+export async function pasteEditorMarkdown(editor: Locator, source: string) {
+  await editor.press("Control+a");
+  await editor.evaluate((element, text) => {
+    const clipboardData = new DataTransfer(); clipboardData.setData("text/plain", text);
+    element.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData }));
+  }, source);
 }
 export async function expectEditorSource(editor: Locator, expected: string | RegExp) {
   if (typeof expected === "string") await expect.poll(() => editorSource(editor)).toBe(expected);

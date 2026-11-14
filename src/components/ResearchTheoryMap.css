@@ -446,6 +446,8 @@
   color: #172033;
   font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
 }
+.theory-map-legend > .theory-map-legend-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.theory-map-legend-heading > strong { color: var(--mewiki-ui-muted); font-size: inherit; font-weight: 550; }
 .theory-map-legend > strong {
   display: block;
   margin-bottom: 8px;

@@ -117,7 +117,7 @@ export default function AiServiceSettings() {
   }
 
   return <div className="mewiki-ai-service-settings" data-testid="mewiki-ai-service-settings">
-    <p className="mewiki-ai-service-intro">{t('自行配置服务地址、API Key 和模型。请求由 MeWiki 本机服务转发，费用由所选服务商结算。')}</p>
+    <p className="mewiki-ai-service-intro">{t('请求由觅维本机服务转发，费用由所选服务商结算。')}{' '}{t('使用云端地址时，AI 任务中选定的资料会发送给该服务；使用本地模型地址时可在本机推理。')}</p>
     <div className="mewiki-ai-provider-controls" role="toolbar" aria-label={t('AI 服务操作')}>
       <label className="mewiki-ai-provider-select" htmlFor="mewiki-ai-provider"><span>{t('服务配置')}</span><select id="mewiki-ai-provider" value={selectedId} disabled={locked || !providers.length} onChange={event => { setSelectedId(event.target.value); setModels([]); setTestResult(null); setNotice(''); setError(''); }}>
         {!providers.length && <option value="">{t('尚未添加 AI 服务')}</option>}
@@ -150,7 +150,7 @@ export default function AiServiceSettings() {
       {!provider && !busy && !error && <p className="mewiki-ai-service-empty">{t('添加一项服务后，即可选择模型并使用 AI 工作区。')}</p>}
       <div className="mewiki-ai-service-actions">
         <button type="submit" className="mewiki-ai-save" disabled={!settings || !dirty || locked}><Save size={15} /><span>{t('保存服务')}</span></button>
-        <button type="button" disabled={!canProbe} onClick={() => void perform('testing', async signal => {
+        <button type="button" disabled={!canProbe} aria-describedby="mewiki-ai-probe-description" onClick={() => void perform('testing', async signal => {
           const result = await testAiProvider(selectedId, signal); if (!signal.aborted) setTestResult(result);
         })}>{t('测试服务')}</button>
         <button type="button" disabled={!canProbe} onClick={() => void perform('models', async signal => {
@@ -158,6 +158,7 @@ export default function AiServiceSettings() {
         })}>{t('获取模型')}</button>
         {busy && <button type="button" onClick={cancel}><Square size={14} /><span>{t('取消操作')}</span></button>}
       </div>
+      <p className="mewiki-ai-probe-description" id="mewiki-ai-probe-description">{t('测试会发送一条不含笔记资料的模型请求，可能产生少量费用。模型列表不可用时，可以直接手动填写。')}</p>
     </form>
     <div className="mewiki-ai-service-feedback" aria-live="polite">
       {busy && <p role="status">{busy === 'loading' ? t('正在加载 AI 服务…') : busy === 'saving' ? t('正在保存 AI 服务…') : busy === 'testing' ? t('正在测试模型响应、流式输出和工具调用…') : t('正在获取模型列表…')}</p>}
@@ -172,10 +173,8 @@ export default function AiServiceSettings() {
         ] as const).map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{testResult[key] ? <Check size={14} aria-hidden="true" /> : <X size={14} aria-hidden="true" />}{testResult[key] ? t('通过') : t('未通过')}</dd></div>)}</dl>
       </div>}
     </div>
-    <div className="mewiki-ai-service-notes">
-      <p>{t('测试会发送一条不含笔记资料的模型请求，可能产生少量费用。模型列表不可用时，可以直接手动填写。')}</p>
+    <details className="mewiki-ai-service-notes"><summary>{t('服务与数据说明')}</summary>
       <p>{t('密钥与笔记备份分开保存。Windows 使用当前用户的系统加密保护，其他平台使用仅当前用户可读写的文件存储。')}</p>
-      <p>{t('使用云端地址时，AI 任务中选定的资料会发送给该服务；使用本地模型地址时可在本机推理。')}</p>
-    </div>
+    </details>
   </div>;
 }

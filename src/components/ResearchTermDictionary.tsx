@@ -24,6 +24,7 @@ import ResearchClassifiedList from "./ResearchClassifiedList.tsx";
 import ResearchTagTreeToolbar from "./ResearchTagTreeToolbar.tsx";
 import ResearchDictionaryConsistencyPanel from "./ResearchDictionaryConsistencyPanel.tsx";
 import ResearchTermDiagram from "./ResearchTermDiagram.tsx";
+import UiInfo from './UiInfo.tsx';
 import "./ResearchDictionary.css";
 
 function initialDraft() {
@@ -43,7 +44,7 @@ export interface ResearchTermFilters {
   tag: string;
 }
 
-export default function ResearchTermDictionary({ active, showSidebar, showDetail, filters, setFilters, state, onChange, windowActions, pageControls, onOpen }: {
+export default function ResearchTermDictionary({ active, showSidebar, showDetail, filters, setFilters, state, onChange, windowActions, onOpen }: {
   active: boolean;
   showSidebar: boolean;
   showDetail: boolean;
@@ -52,7 +53,6 @@ export default function ResearchTermDictionary({ active, showSidebar, showDetail
   state: ResearchNotebookState;
   onChange: (next: ResearchNotebookState) => void;
   windowActions: ReactNode;
-  pageControls: ReactNode;
   onOpen: () => void;
 }) {
   useLocale();
@@ -140,7 +140,7 @@ export default function ResearchTermDictionary({ active, showSidebar, showDetail
     </aside>}
     {showDetail && <div className="research-symbol-pane">
       <div className="research-symbol-definition-actions research-notebook-toolbar research-symbol-header" role="toolbar" aria-label={t("术语管理")}>
-        <div className="research-note-header-leading">{pageControls}<div className="research-page-tags"><div className="research-note-tag-list" aria-label={t("术语标签")}>{(tagTarget?.tags ?? []).map(tag => <button type="button" className="research-note-tag" key={tag} onClick={() => setFilters({ query: "", tag })}>{tag}</button>)}</div></div></div>
+        <div className="research-note-header-leading"><div className="research-page-tags"><div className="research-note-tag-list" aria-label={t("术语标签")}>{(tagTarget?.tags ?? []).map(tag => <button type="button" className="research-note-tag" key={tag} onClick={() => setFilters({ query: "", tag })}>{tag}</button>)}</div></div></div>
         <h2 className="research-note-title research-symbol-title" title={title}>{title}</h2>
         <div className="research-note-header-actions"><div className="research-page-tools" role="toolbar" aria-label={t("术语词典功能")}><div className="research-page-tool-actions">
           <button data-ui="icon-action" className="research-small-button" onClick={beginCreate} aria-label={t("新建术语词条")} title={t("新建术语词条")}><Plus size={14} /></button>
@@ -152,7 +152,7 @@ export default function ResearchTermDictionary({ active, showSidebar, showDetail
         {draft ? <div className="research-term-editor">
           <div className="research-term-editor-columns">
             <section className="research-term-editor-section" aria-labelledby="research-term-naming-heading">
-              <div className="research-term-section-heading"><Languages size={18} aria-hidden="true" /><div><h3 id="research-term-naming-heading">{t("命名与引用")}</h3><p>{t("统一名称与写法，方便在笔记中引用。")}</p></div></div>
+              <div className="research-term-section-heading"><Languages size={18} aria-hidden="true" /><h3 id="research-term-naming-heading">{t("命名与引用")}</h3></div>
               <label className="research-term-field"><span className="research-term-field-label">{t("术语名称")}<span className="research-term-field-required">{t("必填")}</span></span><input className="research-term-name-input" aria-label={t("术语名称")} aria-required="true" value={draft.name} onChange={event => {
                 const name = event.target.value;
                 const nextAtoms = draft.atoms?.length === 1 && draft.atoms[0].text === draft.name ? [{ ...draft.atoms[0], text: name }] : draft.atoms;
@@ -165,8 +165,7 @@ export default function ResearchTermDictionary({ active, showSidebar, showDetail
               </div>
               <div className="research-term-reference-preview"><span>{t("规范引用预览")}</span><output aria-label={t("规范引用预览")}>{draft.name.trim() ? formatTermReference(draft, { form: "full" }) : t("填写名称后显示引用预览")}</output></div>
               <section className="research-term-alias-editor" aria-label={t("术语别名")}>
-                <div className="research-term-alias-heading"><h4>{t("别名")}</h4><button type="button" className="research-small-button research-term-add-button" onClick={() => updateDraftAliases([...(draft.aliasEntries ?? []), { id: `${draft.id}:alias:${crypto.randomUUID()}`, name: "" }])}><Plus size={14} aria-hidden="true" />{t("新增别名")}</button></div>
-                <p>{t("每行保存一个别名，可填写中文别名或英文别称并单独引用；修改同一行后，已绑定的引用同步更新。")}</p>
+                <div className="research-term-alias-heading"><h4>{t("别名")}</h4><UiInfo label={t('别名说明')}><p>{t("每行保存一个别名，可填写中文别名或英文别称并单独引用；修改同一行后，已绑定的引用同步更新。")}</p></UiInfo><button type="button" className="research-small-button research-term-add-button" onClick={() => updateDraftAliases([...(draft.aliasEntries ?? []), { id: `${draft.id}:alias:${crypto.randomUUID()}`, name: "" }])}><Plus size={14} aria-hidden="true" />{t("新增别名")}</button></div>
                 {draft.aliasEntries?.length ? <div className="research-term-alias-fields">{draft.aliasEntries.map((alias, index) => <div className="research-term-alias-row" key={alias.id}>
                   <input aria-label={t`别名 ${index + 1}`} value={alias.name} onChange={event => updateDraftAliases(draft.aliasEntries!.map(item => item.id === alias.id ? { ...item, name: event.target.value } : item))} placeholder={t("输入一个别名")} />
                   <button type="button" data-ui="icon-action" data-tone="danger" className="research-small-button" aria-label={t`删除别名 ${index + 1}`} title={t`删除别名 ${index + 1}`} onClick={() => updateDraftAliases(draft.aliasEntries!.filter(item => item.id !== alias.id))}><Trash2 size={14} /></button>
@@ -174,7 +173,7 @@ export default function ResearchTermDictionary({ active, showSidebar, showDetail
               </section>
             </section>
             <section className="research-term-editor-section" aria-labelledby="research-term-meaning-heading">
-              <div className="research-term-section-heading"><AlignLeft size={18} aria-hidden="true" /><div><h3 id="research-term-meaning-heading">{t("含义与使用")}</h3><p>{t("说明概念与使用边界，让定义更清晰。")}</p></div></div>
+              <div className="research-term-section-heading"><AlignLeft size={18} aria-hidden="true" /><h3 id="research-term-meaning-heading">{t("含义与使用")}</h3></div>
               <label className="research-term-field"><span className="research-term-field-label">{t("术语含义")}<span className="research-term-field-required">{t("必填")}</span></span><textarea className="research-term-meaning-input" aria-label={t("术语含义")} aria-required="true" rows={6} value={draft.meaning} onChange={event => setDraft({ ...draft, meaning: event.target.value })} placeholder={t("解释这个术语的概念、定义或计算含义")} /></label>
               <label className="research-term-field">{t("适用范围")}<textarea className="research-term-scope-input" aria-label={t("术语适用范围")} rows={3} value={draft.scope ?? ""} onChange={event => setDraft({ ...draft, scope: event.target.value })} placeholder={t("说明使用场景、约束或与相近概念的区别，可留空")} /></label>
               <label className="research-term-field">{t("术语标签")}<input aria-label={t("术语标签")} value={(draft.tags ?? []).join("、")} onChange={event => setDraft({ ...draft, tags: tagsFromInput(event.target.value) })} placeholder={t("例如：模型/定义、写作/规范")} /></label>
@@ -186,7 +185,7 @@ export default function ResearchTermDictionary({ active, showSidebar, showDetail
             {draft.atoms?.length ? <>
               <div className="research-term-atom-fields">{draft.atoms.map((atom, index) => <fieldset className="research-term-atom-field" key={atom.id}>
                 <legend className="visually-hidden">{t`原子词汇 ${index + 1}`}</legend>
-                <div className="research-term-atom-field-heading"><span className="research-term-atom-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><h4>{t`原子词汇 ${index + 1}`}</h4><button type="button" data-ui="icon-action" data-tone="danger" className="research-small-button" aria-label={t`删除原子词汇 ${index + 1}`} title={t`删除原子词汇 ${index + 1}`} onClick={() => removeDraftAtom(index)}><Trash2 size={14} /></button></div>
+                <div className="research-term-atom-field-heading"><span className="research-term-atom-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><h4 className="visually-hidden">{t`原子词汇 ${index + 1}`}</h4><button type="button" data-ui="icon-action" data-tone="danger" className="research-small-button" aria-label={t`删除原子词汇 ${index + 1}`} title={t`删除原子词汇 ${index + 1}`} onClick={() => removeDraftAtom(index)}><Trash2 size={14} /></button></div>
                 <label className="research-term-field">{t("原子词汇名称")}<input aria-label={t`原子词汇 ${index + 1} 名称`} value={atom.text} onChange={event => updateDraftAtom(index, { text: event.target.value })} /></label>
                 <label className="research-term-field">{t("原子词汇解释")}<textarea aria-label={t`原子词汇 ${index + 1} 解释`} rows={3} value={atom.meaning} onChange={event => updateDraftAtom(index, { meaning: event.target.value })} /></label>
               </fieldset>)}</div>

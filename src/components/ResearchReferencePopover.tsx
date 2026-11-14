@@ -26,7 +26,7 @@ function FileSource({ href }: { href: string }) {
 }
 
 export default function ResearchReferencePopover({ node, target, onApply, onDelete, onCancel }: {
-  node: EditorNode; target: HTMLElement; onApply: (source: string) => void; onDelete: () => void; onCancel: (restore?: boolean) => void;
+  node: EditorNode; target: HTMLElement; onApply: (source: string) => void; onDelete: () => void; onCancel: (restore?: boolean, nextTarget?: EventTarget | null) => void;
 }) {
   const locale = useLocale();
   const context = useContext(ResearchNoteLinkContext), ref = useRef<HTMLDivElement>(null), triggerRef = useRef(target);
@@ -73,10 +73,10 @@ export default function ResearchReferencePopover({ node, target, onApply, onDele
       onApply(`[${label.replace(/[\\[\]]/g, "\\$&")}](${selectedHref})`);
     }
   };
-  useFormulaPopover({ ref, triggerRef, getAnchor: () => target.getBoundingClientRect(), onCancel: (restore = false) => {
+  useFormulaPopover({ ref, triggerRef, getAnchor: () => target.getBoundingClientRect(), onCancel: (restore = false, nextTarget) => {
     // A nested classified picker is part of this editing session.
     if (!restore && document.querySelector('.research-selection-popup:popover-open, .research-media-preview-dialog')) return;
-    onCancel(restore);
+    onCancel(restore, nextTarget);
   } });
   return <div ref={ref} className="research-reference-popover" role="dialog" aria-label={t("编辑引用")} popover="manual"
     onPointerDown={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()}>

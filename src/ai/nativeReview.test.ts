@@ -112,7 +112,7 @@ describe('native operation review', () => {
     expect(list).not.toContain('**有效条件**');
     const table = renderReview(state, { action: 'block-update', noteId: note.id, blockId: 'table', fields: { text: '| 项 | 值 |\n| --- | --- |\n| 新值 | 2 |' } }).html;
     expect(occurrences(table, '<table>')).toBe(2);
-    expect(table).toContain('新值');
+    expect(table).toMatch(/<ins[^>]*>新<\/ins>值/);
     expect(table).not.toContain('| 新值 |');
   });
 
@@ -194,7 +194,7 @@ describe('native operation review', () => {
       englishName: '', englishAbbreviation: 'CL', chineseAbbreviation: '闭环', aliasEntries: [{ id: 'alias-1', name: '新别名' }],
       atoms: [{ id: 'atom-1', text: '闭', meaning: '闭合的路径' }, { id: 'atom-2', text: '环', meaning: '环路' }], tags: ['控制'], scope: '控制系统', status: 'deprecated',
     } });
-    for (const value of ['英文名称', 'Closed loop', '英文缩写', 'CL', '中文缩写', '别名', '新别名', '原子词汇', '闭合的路径', '适用范围', '控制系统', '标签', '控制', '状态', '已停用']) expect(html).toContain(value);
+    for (const value of ['英文名称', 'Closed loop', '英文缩写', 'CL', '中文缩写', '别名', '新别名', '原子词汇', '闭合的路径', '适用范围', '控制系统', '标签', '控制', '状态', '已停用']) expect(html.replace(/<[^>]*>/g, '')).toContain(value);
     expect(html).toContain('data-review-entry-id="alias-1"');
     expect(html).toContain('data-review-entry-id="atom-1"');
     expect(occurrences(html, '环路')).toBe(1);
@@ -237,7 +237,7 @@ describe('native operation review', () => {
     const { html } = renderReview(nestedFixture(), { action: 'block-update', noteId: 'fixture-definition', blockId: 'inside', fields: { text: '修改后的文字。' } }, true);
     expect(html).toContain('mewiki-ai-diff-number');
     expect(html).toContain('role="tablist"');
-    expect(html).toContain('<strong>修改后</strong>');
+    expect(html).toMatch(/<ins[^>]*>修改后<\/ins>/);
     expect(html).not.toContain('&quot;tabs&quot;');
   });
 });

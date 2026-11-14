@@ -1,7 +1,7 @@
 import { useLocale } from "../i18n/react.ts";
 import { t } from "../i18n/locale.ts";
 import { useEffect, useId, useImperativeHandle, useRef, useState, type KeyboardEvent, type Ref } from "react";
-import { ArrowDown, ArrowUp, AudioLines, BookOpen, BookmarkPlus, ChartNoAxesCombined, CheckSquare2, Code2, File, FileText, Film, Globe, Heading2, Image, List, ListChecks, ListOrdered, MessageSquare, Minus, MoreVertical, PanelsTopLeft, PencilRuler, Plus, Quote, RefreshCw, Search, Sigma, Square, Table2, Type, X } from "lucide-react";
+import { ArrowDown, ArrowUp, AudioLines, BookOpen, BookmarkPlus, ChartNoAxesCombined, CheckSquare2, Code2, File, FileText, Film, Globe, Heading2, Image, List, ListChecks, ListOrdered, MessageSquare, Minus, MoreVertical, PanelsTopLeft, PencilRuler, Plus, Quote, RefreshCw, Search, Sigma, Sparkles, Square, Table2, Type, X } from "lucide-react";
 import type { ResearchContentType } from "../domain/researchNotebook.ts";
 import { theoryAreaLabels, type TheoryContentArea } from "../domain/researchTheorySections.ts";
 import { useFormulaPopover } from "./useFormulaPopover.ts";
@@ -56,7 +56,7 @@ const insertionGroups = () => ([
   ] },
 ] satisfies { name: string; items: { type: BlockType; label: string; description: string; icon: typeof Type }[] }[]).map(group => ({ ...group, id: group.name, name: t(group.name), items: group.items.map(item => ({ ...item, label: t(item.label), description: t(item.description) })) }));
 
-function InsertPopover({ trigger, mode, position, currentType, canInsertEvidence, canChangeType, onModeChange, onInsert, onChangeType, onClose, contentArea, chapter, onAreaChange }: {
+function InsertPopover({ trigger, mode, position, currentType, canInsertEvidence, canChangeType, onModeChange, onInsert, onChangeType, onSendToAi, onClose, contentArea, chapter, onAreaChange }: {
   trigger: HTMLButtonElement;
   mode: PickerMode;
   position?: BlockInsertPosition;
@@ -66,6 +66,7 @@ function InsertPopover({ trigger, mode, position, currentType, canInsertEvidence
   onModeChange: (mode: PickerMode, position?: BlockInsertPosition) => void;
   onInsert: (type: BlockType, position?: BlockInsertPosition, provider?: string) => void;
   onChangeType: (type: BlockType) => void;
+  onSendToAi?: (anchor: DOMRect) => void;
   onClose: (restoreFocus?: boolean) => void;
   contentArea?: TheoryContentArea;
   chapter?: boolean;
@@ -112,6 +113,7 @@ function InsertPopover({ trigger, mode, position, currentType, canInsertEvidence
       <button type="button" data-menu-action="above" onClick={() => onModeChange("insert", "above")}><ArrowUp size={15} /><span>{t("上方插入")}</span></button>
       <button type="button" data-menu-action="below" onClick={() => onModeChange("insert", "below")}><ArrowDown size={15} /><span>{t("下方插入")}</span></button>
       <button type="button" data-menu-action="change" disabled={!canChangeType} title={!canChangeType ? t("该公式仍存在来源关联，解除关联后才能更改类型") : undefined} onClick={() => onModeChange("change")}><RefreshCw size={15} /><span>{t("更改类型")}</span></button>
+      {onSendToAi && <button type="button" data-menu-action="ai" onClick={() => { const anchor = trigger.getBoundingClientRect(); onClose(); onSendToAi(anchor); }}><Sparkles size={15} /><span>{t("发送到 AI")}</span></button>}
       {onAreaChange && <div className="research-block-section-options">
         <strong>{chapter ? t("分区 · 本节及下级内容") : t("内容分区")}</strong>
         {(["given", "conclusion", "derivation"] as const).map((area) => <button type="button" key={area} data-menu-action={`section-${area}`} aria-pressed={(contentArea ?? "derivation") === area}
@@ -142,7 +144,7 @@ function InsertPopover({ trigger, mode, position, currentType, canInsertEvidence
   </div>;
 }
 
-export default function ResearchBlockInsert({ ref, atEnd = false, currentType, canInsertEvidence, canChangeType = true, onInsert, onChangeType, contentArea, onAreaChange, insertionLabel, dragHandle }: {
+export default function ResearchBlockInsert({ ref, atEnd = false, currentType, canInsertEvidence, canChangeType = true, onInsert, onChangeType, onSendToAi, contentArea, onAreaChange, insertionLabel, dragHandle }: {
   ref?: Ref<ResearchBlockInsertHandle>;
   atEnd?: boolean;
   currentType?: BlockType;
@@ -150,6 +152,7 @@ export default function ResearchBlockInsert({ ref, atEnd = false, currentType, c
   canChangeType?: boolean;
   onInsert: (type: BlockType, position?: BlockInsertPosition, provider?: string) => void;
   onChangeType?: (type: BlockType) => void;
+  onSendToAi?: (anchor: DOMRect) => void;
   contentArea?: TheoryContentArea;
   onAreaChange?: (area: TheoryContentArea) => void;
   insertionLabel?: string;
@@ -178,6 +181,7 @@ export default function ResearchBlockInsert({ ref, atEnd = false, currentType, c
       onClick={(event) => trigger ? close() : setTrigger(event.currentTarget)}>{atEnd ? <Plus size={16} /> : dragHandle?.selected ? <CheckSquare2 size={16} /> : dragHandle?.selecting ? <Square size={16} /> : <MoreVertical size={16} />}</button>
     {trigger && <InsertPopover key={`${trigger.dataset.blockId ?? "tail"}:${mode}`} trigger={trigger} mode={mode} position={position} currentType={currentType}
       canInsertEvidence={canInsertEvidence} canChangeType={canChangeType} onModeChange={chooseMode} onInsert={onInsert} onChangeType={onChangeType ?? (() => {})} onClose={close}
+      onSendToAi={atEnd ? undefined : onSendToAi}
       contentArea={contentArea} chapter={currentType === "heading"} onAreaChange={onAreaChange} />}
   </div>;
 }

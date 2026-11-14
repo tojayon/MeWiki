@@ -17,7 +17,7 @@
   border-radius: 4px;
   padding: 7px 10px;
   background: transparent;
-  color: #172033;
+  color: var(--mewiki-ui-ink);
   font: inherit;
   font-size: calc(var(--mewiki-interface-unit, 1px) * 12);
   line-height: 1.5;
@@ -34,8 +34,8 @@
   overflow-wrap: anywhere;
 }
 :root button[data-ui="menu-action"]:is(:hover, :focus-visible):not(:disabled) {
-  background: #eaf0ff;
-  color: #123c9b;
+  background: var(--mewiki-ui-selected);
+  color: var(--mewiki-ui-accent);
 }
 :root button[data-ui="menu-action"][data-tone="danger"] {
   color: #a32236;
@@ -48,9 +48,9 @@
 /* Explicit opt-in: tabs, packet cards, scene labels and mode choices keep their semantics. */
 :root button[data-ui="icon-action"][aria-label] {
   --action-size: 28px;
-  --action-ink: #172033;
-  --action-accent: #1547c0;
-  --action-hover: #e6edfa;
+  --action-ink: var(--mewiki-ui-ink);
+  --action-accent: var(--mewiki-ui-accent);
+  --action-hover: var(--mewiki-ui-hover);
   display: inline-flex;
   box-sizing: border-box;
   width: var(--action-size);

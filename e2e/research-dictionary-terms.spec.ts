@@ -95,7 +95,7 @@ for (const kind of ["term", "symbol"] as const) test(`opens the referenced ${kin
   await page.locator("#research-notebook-sidebar").getByRole("button", { name: "导航检查", exact: true }).click();
   const body = page.locator('[data-block-id="navigate-body"]');
   await body.getByRole("button", { name: kind === "term" ? "术语：术语乙" : "符号：符号乙", exact: true }).click();
-  if (kind === "term") await page.getByRole("dialog", { name: "术语解释", exact: true }).getByRole("button", { name: "打开词典词条", exact: true }).click();
+  await page.getByRole("dialog", { name: kind === "term" ? "术语解释" : "符号含义与推导来源", exact: true }).getByRole("button", { name: "打开词典词条", exact: true }).click();
   await expect(page.locator(".research-symbol-title")).toHaveText(kind === "term" ? "术语乙" : "符号乙");
   await expect(page.getByRole("region", { name: kind === "term" ? "术语词条详情" : "符号词条详情", exact: true })).toBeVisible();
 });
@@ -268,6 +268,11 @@ test("keeps dictionary references quiet until hover and opens the matching expla
   await currentSymbolReference.hover();
   expect(await currentSymbolReference.evaluate(element => getComputedStyle(element).textDecorationStyle)).toBe("dashed");
   await currentSymbolReference.click();
+  const symbolPopover = page.getByRole("dialog", { name: "符号含义与推导来源", exact: true });
+  await expect(symbolPopover).toContainText("状态含义");
+  await expect(noteBody).toBeVisible();
+  await expect(panel.getByRole("tab", { name: "研究记录", exact: true })).toHaveAttribute("aria-selected", "true");
+  await symbolPopover.getByRole("button", { name: "打开词典词条", exact: true }).click();
   await expect(panel.getByRole("tab", { name: "符号", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(panel.getByRole("heading", { name: "统一状态", exact: true })).toBeVisible();
 });

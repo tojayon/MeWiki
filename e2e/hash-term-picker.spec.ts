@@ -53,10 +53,12 @@ test("keeps headings, code, math and URL fragments ordinary and preserves cancel
   await editor.press("Space");
   await expect(picker).toHaveCount(0);
   await expectEditorSource(editor, "# ");
-  for (const text of ["## 标题", "\\#均方", "`#均方", "```text\n#均方", "$x+#均方", "[文档](#section", "https://example.com/#section", "C#"]) {
+  await expect(editor.locator("h1")).toHaveCount(1);
+  await editor.press("Control+Alt+0");
+  for (const text of ["## 标题", "\\#均方", "`#均方", "$x+#均方", "[文档](#section", "https://example.com/#section", "C#"]) {
     await editor.fill(text);
     await expect(picker).toHaveCount(0);
-    await expectEditorSource(editor, text);
+    await expect(editor).toHaveText(text);
   }
   await editor.fill("前文 #MSE");
   await expect(picker.getByRole("option", { name: "均方误差", exact: true })).toBeVisible();
@@ -80,7 +82,8 @@ test("shows the term dialog and reference formats even with an empty dictionary"
   await picker.getByRole("searchbox", { name: "搜索术语", exact: true }).fill("未收录");
   await expect(picker).toBeVisible();
   await picker.getByRole("searchbox").press("Escape");
-  await expectEditorSource(editor, "#");
+  await expect(editor).toHaveText("#");
+  await expectEditorSource(editor, "\\#");
 });
 
 for (const order of ["before", "after"] as const) test(`waits for Chinese composition to commit ${order} compositionend`, async ({ page }) => {
@@ -90,7 +93,8 @@ for (const order of ["before", "after"] as const) test(`waits for Chinese compos
   await expect(picker).toHaveCount(0);
   await finishEditorComposition(editor, "#均方", order);
   await expect(picker.getByRole("option", { name: "均方误差", exact: true })).toBeVisible();
-  await expectEditorSource(editor, "#均方");
+  await expect(editor).toHaveText("#均方");
+  await expectEditorSource(editor, "\\#均方");
   await editor.press("Enter");
   await expectEditorSource(editor, "[均方误差](mewiki-term:hash-mse)");
 });

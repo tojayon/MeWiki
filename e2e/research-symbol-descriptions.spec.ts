@@ -120,6 +120,29 @@ test("creates and reads explanations for empty positions on a narrow screen with
   await expect(diagram.getByLabel("右下角标 x2说明", { exact: true })).toContainText("即使当前未填写取值");
   expect(await panel.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await panel.getByRole("button", { name: "收起笔记左侧面板", exact: true }).click();
-  await expect.poll(() => diagram.evaluate(element => element.clientWidth)).toBeGreaterThan(300);
+  const leftRibbon = panel.locator(".research-notebook-mode-tabs.research-sidebar-ribbon");
+  const rightRibbon = panel.locator(".research-sidebar-ribbon.is-right");
+  await expect(leftRibbon).toBeVisible();
+  await expect(rightRibbon).toBeVisible();
+  await expect.poll(() => diagram.evaluate(element => {
+    const detail = element.closest(".research-symbol-detail")!;
+    const style = getComputedStyle(detail);
+    const availableWidth = detail.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    return Math.abs(element.getBoundingClientRect().width - availableWidth);
+  })).toBeLessThanOrEqual(1);
+  const diagramBox = (await diagram.boundingBox())!;
+  const leftBox = (await leftRibbon.boundingBox())!;
+  const rightBox = (await rightRibbon.boundingBox())!;
+  expect(leftBox.width).toBeCloseTo(44, 0);
+  expect(rightBox.width).toBeCloseTo(44, 0);
+  expect(diagramBox.x).toBeGreaterThanOrEqual(leftBox.x + leftBox.width);
+  expect(diagramBox.x + diagramBox.width).toBeLessThanOrEqual(rightBox.x);
+  expect(await diagram.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  for (const position of positions) {
+    const explanation = diagram.getByLabel(position + "说明", { exact: true });
+    await explanation.scrollIntoViewIfNeeded();
+    await expect(explanation).toBeInViewport();
+    expect(await explanation.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  }
   await diagram.screenshot({ path: testInfo.outputPath("position-explanations-mobile.png") });
 });

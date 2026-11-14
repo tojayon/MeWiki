@@ -1,4 +1,3 @@
-import { closeSettingsPage } from "./helpers/settings.ts";
 import { expect, test, type Page } from '@playwright/test';
 import { createNotebookFixture } from '../src/domain/testUtils/notebook.ts';
 import { createResearchNote } from '../src/domain/researchNotebook.ts';
@@ -22,7 +21,7 @@ async function chooseLanguage(page: Page, language: 'en' | 'zh-CN') {
   await page.getByRole('button', { name: /^(Interface language|界面语言)$/ }).click();
   const settings = page.getByTestId('mewiki-language-settings');
   await settings.getByRole('radio', { name: language === 'en' ? /English/ : /简体中文/ }).check();
-  await closeSettingsPage(page);
+  await page.keyboard.press('Escape');
 }
 
 test('keeps existing audio and video playback errors in the selected interface language', async ({ page }) => {

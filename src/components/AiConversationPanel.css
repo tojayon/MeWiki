@@ -1,0 +1,15 @@
+.mewiki-ai-conversation-control { display: flex; flex: 0 0 auto; align-items: center; }
+.mewiki-ai-conversation-panel { position: absolute; z-index: 4; right: 10px; bottom: calc(100% + 8px); left: 10px; overflow: hidden; min-width: 0; border: 1px solid #dce1e8; border-radius: 4px; background: #fff; color: #38485f; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.6; }
+.mewiki-ai-conversation-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; box-sizing: border-box; border-bottom: 1px solid #e5e8ed; padding: 5px 10px; }
+.mewiki-ai-conversation-panel > header > strong { font-size: inherit; font-weight: 500; }
+.mewiki-ai-conversation-panel button { display: flex; min-width: 0; align-items: center; gap: 7px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.mewiki-ai-conversation-panel > header > button { min-height: 28px; padding: 3px 6px; }
+.mewiki-ai-conversation-panel button:hover:not(:disabled) { background: #f2f4f7; }
+.mewiki-ai-conversation-panel button:disabled { opacity: .5; cursor: default; }
+.mewiki-ai-conversation-panel .mewiki-ai-conversation-list { max-height: min(320px, var(--ai-conversations-max-height, 320px)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; box-sizing: border-box; margin: 0; padding: 4px; list-style: none; }
+.mewiki-ai-conversation-list > li > button { width: 100%; min-height: 38px; padding: 6px; }
+.mewiki-ai-conversation-list > li > button[aria-current=true] { background: #f2f4f7; color: #192436; }
+.mewiki-ai-conversation-list button > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-ai-conversation-list button > svg { flex: 0 0 auto; color: #718094; }
+.mewiki-ai-conversation-list time { flex: 0 0 auto; color: #718094; font-size: calc(var(--mewiki-interface-unit, 1px) * 10); white-space: nowrap; }
+@media (pointer: coarse) { .mewiki-ai-conversation-list > li > button { min-height: 44px; } }

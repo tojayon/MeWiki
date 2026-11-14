@@ -112,6 +112,8 @@ test("keeps navigation unavailable while checking a storage path", async ({ page
     await settings.getByLabel("本地保存路径", { exact: true }).fill("D:\\Examples\\Test library");
     await settings.getByRole("button", { name: "检查路径", exact: true }).click();
     await expect(settings.getByRole("button", { name: "返回笔记", exact: true })).toBeDisabled();
+    await expect(page.getByTestId('mewiki-ai-launcher')).toBeVisible();
+    await expect(page.getByTestId('mewiki-ai-launcher')).toBeDisabled();
     await expect(settings.getByRole("searchbox", { name: "搜索设置", exact: true })).toBeDisabled();
     await expect(settings.getByRole("link", { name: "通用", exact: true })).toHaveAttribute("aria-disabled", "true");
     await expect(settings.getByRole("status").last()).toContainText("操作进行中");
@@ -120,4 +122,5 @@ test("keeps navigation unavailable while checking a storage path", async ({ page
   } finally { finishInspection(); }
   await expect(settings.getByText("此目录将创建新资料库", { exact: true })).toBeVisible();
   await expect(settings.getByRole("button", { name: "返回笔记", exact: true })).toBeEnabled();
+  await expect(page.getByTestId('mewiki-ai-launcher')).toBeEnabled();
 });

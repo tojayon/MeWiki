@@ -1,6 +1,25 @@
-.research-reference-editor { min-width: 0; cursor: text; }
-.research-reference-content { min-width: 0; min-height: 1lh; outline: none; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: inherit; font: inherit; color: inherit; caret-color: #172033; }
+.research-reference-editor { position: relative; min-width: 0; cursor: text; }
+.research-reference-editor.research-text-source { overflow: visible; }
+.research-reference-content { min-width: 0; min-height: 1lh; outline: none; white-space: normal; overflow-wrap: anywhere; tab-size: inherit; font: inherit; color: inherit; caret-color: #172033; }
 .research-reference-line { margin: 0; padding: 0; min-height: 1lh; white-space: inherit; }
+.research-reference-content > :first-child { margin-top: 0; }
+.research-reference-content > :last-child { margin-bottom: 0; }
+.research-reference-content .research-list-item-content { display: contents; }
+.research-reference-content li > .research-list-item-content > p { margin: calc(var(--mewiki-document-unit, 1px) * 3) 0; }
+.research-reference-content :is(ul, ol)[data-tight="true"] > li > .research-list-item-content > p { margin: 0; }
+.research-reference-content li:has(> .research-list-item-content > :is(ul, ol)) > .research-list-item-content > :is(ul, ol) { margin-block: calc(var(--mewiki-document-unit, 1px) * 2); }
+.research-reference-content .task-list-item > input { float: left; margin-top: .35em; }
+.research-markdown[data-plain-text="true"] .research-reference-content > .research-reference-line { margin: 0; white-space: pre-wrap; }
+.research-table-cell-editor .research-reference-content > p { margin: 0; }
+.research-reference-content .research-heading-number { user-select: none; }
+.research-markdown[data-kind="list"] .research-reference-content > ul { margin: 0; padding: 4px 6px 4px calc(var(--mewiki-document-unit, 1px) * 24); color: #25364d; font-size: calc(var(--mewiki-document-unit, 1px) * 15); line-height: 1.72; }
+.research-reference-content p:has(> br.ProseMirror-trailingBreak:only-child)::before { content: attr(data-placeholder); pointer-events: none; color: #7a8494; }
+:root .research-reference-editor > .research-text-view-toggle[data-ui="icon-action"][aria-label] { position: absolute; right: 0; top: -22px; --action-size: 22px; opacity: 0; }
+:root .research-reference-editor:is(:hover, :focus-within) > .research-text-view-toggle[data-ui="icon-action"][aria-label] { opacity: 1; }
+:root .research-note-block > .research-text-view-toggle[data-ui="icon-action"][aria-label] { position: absolute; z-index: 1; right: 4px; top: 6px; --action-size: 22px; opacity: 0; }
+:root .research-note-block:is(:hover, :focus-within) > .research-text-view-toggle[data-ui="icon-action"][aria-label],
+:root .research-text-view-toggle[data-ui="icon-action"][aria-label]:focus-visible { opacity: 1; }
+.research-markdown-source { min-height: 3lh; font-family: Consolas, "Cascadia Code", monospace; }
 /* Keep the browser caret helper inline; Markdown image styles must not add a blank row. */
 .research-reference-content img.ProseMirror-separator { display: inline; width: 0; height: 0; max-width: none; margin: 0; padding: 0; border: 0; }
 .research-reference-line:has(> br.ProseMirror-trailingBreak:only-child)::before { content: attr(data-placeholder); pointer-events: none; color: #7a8494; }
@@ -9,7 +28,6 @@
 .research-reference-atom:hover { color: #1547c0; text-decoration: underline; text-decoration-color: #779bcd; text-underline-offset: 3px; }
 .research-reference-atom:is(.ProseMirror-selectednode, :focus-visible) { background: #eaf1ff; }
 .research-reference-atom.is-missing { color: #a45748; }
-.research-reference-atom .katex { font-size: 1.05em; }
 .research-reference-atom[data-reference-kind="symbol"] { display: inline-block; white-space: nowrap; }
 .research-reference-popover { position: fixed; inset: auto; box-sizing: border-box; width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); margin: 0; padding: 0; overflow: auto; border: 1px solid #c7d3e3; border-radius: 4px; background: #fff; color: #172033; box-shadow: 0 8px 30px #17355626; font: calc(var(--mewiki-interface-unit, 1px) * 13)/1.6 var(--mewiki-interface-font-family, system-ui, sans-serif); }
 .research-reference-popover > header { display: flex; height: 44px; box-sizing: border-box; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #e4eaf2; padding: 0 14px; }
@@ -29,5 +47,5 @@
 .research-reference-popover > footer > .is-primary { border-color: #1547c0; background: #1547c0; color: #fff; }
 .research-reference-popover > footer > .research-reference-remove { border-color: transparent; color: #b33343; padding-inline: 4px; }
 .research-reference-popover button:disabled { opacity: .45; cursor: not-allowed; }
-.research-reference-editor.research-table-cell-editor { overflow: auto; }
+.research-reference-editor.research-table-cell-editor { position: absolute; overflow: auto; }
 @media (max-width: 480px) { .research-reference-popover-body { gap: 12px; padding: 12px; } .research-reference-popover > footer { gap: 4px; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); } }

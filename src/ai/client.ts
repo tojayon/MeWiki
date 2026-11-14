@@ -1,5 +1,6 @@
 import type { AiCompletion, AiConnectionTest, AiMessage, AiSettings, AiSettingsInput, AiStreamEvent, AiToolDefinition, AiToolStreamUpdate } from './types.ts';
 import { checkedResponsesReasoning } from './types.ts';
+import { AiRequestError, aiHttpFailure, restoreAiFailure } from './failures.ts';
 
 const base = '/api/mewiki/ai';
 const headers = { 'Content-Type': 'application/json', 'X-MeWiki-Request': 'ai' };
@@ -9,8 +10,9 @@ async function checkedFetch(path: string, init: RequestInit) {
   const response = await fetch(`${base}${path}`, { ...init, headers, redirect: 'error', credentials: 'same-origin' });
   if (!response.ok) {
     let error = 'AI 服务请求失败。';
-    try { const payload = await response.json(); if (typeof payload.error === 'string') error = payload.error.slice(0, 500); } catch { /* Never expose raw upstream errors. */ }
-    throw new Error(error);
+    let failure = aiHttpFailure(response.status);
+    try { const payload = await response.json(); if (typeof payload.error === 'string') error = payload.error.slice(0, 500); failure = restoreAiFailure(payload.failure) ?? failure; } catch { /* Never expose raw upstream errors. */ }
+    throw new AiRequestError(error, failure);
   }
   return response;
 }
@@ -50,7 +52,7 @@ export async function completeAi(request: AiChatRequest, options: { signal?: Abo
     options.signal?.throwIfAborted();
     if (result) throw new Error('AI 响应格式无效。');
     const event: AiStreamEvent = JSON.parse(line);
-    if (event.type === 'error') throw new Error(typeof event.error === 'string' ? event.error.slice(0, 500) : 'AI 服务请求失败。');
+    if (event.type === 'error') throw new AiRequestError(typeof event.error === 'string' ? event.error.slice(0, 500) : 'AI 服务请求失败。', restoreAiFailure(event.failure) ?? { kind: 'response', recovery: 'retry' });
     if (event.type === 'text') {
       if (typeof event.text !== 'string') throw new Error('AI 响应格式无效。');
       options.onText?.(event.text);

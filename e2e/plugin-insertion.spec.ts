@@ -4,7 +4,7 @@ import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { enableNotebookEditing, runNotebookAction } from './helpers/researchNotebook.ts';
 
-const settings = path.resolve('.mewiki/media-e2e-settings.json');
+const settings = path.resolve(process.env.MEWIKI_RESEARCH_SETTINGS || '.mewiki/media-e2e-settings.json');
 const item = { id: 'catalog-record', file: 'examples/fixture.replay.sqlite', manifest: {
   format: 'cislunar-replay-sqlite/v2', sealed: true, run: { id: 'test-run', title: '可选择的实验' },
   recordDigest: 'a'.repeat(64), timeBase: { unit: 's', origin: 'scenario', start: 0, end: 0.8 }, loopIds: ['rc_slow'],

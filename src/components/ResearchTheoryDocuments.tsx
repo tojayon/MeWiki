@@ -130,7 +130,6 @@ export default function ResearchTheoryDocuments({
   onToggleReadOnly,
   onOpenContent,
   windowActions,
-  pageControls,
 }: {
   active: boolean;
   sidebarActive: boolean;
@@ -140,7 +139,6 @@ export default function ResearchTheoryDocuments({
   onToggleReadOnly: () => void;
   onOpenContent: (ref: TheoryReference) => void;
   windowActions: ReactNode;
-  pageControls: ReactNode;
 }) {
   useLocale();
   const files = useTheoryMapFiles(state, onChange);
@@ -263,7 +261,6 @@ export default function ResearchTheoryDocuments({
           role="toolbar"
           aria-label={t("地图文档管理")}
         >
-          {pageControls}
           <div className="research-page-tags" />
           <div className="research-page-tools" role="toolbar" aria-label={t("理论地图功能")}>
             <div className="research-page-tool-actions">

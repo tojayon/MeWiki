@@ -3,6 +3,15 @@ import { completeAi } from './client.ts';
 
 afterEach(() => vi.unstubAllGlobals());
 describe('AI streaming client', () => {
+  it('keeps typed recoveries for HTTP and stream errors without accepting malformed retry timestamps', async () => {
+    const failure = { kind: 'rate-limit', recovery: 'retry', status: 429, retryAt: Date.now() + 4000 };
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ error: '受限', failure }), { status: 429 }));
+    await expect(completeAi({ providerId: 'a', messages: [] })).rejects.toMatchObject({ failure });
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ type: 'error', error: '受限', failure }) + '\n'));
+    await expect(completeAi({ providerId: 'a', messages: [] })).rejects.toMatchObject({ failure });
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ type: 'error', error: '中断', failure: { ...failure, retryAt: 'invalid' } }) + '\n'));
+    await expect(completeAi({ providerId: 'a', messages: [] })).rejects.toMatchObject({ failure: { kind: 'response', recovery: 'retry' } });
+  });
   it('forwards validated tool deltas and refuses malformed, oversized and late events', async () => {
     const update = { key: 'call-0', name: 'propose_note', arguments: '{"content":"草稿' };
     const done = { type: 'done', result: { message: { role: 'assistant', content: '' }, usage: { inputTokens: 1, outputTokens: 1 } } };

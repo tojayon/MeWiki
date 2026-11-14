@@ -58,9 +58,9 @@ describe("rendered reference documents", () => {
   it("preserves every line when browsers insert separate paragraphs or breaks", () => {
     const paragraph = referenceEditorSchema.nodes.paragraph;
     const doc = referenceEditorSchema.nodes.doc.create(null, [paragraph.create(null, referenceEditorSchema.text("第一行")), paragraph.create(null, referenceEditorSchema.text("第二行"))]);
-    expect(referenceDocumentSource(doc)).toBe("第一行\n第二行");
-    expect(referenceSourceOffset(doc, 6)).toBe(4);
-    expect(referencePositionAt(doc, 4)).toBe(6);
+    expect(referenceDocumentSource(doc)).toBe("第一行\n\n第二行");
+    expect(referenceSourceOffset(doc, 6)).toBe(5);
+    expect(referencePositionAt(doc, 5)).toBe(6);
   });
 
   it("makes reference-style links self-contained on the clipboard without changing their original source", () => {

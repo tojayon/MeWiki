@@ -35,6 +35,6 @@ New locales should extend the locale type, detection, catalog selection, languag
 
 ## 截图更新 · Gallery
 
-执行 `npm run build` 后运行 `npm run docs:screenshots`。需要安装 Microsoft Edge；如需安装浏览器，可使用 Playwright 的标准安装流程。截图脚本启动独立 5282 预览，仅使用内置虚构示例，拦截资料库 API，不读取真实笔记和设置。生成 8 张图片到 `docs/assets/`，普通浏览器回归默认跳过此任务，避免意外改写公开图片。
+执行 `npm run build` 后运行 `npm run docs:screenshots`。需要安装 Microsoft Edge；如需安装浏览器，可使用 Playwright 的标准安装流程。截图脚本启动独立 5282 预览，仅使用内置虚构示例，拦截资料库与 AI API，不读取真实笔记和设置，也不调用真实模型。生成 11 张图片到 `docs/assets/`，包括中英文工作区、正文排版编辑、公式、词典、引用、数据图表、地图、资料库及 AI 对话和原位审阅；普通浏览器回归默认跳过此任务，避免意外改写公开图片。
 
 After building, run `npm run docs:screenshots` to recreate the eight screenshots using isolated fictional data. Review the images visually before publishing. The screenshot suite refuses other ports and does not use real libraries.

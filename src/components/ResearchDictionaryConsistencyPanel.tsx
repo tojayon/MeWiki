@@ -13,6 +13,7 @@ import {
   type ResearchTermEntry,
 } from "../domain/researchTerms.ts";
 import "./ResearchDictionary.css";
+import UiInfo from './UiInfo.tsx';
 
 type DictionaryEntry = ResearchSymbolEntry | ResearchTermEntry;
 type DictionaryTextField = "text" | "callout-title" | "note" | "list";
@@ -108,10 +109,9 @@ export default function ResearchDictionaryConsistencyPanel({ kind, entry, state,
   };
   return <section className="research-dictionary-consistency" aria-label={t("一致性检查")}>
     <header className="research-dictionary-consistency-header">
-      <div><ScanSearch size={15} aria-hidden="true" /><strong>{t("一致性检查")}</strong><span>{hits.length}</span></div>
+      <div><ScanSearch size={15} aria-hidden="true" /><strong>{t("一致性检查")}</strong><span>{hits.length}</span><UiInfo label={t('一致性检查说明')}><p>{t("扫描正文中的名称、别名、英文名称和缩写；代码、链接、数学公式与 URL 会自动跳过。绑定后按词典名称显示，替换只修改当前文字。")}</p></UiInfo></div>
       <button type="button" data-ui="icon-action" className="research-small-button" aria-label={t("关闭一致性检查")} title={t("关闭一致性检查")} onClick={onClose}><X size={14} /></button>
     </header>
-    <p className="research-dictionary-consistency-help">{t("扫描正文中的名称、别名、英文名称和缩写；代码、链接、数学公式与 URL 会自动跳过。绑定后按词典名称显示，替换只修改当前文字。")}</p>
     {hits.length ? <ul className="research-dictionary-consistency-list">
       {hits.map(hit => <li key={`${hit.key}:${hit.start}:${hit.end}`} className="research-dictionary-consistency-hit">
         <div className="research-dictionary-consistency-context">{renderContext(hit.context, hit.matchedText)}</div>

@@ -17,7 +17,7 @@ describe('AI review transactions', () => {
     expect(preview.after).toEqual({ ...applied, updatedAt: preview.target === 'note' ? preview.after.updatedAt : undefined });
     expect(state).toEqual(before);
     const changed = structuredClone(state); changed.notes.find(item => item.id === note.id)!.title = '手工改过';
-    expect(() => previewAiProposal(changed, proposal, 'a')).toThrow(/已变化/);
+    expect(previewAiProposal(changed, proposal, 'a').before).toMatchObject({ title: '手工改过' });
     expect(() => previewAiProposal(state, proposal, 'b')).toThrow(/资料库/);
   });
 
@@ -78,6 +78,8 @@ describe('AI review transactions', () => {
     const proposal = createNoteProposal(state, 'a', { operation: 'append', noteId: note.id, content: '补充内容。', title: note.title });
     expect(() => applyAiProposal(state, proposal, 'b')).toThrow(/资料库/);
     const changed = structuredClone(state); changed.notes[0].title = '用户刚修改的标题';
+    expect(() => applyAiProposal(changed, proposal, 'a')).not.toThrow();
+    changed.notes[0].blocks.push({ id: 'manual-tail', type: 'paragraph', text: '用户改变了追加位置' });
     expect(() => applyAiProposal(changed, proposal, 'a')).toThrow(/已变化/);
     const applied = applyAiProposal(state, proposal, 'a');
     const later = structuredClone(applied.state); later.notes[0].title = '应用之后的编辑';
@@ -106,7 +108,7 @@ describe('AI review transactions', () => {
     expect(() => createTermProposal(state, 'a', { name: '', meaning: '' })).toThrow();
   });
 
-  it('allows independent suggestions from the same task to follow only known applied changes', () => {
+  it('allows independent suggestions after approved changes and unrelated manual edits', () => {
     const state = createNotebookFixture();
     const note = state.notes.find(item => item.id === 'fixture-definition')!;
     note.blocks.push({ id: 'second', type: 'paragraph', text: '第二段。' });
@@ -116,7 +118,7 @@ describe('AI review transactions', () => {
     const two = applyAiProposal(one.state, second, 'a', [one.change]);
     expect(two.state.notes.find(item => item.id === note.id)!.blocks[1]).toMatchObject({ text: '第二段修改。' });
     const edited = structuredClone(one.state); edited.notes.find(item => item.id === note.id)!.title = '用户并发编辑';
-    expect(() => applyAiProposal(edited, second, 'a', [one.change])).toThrow(/已变化/);
+    expect(applyAiProposal(edited, second, 'a', [one.change]).state.notes.find(item => item.id === note.id)!.title).toBe('用户并发编辑');
   });
 
   it.each(['text-first', 'tab-first'])('chains legacy text and native tab edits in %s order and undoes in reverse', order => {
@@ -127,10 +129,11 @@ describe('AI review transactions', () => {
     const first = order === 'text-first' ? text : tab, second = order === 'text-first' ? tab : text;
     const one = applyAiProposal(state, first, 'a');
     const user = structuredClone(one.state); user.notes.find(item => item.id === note.id)!.title = '后续用户修改';
-    expect(() => applyAiProposal(user, second, 'a', [one.change])).toThrow(/变化/);
-    expect(() => applyAiProposal(one.state, second, 'a')).toThrow(/变化/);
-    expect(() => applyAiProposal(one.state, second, 'a', [{ ...one.change, baseline: '{invalid' }])).toThrow(/变化/);
-    expect(() => applyAiProposal(one.state, second, 'a', [{ ...one.change, after: '{invalid' }])).toThrow(/变化/);
+    expect(() => applyAiProposal(user, second, 'a', [one.change])).not.toThrow();
+    expect(() => applyAiProposal(one.state, second, 'a')).not.toThrow();
+    // Approval no longer needs history to establish field independence.
+    expect(() => applyAiProposal(one.state, second, 'a', [{ ...one.change, baseline: '{invalid' }])).not.toThrow();
+    expect(() => applyAiProposal(one.state, second, 'a', [{ ...one.change, after: '{invalid' }])).not.toThrow();
     const two = applyAiProposal(one.state, second, 'a', [one.change]);
     expect(two.state.notes.find(item => item.id === note.id)!.blocks[0]).toMatchObject({ tabs: [{ title: '新标签', blocks: [{ text: '批准的新说明' }] }] });
     const secondUndone = undoAiChange(two.state, two.change, 'a');

@@ -1,11 +1,42 @@
 import { describe, expect, it } from 'vitest';
-import { aiHistoryContextKey, createAiSession, readAiSession, writeAiSession } from './session.ts';
+import { aiHistoryContextKey, createAiSession, isAiProposalApplied, readAiSession, writeAiSession } from './session.ts';
 import { createNotebookFixture } from '../domain/testUtils/notebook.ts';
 import { createNoteProposal } from './proposals.ts';
+import { applyAiProposalGroup } from './proposalGroup.ts';
 
 describe('library-scoped AI sessions', () => {
   const storage = () => { const data = new Map<string, string>(); return { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); } }; };
   const usageRecord = (index: number) => ({ prompt: `提问 ${index}`, providerName: '测试服务', model: 'test-model', inputTokens: index * 10, outputTokens: index, completedAt: '2026-11-12T10:00:00.000Z' });
+  it('distinguishes active approvals from undone history and keeps merged suggestions applied', () => {
+    const state = createNotebookFixture(), proposal = createNoteProposal(state, 'a', { operation: 'append', noteId: 'fixture-definition', content: '可反复审阅的建议' });
+    const approved = applyAiProposalGroup(state, [proposal], 'a');
+    const session = { ...createAiSession('a'), proposals: [proposal], appliedIds: [proposal.id], changes: approved.changes };
+    expect(isAiProposalApplied(session, proposal.id)).toBe(true);
+    expect(isAiProposalApplied({ ...session, changes: [] }, proposal.id)).toBe(false);
+    expect(isAiProposalApplied({ ...session, changes: [], mergedIds: [proposal.id] }, proposal.id)).toBe(true);
+    const store = storage(); writeAiSession({ ...session, changes: [] }, store);
+    expect(isAiProposalApplied(readAiSession('a', store), proposal.id)).toBe(false);
+    expect(readAiSession('a', store).appliedIds).toEqual([proposal.id]);
+  });
+  it('ignores malformed merge metadata while restoring a rejected undone suggestion and its messages', () => {
+    const state = createNotebookFixture(), proposal = createNoteProposal(state, 'a', { operation: 'append', noteId: 'fixture-definition', content: '撤回后拒绝' });
+    const store = storage(), session = { ...createAiSession('a'), proposals: [proposal], appliedIds: [proposal.id], rejectedIds: [proposal.id], history: [{ role: 'user' as const, content: '保留这次对话' }] };
+    for (const mergedIds of [{ invalid: true }, 'invalid', [proposal.id, 123]]) {
+      store.setItem('mewiki:library:a:ai-session:v1', JSON.stringify({ ...session, mergedIds }));
+      expect(readAiSession('a', store)).toMatchObject({ proposals: [proposal], appliedIds: [proposal.id], rejectedIds: [proposal.id], history: session.history, mergedIds: [] });
+    }
+    writeAiSession({ ...session, mergedIds: [proposal.id] }, store);
+    expect(readAiSession('a', store).rejectedIds).toEqual([]);
+  });
+  it('restores optional conversation identity without letting malformed metadata discard messages', () => {
+    const store = storage(), session = { ...createAiSession('a'), history: [{ role: 'user' as const, content: '原始提问' }], conversationId: 'conversation-1', conversationTitle: '稳定标题', updatedAt: '2026-11-13T08:00:00.000Z' };
+    writeAiSession(session, store);
+    expect(readAiSession('a', store)).toMatchObject(session);
+    store.setItem('mewiki:library:a:ai-session:v1', JSON.stringify({ ...session, conversationId: {}, conversationTitle: '字'.repeat(301), updatedAt: 'invalid' }));
+    const restored = readAiSession('a', store);
+    expect(restored.history).toEqual(session.history);
+    expect(restored.conversationId).toBeUndefined(); expect(restored.conversationTitle).toBeUndefined(); expect(restored.updatedAt).toBeUndefined();
+  });
   it('restores optional merged approvals and ignores unapproved or unknown merged IDs', () => {
     const state = createNotebookFixture(), store = storage();
     const proposals = [1, 2].map(index => createNoteProposal(state, 'a', { operation: 'append', noteId: 'fixture-definition', content: `内容 ${index}` }));

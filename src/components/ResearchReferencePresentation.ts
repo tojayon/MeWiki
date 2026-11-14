@@ -23,9 +23,10 @@ export function paintReference(element: HTMLElement, node: EditorNode, context: 
   const presentation = referencePresentation(node, context);
   element.dataset.referenceKind = node.attrs.kind;
   element.dataset.mewikiReference = node.attrs.source;
-  element.className = `research-reference-atom${presentation.missing ? " is-missing" : ""}`;
+  const dictionaryClass = !presentation.missing && ["term", "symbol"].includes(node.attrs.kind) ? ` research-dictionary-${node.attrs.kind}-reference` : "";
+  element.className = `research-reference-atom${dictionaryClass}${presentation.missing ? " is-missing" : ""}`;
   element.title = presentation.title;
-  element.setAttribute("aria-label", t`编辑引用：${presentation.tex ? presentation.title : presentation.text}`);
+  element.setAttribute("aria-label", dictionaryClass ? node.attrs.kind === "term" ? t`术语：${presentation.text}` : t`符号：${context?.symbols.find(entry => entry.id === dictionaryReferenceId(node.attrs.href))?.name ?? presentation.title}` : t`编辑引用：${presentation.tex ? presentation.title : presentation.text}`);
   element.replaceChildren();
   if (node.attrs.kind === "note" || node.attrs.kind === "file") {
     const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");

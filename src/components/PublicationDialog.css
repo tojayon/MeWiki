@@ -38,10 +38,14 @@
 .mewiki-publication-dimensions > summary { cursor: pointer; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); margin: 10px 0; }
 .mewiki-publication-frame { margin-top: 18px; border-top: 1px solid #dce2e9; padding-top: 16px; }
 .mewiki-publication-sample { max-width: 760px; margin: 0 auto; min-width: 0; }
+.mewiki-publication-sample-tools { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+.mewiki-publication-frame-choice { display: flex; min-width: 0; align-items: center; gap: 6px; }
+.mewiki-publication-frame-choice > label { flex: 1; min-width: 0; }
+.mewiki-publication-frame-choice > .mewiki-ui-info { padding-top: 12px; }
 .mewiki-publication-sample-canvas { position: relative; overflow: hidden; margin: 0 auto; border: 1px solid #dce2e9; box-sizing: content-box; }
 .mewiki-publication-sample-canvas iframe { display: block; border: 0; transform-origin: top left; pointer-events: none; }
 .mewiki-publication-source { min-width: 0; }
-.mewiki-publication-source > .mewiki-publication-scope-actions { margin: 0; padding: 0; border: 0; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); color: #596a7d; }
+.mewiki-publication-source > .mewiki-publication-scope-actions { margin: 0 0 16px; padding: 0; border: 0; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); color: var(--mewiki-ui-muted); }
 .mewiki-publication-scope-actions > label { display: flex; align-items: center; gap: 6px; }
 .mewiki-publication-source-paper { max-width: 860px; min-width: 0; padding: 22px 18px 28px; margin: 0 auto; border: 1px solid #dce2e9; border-radius: 4px; background: #fff; }
 .mewiki-publication-source-paper > .research-note-title { margin: 0 0 18px; }

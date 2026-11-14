@@ -116,7 +116,7 @@ test('uses a flat template selector and independent icon toolbars on a full expo
   }
   await toolbar.getByRole('button', { name: '导出说明', exact: true }).hover();
   await expect(dialog.getByRole('tooltip')).toContainText('个人模板按资料库保存');
-  await expect(dialog.getByRole('tooltip')).toContainText('使用与 MeWiki 正文共用的基础样式');
+  await expect(dialog.getByRole('tooltip')).toContainText('使用与觅维正文共用的基础样式');
   await page.keyboard.press('Escape');
   await expect(dialog.getByRole('tooltip')).not.toBeVisible();
   await expect(dialog).toBeVisible();
@@ -251,7 +251,7 @@ test('shares reading typography with the native template and keeps parameter tem
   await dialog.getByRole('button', { name: '全选', exact: true }).click();
   await dialog.getByRole('tab', { name: '样式预览', exact: true }).click();
   await dialog.getByRole('button', { name: '导出说明', exact: true }).hover();
-  await expect(dialog.getByRole('tooltip')).toContainText('使用与 MeWiki 正文共用的基础样式');
+  await expect(dialog.getByRole('tooltip')).toContainText('使用与觅维正文共用的基础样式');
   await page.keyboard.press('Escape');
   const pending = page.waitForRequest(request => request.url().endsWith('/api/mewiki/publications/jobs') && request.method() === 'POST');
   await dialog.getByRole('button', { name: '生成预览', exact: true }).click();

@@ -8,9 +8,13 @@ const brand = path.join(root, 'public/brand');
 const checking = process.argv.includes('--check');
 const icon = await readFile(path.join(brand, 'mewiki-app-icon.svg'));
 const mark = await readFile(path.join(brand, 'mewiki-mark.svg'), 'utf8');
+const mascot = await readFile(path.join(brand, 'mewiki-ai-mascot.svg'));
+const cannon = await readFile(path.join(brand, 'mewiki-text-cannon.svg'));
 // Remove the presentation margin so the circular mark stays legible in browser tabs.
 const favicon = Buffer.from(mark.replace('viewBox="0 0 192 192"', 'viewBox="17.5 17.5 157 157"'));
 const generated = new Map();
+generated.set('public/brand/mewiki-ai-mascot-1024.png', await sharp(mascot).resize(1024, 1024).png().toBuffer());
+generated.set('public/brand/mewiki-text-cannon-1024.png', await sharp(cannon).resize(1024, 1024).png().toBuffer());
 const monogram = /<g id="monogram"[\s\S]*<\/g>/.exec(icon.toString('utf8'))?.[0];
 if (!monogram) throw new Error('方形图标原件缺少 monogram 笔画。');
 const appSvg = (title, description, body) => Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>

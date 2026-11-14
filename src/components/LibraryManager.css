@@ -55,6 +55,9 @@
   font-size: calc(var(--mewiki-interface-unit, 1px) * 13);
 }
 .mewiki-library-entry-select { margin: 16px 0; }
+.mewiki-library-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.mewiki-library-toolbar > .mewiki-library-entry-select { flex: 1; min-width: 0; margin: 0; }
+.mewiki-library-toolbar > .mewiki-ui-info { margin-left: auto; align-self: flex-end; }
 .mewiki-library-manager input, .mewiki-library-manager select {
   width: 100%;
   box-sizing: border-box;

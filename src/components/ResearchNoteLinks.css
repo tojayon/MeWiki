@@ -33,7 +33,7 @@ a.research-note-link[aria-disabled="true"] { color: #6b7687; text-decoration: li
 .research-reading-pane-header > svg { flex: 0 0 auto; color: #1547c0; }
 .research-reading-pane-header > strong { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(var(--mewiki-interface-unit, 1px) * 15); }
 .research-reading-independent { color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); }
-.research-reading-pane-footer { display: flex; box-sizing: border-box; height: 42px; flex: 0 0 42px; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 10px; border-top: 1px solid #d3ddea; color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); background: #fbfcfe; }
+.research-reading-pane-footer { display: flex; box-sizing: border-box; height: 42px; flex: 0 0 42px; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 10px; border-top: 0; color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); background: transparent; }
 .research-reading-pane .research-note-scroll { padding: 10px 20px 30px; }
 .research-reading-pane .research-note-page { overflow: hidden; }
 .research-note-header.is-compact { grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; }

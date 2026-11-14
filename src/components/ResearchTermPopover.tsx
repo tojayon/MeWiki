@@ -11,7 +11,7 @@ import "./ResearchNotebook.css";
 export default function ResearchTermPopover({ entry, target, onCancel }: {
   entry: ResearchTermEntry;
   target: HTMLElement;
-  onCancel: (restoreFocus?: boolean) => void;
+  onCancel: (restoreFocus?: boolean, nextTarget?: EventTarget | null) => void;
 }) {
   useLocale();
   const ref = useRef<HTMLDivElement>(null);
@@ -21,7 +21,7 @@ export default function ResearchTermPopover({ entry, target, onCancel }: {
   useLayoutEffect(() => {
     ref.current?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
   }, []);
-  return <div ref={ref} className="research-formula-inline-editor research-term-popover" popover="manual" role="dialog" aria-label={t("术语解释")}>
+  return <div ref={ref} className="research-formula-inline-editor research-term-popover" popover="manual" role="dialog" tabIndex={-1} aria-label={t("术语解释")}>
     <header className="research-formula-symbol-heading research-term-popover-heading">
       <h2 className="research-term-popover-title">{entry.name}</h2>
       <button data-ui="icon-action" className="research-formula-dictionary-button" aria-label={t("打开词典词条")} title={t("打开词典词条")}

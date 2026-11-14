@@ -4,6 +4,7 @@ import { normalizeResearchNotebook, type ResearchNotebookState } from '../src/do
 import { createNoteProposal, type AiProposal } from '../src/ai/proposals.ts';
 import { createNativeProposal } from '../src/ai/nativeProposals.ts';
 import { createAiSession } from '../src/ai/session.ts';
+import { expandAiProposalCards, openAiWorkspace, replaceRenderedAiReviewText } from './helpers/ai.ts';
 
 const noteId = 'fixture-definition', sessionKey = 'mewiki:library:default:ai-session:v1';
 function fixture() {
@@ -18,8 +19,8 @@ function fixture() {
   return normalizeResearchNotebook(state);
 }
 async function openAi(page: Page, english = false) {
-  await page.getByRole('button', { name: english ? 'AI workspace' : 'AI 工作区', exact: true }).first().click();
-  return page.getByTestId('mewiki-ai-workspace');
+  const ai = await openAiWorkspace(page, english); await expandAiProposalCards(ai, false);
+  return ai;
 }
 async function setup(page: Page, state: ResearchNotebookState, proposals: AiProposal[], english = false) {
   await page.addInitScript(({ state, session, english, sessionKey }) => {
@@ -36,6 +37,8 @@ async function setup(page: Page, state: ResearchNotebookState, proposals: AiProp
   await page.goto('/');
   const ai = await openAi(page, english);
   await ai.getByRole('button', { name: english ? 'Review changes' : '查看修改', exact: true }).first().click();
+  const move = ai.getByRole('button', { name: english ? 'Move AI panel' : '移动AI 面板', exact: true });
+  for (let index = 0; index < 30; index++) await move.press('Shift+ArrowLeft');
   return { ai, review: page.getByTestId('mewiki-ai-review') };
 }
 const item = (page: Page, proposal: AiProposal) => page.getByTestId('mewiki-ai-review').locator(`[data-ai-review-proposal-id="${proposal.id}"]`);
@@ -89,17 +92,25 @@ test('accepts and rejects at their original positions while retaining one note a
 test('keeps a rendered adjustment as a pending suggestion and only saves it after explicit acceptance, including undo after refresh', async ({ page }, info) => {
   const state = fixture(), proposal = createNoteProposal(state, 'default', { operation: 'replace-text', noteId, blockId: 'one-text', content: '**AI 建议**与 $x^2$。' });
   const { ai: initialAi, review } = await setup(page, state, [proposal]);
+  await expect(item(page, proposal).locator('.mewiki-ai-review-after strong')).toHaveText('AI 建议');
+  await expect(item(page, proposal).locator('.mewiki-ai-review-after .katex')).toBeVisible();
   await item(page, proposal).getByRole('button', { name: '调整此修改', exact: true }).click();
   const adjustment = item(page, proposal).getByRole('region', { name: '调整建议', exact: true });
   await expect(adjustment.locator('strong')).toHaveText('AI 建议');
   await expect(adjustment.locator('.katex')).toBeVisible();
+  await expect(adjustment).not.toContainText('**');
   await expect(review.getByRole('button', { name: '应用建议', exact: true })).toBeDisabled();
   await expect(initialAi.getByRole('button', { name: '应用建议', exact: true })).toBeDisabled();
   await expect(initialAi.getByRole('button', { name: '拒绝此修改', exact: true })).toBeDisabled();
+  await initialAi.getByRole('button', { name: '对话历史', exact: true }).click();
+  const conversations = initialAi.getByRole('dialog', { name: '对话历史', exact: true });
+  await expect(conversations.getByRole('button', { name: '新建对话', exact: true })).toBeDisabled();
+  await conversations.locator('ol').press('Escape');
+  await expect(adjustment).toBeVisible();
   await adjustment.getByRole('textbox', { name: '建议正文', exact: true }).click();
-  await adjustment.locator('[contenteditable="true"]').fill('**用户补充**与 $x^3$。');
+  await replaceRenderedAiReviewText(adjustment.locator('[contenteditable="true"]'), '**用户补充**与 $x^3$。');
   await page.screenshot({ path: info.outputPath('inline-adjustment-editor.png') });
-  await adjustment.getByRole('button', { name: '保留调整', exact: true }).click();
+  await item(page, proposal).getByRole('button', { name: '保留调整', exact: true }).click();
   await expect(adjustment).toHaveCount(0);
   await expect(review.locator('ins strong')).toHaveText('用户补充');
   await expect(review.locator('ins .katex')).toBeVisible();
@@ -130,7 +141,7 @@ test('adjusts a native tab name and inserted content while preserving stable IDs
   await expect(review.getByRole('tab', { name: '用户标签', exact: true })).toHaveAttribute('aria-selected', 'true');
   await item(page, insert).getByRole('button', { name: '调整此修改', exact: true }).click();
   await item(page, insert).getByRole('textbox', { name: '内容', exact: true }).click();
-  await item(page, insert).locator('[contenteditable="true"]').fill('用户调整的新段落。');
+  await replaceRenderedAiReviewText(item(page, insert).locator('[contenteditable="true"]'), '用户调整的新段落。');
   await item(page, insert).getByRole('button', { name: '保留调整', exact: true }).click();
   const pending = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!).proposals, sessionKey);
   expect(pending.find((entry: AiProposal) => entry.id === insert.id).edit).toMatchObject({ generatedId: insert.edit.generatedId, generatedAt: insert.edit.generatedAt, block: { id: insert.edit.generatedId, text: '用户调整的新段落。' } });
@@ -161,20 +172,22 @@ test('cancels local adjustments and restores a rejected suggestion without chang
   await expect(review).toHaveCount(0);
   await ai.getByRole('button', { name: '恢复此建议', exact: true }).click();
   await expect(review).toBeVisible();
-  await expect(review.locator('ins')).toContainText('原建议。');
+  await expect(review.locator('[data-review-block-id="intro"] .mewiki-ai-diff-row[data-kind="add"]')).toContainText('原建议。');
+  await expect(review.locator('ins.mewiki-ai-inline-change')).toHaveText('建议');
   expect((await savedNote(page)).blocks).toEqual(state.notes.find(note => note.id === noteId)!.blocks);
 });
 
 test('keeps inline controls accessible on a narrow English page and disables decisions in read-only mode', async ({ page }, info) => {
   const state = fixture(), proposal = createNoteProposal(state, 'default', { operation: 'replace-text', noteId, blockId: 'intro', content: '**Revised text**.' });
-  const { ai, review } = await setup(page, state, [proposal], true);
+  const { review } = await setup(page, state, [proposal], true);
   await page.setViewportSize({ width: 390, height: 680 });
+  await page.getByRole('button', { name: 'Collapse note left panel', exact: true }).click();
   for (const name of ['Accept this change', 'Reject this change', 'Adjust this change']) await expect(item(page, proposal).getByRole('button', { name, exact: true })).toBeInViewport();
   expect(await review.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('inline-decisions-english-mobile.png') });
   await review.getByRole('button', { name: 'Return to editing', exact: true }).click();
   await page.setViewportSize({ width: 1440, height: 960 });
-  await ai.getByRole('button', { name: 'Close AI workspace', exact: true }).click();
+  await page.getByTestId('mewiki-ai-launcher').click();
   await page.getByRole('button', { name: 'Switch to read-only mode', exact: true }).click();
   const reopened = await openAi(page, true);
   await reopened.getByRole('button', { name: 'Review changes', exact: true }).click();

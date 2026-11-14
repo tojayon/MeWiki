@@ -1,14 +1,15 @@
 import { useLocale } from "../i18n/react.ts";
 import { t } from "../i18n/locale.ts";
 import { useMemo, type ReactNode } from "react";
-import { FileText } from "lucide-react";
+import { FileText, FlaskConical, Link2 } from "lucide-react";
+import ResearchSidebarTabs from './ResearchSidebarTabs.tsx';
 import { listSymbolUses, resolveSymbolEntry, type ResearchSymbolEntry } from "../domain/researchDictionary.ts";
 import { findResearchFormula, listFormulaOutputs, researchFormulaTitle, type FormulaAddress } from "../domain/researchFormulaLinks.ts";
 import type { ResearchNotebookState } from "../domain/researchNotebook.ts";
 import { Formula } from "./Formula.tsx";
 import "./ResearchOutline.css";
 
-export default function ResearchSymbolBacklinks({ state, entry, onOpenFormula, onClose, recipe, recipeActive = false, onRecipeActiveChange, aiPanel, aiActive = false, onAiActiveChange }: {
+export default function ResearchSymbolBacklinks({ state, entry, onOpenFormula, onClose, recipe, recipeActive = false, onRecipeActiveChange, extraTabs, panelControls, hidden }: {
   state: ResearchNotebookState;
   entry: ResearchSymbolEntry;
   onOpenFormula: (address: FormulaAddress) => void;
@@ -16,9 +17,9 @@ export default function ResearchSymbolBacklinks({ state, entry, onOpenFormula, o
   recipe?: ReactNode;
   recipeActive?: boolean;
   onRecipeActiveChange?: (active: boolean) => void;
-  aiPanel?: ReactNode;
-  aiActive?: boolean;
-  onAiActiveChange?: (active: boolean) => void;
+  extraTabs?: ReactNode;
+  panelControls?: ReactNode;
+  hidden?: boolean;
 }) {
   useLocale();
   const definitions = useMemo(() => listFormulaOutputs(state, entry.id), [state, entry.id]);
@@ -28,18 +29,19 @@ export default function ResearchSymbolBacklinks({ state, entry, onOpenFormula, o
     return [{ ...use, ...found }];
   }), [state, entry.id]);
 
-  return <aside id="research-note-outline" className="research-note-outline research-symbol-backlinks" aria-label={aiActive ? t('AI 工作区') : t("符号反向链接")} onKeyDown={event => {
+  return <aside id="research-note-outline" className="research-note-outline research-symbol-backlinks" aria-label={t("符号反向链接")} hidden={hidden} onKeyDown={event => {
     if (event.key !== "Escape") return;
     event.preventDefault(); event.stopPropagation(); onClose();
   }}>
-    <header><div className="research-outline-tabs" role="tablist" aria-label={t("符号右侧面板")}>
-      <button id="research-symbol-backlinks-tab" type="button" role="tab" aria-selected={!aiActive && !recipeActive} aria-controls="research-symbol-backlinks-panel" onClick={() => { onAiActiveChange?.(false); onRecipeActiveChange?.(false); }}>{t("反向链接")}</button>
-      {recipe && <button id="research-symbol-recipe-tab" type="button" role="tab" aria-selected={!aiActive && recipeActive} aria-controls="research-symbol-recipe-panel" onClick={() => onRecipeActiveChange?.(true)}>{t("变量配方")}</button>}
-      {onAiActiveChange && <button id="research-note-ai-tab" type="button" role="tab" title={t('AI 工作区')} aria-selected={aiActive} aria-controls="research-note-ai-panel" onClick={() => onAiActiveChange(true)}>{t('AI')}</button>}
-    </div></header>
-    {onAiActiveChange && <div id="research-note-ai-panel" className="research-outline-ai-panel" role="tabpanel" aria-labelledby="research-note-ai-tab" hidden={!aiActive}>{aiPanel}</div>}
-    {recipe && <div id="research-symbol-recipe-panel" className="research-outline-recipe-panel" role="tabpanel" aria-labelledby="research-symbol-recipe-tab" hidden={!recipeActive || aiActive}>{recipe}</div>}
-    <div id="research-symbol-backlinks-panel" className="research-symbol-backlinks-content" role="tabpanel" aria-labelledby="research-symbol-backlinks-tab" hidden={recipeActive || aiActive}>
+    <header><ResearchSidebarTabs className="research-outline-tabs" label={t('符号右侧面板')} focusGroup="right"
+      selected={recipeActive ? 'recipe' : 'backlinks'} trailing={extraTabs}
+      tabs={[
+        { id: 'backlinks', label: t('反向链接'), icon: <Link2 size={18} aria-hidden="true" />, elementId: 'research-symbol-backlinks-tab', controls: 'research-symbol-backlinks-panel' },
+        ...(recipe ? [{ id: 'recipe', label: t('变量配方'), icon: <FlaskConical size={18} aria-hidden="true" />, elementId: 'research-symbol-recipe-tab', controls: 'research-symbol-recipe-panel' }] : []),
+      ]} onSelect={next => onRecipeActiveChange?.(next === 'recipe')}
+    />{panelControls}</header>
+    {recipe && <div id="research-symbol-recipe-panel" className="research-outline-recipe-panel" role="tabpanel" aria-labelledby="research-symbol-recipe-tab" hidden={!recipeActive}>{recipe}</div>}
+    <div id="research-symbol-backlinks-panel" className="research-symbol-backlinks-content" role="tabpanel" aria-labelledby="research-symbol-backlinks-tab" hidden={recipeActive}>
       <p className="research-symbol-backlinks-name">{entry.name}</p>
       <nav aria-label={t("定义与计算公式")}>
         <h3>{t("定义与计算公式")}</h3>
@@ -61,6 +63,6 @@ export default function ResearchSymbolBacklinks({ state, entry, onOpenFormula, o
         </li>)}</ol> : <p className="research-outline-empty">{t("暂无公式使用此符号。")}<span>{t("在笔记公式中引用此符号后，会在这里显示。")}</span></p>}
       </nav>
     </div>
-    {!recipeActive && !aiActive && <footer>{definitions.length}  {t("个定义结果 ·")} {appearances.length}  {t("个引用公式")}</footer>}
+    {!recipeActive && <footer>{definitions.length}  {t("个定义结果 ·")} {appearances.length}  {t("个引用公式")}</footer>}
   </aside>;
 }

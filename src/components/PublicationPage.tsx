@@ -32,7 +32,7 @@ export default function PublicationPage() {
   const loading = !initial.error && (!integration.catalogReady || !draft);
   const available = value && plugin && exporter && integration.plugins[plugin.id] === 'enabled';
   useEffect(() => {
-    document.title = `${t('社交图文导出')}${value ? ` · ${value.snapshot.notes.find(note => note.id === value.noteId)?.title}` : ''} — MeWiki`;
+    document.title = `${t('社交图文导出')}${value ? ` · ${value.snapshot.notes.find(note => note.id === value.noteId)?.title}` : ''} — ${t('觅维')}`;
   });
   const content = loading ? <main className="mewiki-publication-state" role="status">{t('正在加载…')}</main>
     : !available ? <main className="mewiki-publication-state"><p role="alert">{localizeError(initial.error || '导出插件已停用或发生变更，请回到笔记重新打开图文导出。')}</p></main>

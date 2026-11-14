@@ -19,8 +19,30 @@
 .mewiki-ai-review-page > .mewiki-ai-review-new-title { color: #21633c; }
 .mewiki-ai-review-blocks { display: flex; flex-direction: column; gap: 20px; }
 .mewiki-ai-review-block { min-width: 0; }
+.mewiki-ai-review-block .research-formula-composer { position: relative; }
+.mewiki-ai-review-block .research-formula-composer:is(:hover, :focus-within) > .research-formula-copy-button { opacity: 1; }
 .mewiki-ai-review-added-block { overflow: hidden; border: 1px solid #dce1e8; border-radius: 4px; }
 .mewiki-ai-text-diff { min-width: 0; overflow: hidden; border: 1px solid #dce1e8; border-radius: 4px; font-size: var(--mewiki-document-font-size, 15px); line-height: 1.8; }
+.mewiki-ai-review-pair { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.mewiki-ai-review-before, .mewiki-ai-review-after { min-width: 0; }
+.mewiki-ai-review-pair:not(.mewiki-ai-review-pair-inline) > .mewiki-ai-review-before { background: #fff4f4; }
+.mewiki-ai-review-pair:not(.mewiki-ai-review-pair-inline) > .mewiki-ai-review-after { background: #edf8f0; }
+.mewiki-ai-review-between { display: flex; min-width: 0; justify-content: flex-end; align-items: center; padding: 3px 8px; background: #fff; }
+.mewiki-ai-review-pair-inline, .mewiki-ai-review-pair-inline > :is(.mewiki-ai-review-before, .mewiki-ai-review-after) { display: contents; }
+.mewiki-ai-review-before:empty, .mewiki-ai-review-after:empty { display: none; }
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-pair:not(.mewiki-ai-review-pair-inline) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-pair:not(.mewiki-ai-review-pair-inline):has(> .mewiki-ai-review-between) { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-pair:not(.mewiki-ai-review-pair-inline) > .mewiki-ai-review-after { grid-column: -2; border-left: 1px solid #dce1e8; }
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-pair:not(.mewiki-ai-review-pair-inline):not([data-has-before]) > .mewiki-ai-review-after { grid-column: 1 / -1; border-left: 0; }
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-between { justify-content: center; align-items: flex-start; padding: 4px; }
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-between .mewiki-ai-inline-actions { flex-direction: column; }
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-page { max-width: 1400px; }
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-editable > .mewiki-ai-diff-row:only-child,
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-pair > :is(.mewiki-ai-review-before, .mewiki-ai-review-after) > .mewiki-ai-diff-row:only-child { height: 100%; box-sizing: border-box; }
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-before:empty + .mewiki-ai-review-between { grid-row: 1; grid-column: 1 / -1; }
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-before:empty + .mewiki-ai-review-between .mewiki-ai-inline-actions { flex-direction: row; }
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-pair:not([data-has-after]) > :is(.mewiki-ai-review-before, .mewiki-ai-review-between) { grid-column: 1 / -1; }
+.mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-pair:not([data-has-after]) > .mewiki-ai-review-between .mewiki-ai-inline-actions { flex-direction: row; }
 .mewiki-ai-diff-row { display: grid; grid-template-columns: 2.6em 2.6em 1.6em minmax(0, 1fr); min-height: 1.8em; background: #fafbfc; }
 .mewiki-ai-diff-number { align-self: stretch; padding: 3px 5px; color: #788393; text-align: right; font-size: .75em; font-variant-numeric: tabular-nums; user-select: none; }
 .mewiki-ai-diff-sign { padding: 1px 0; font-family: monospace; font-weight: 600; text-align: center; user-select: none; }
@@ -34,12 +56,21 @@
 .mewiki-ai-diff-text strong { border-radius: 2px; padding: 1px 0; font-weight: inherit; }
 .mewiki-ai-diff-text del strong { background: #f7cbd0; }
 .mewiki-ai-diff-text ins strong { background: #bce4c8; }
+.mewiki-ai-diff-row[data-inline=true], .mewiki-ai-word-diff .mewiki-ai-diff-row { background: transparent; color: #192436; }
+.mewiki-ai-inline-change { border-radius: 2px; padding: 1px 0; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.mewiki-ai-review .mewiki-ai-inline-change:is(del) { background: #f7cbd0; color: #812c36; text-decoration: line-through; text-decoration-thickness: 1px; }
+.mewiki-ai-review .mewiki-ai-inline-change:is(ins) { background: #bce4c8; color: #225d38; text-decoration: none; }
+.mewiki-ai-review [data-ai-change=remove] { --mewiki-ai-change-background: #f7cbd0; background-color: var(--mewiki-ai-change-background); }
+.mewiki-ai-review [data-ai-change=add] { --mewiki-ai-change-background: #bce4c8; background-color: var(--mewiki-ai-change-background); }
+.mewiki-ai-review .research-markdown pre > code[data-ai-change] { padding-left: 8px; background-color: transparent; box-shadow: inset 3px 0 var(--mewiki-ai-change-background); }
+.mewiki-ai-review .research-markdown [data-ai-change] :is(th, td), .mewiki-ai-review .research-markdown :is(th, td)[data-ai-change] { background-color: var(--mewiki-ai-change-background); color: #25364d; --mewiki-document-accent: #1547c0; --research-tabs-link: #1547c0; }
 .mewiki-ai-rendered-text-diff .mewiki-ai-diff-text > :is(p, h1, h2, h3, h4, h5, h6) { margin: 0; white-space: pre-wrap; }
 .mewiki-ai-rendered-text-diff .mewiki-ai-diff-text del { color: inherit; }
 .mewiki-ai-rendered-text-diff .mewiki-ai-diff-text strong { color: inherit; }
 .mewiki-ai-rendered-diff-row { grid-template-columns: 1.6em minmax(0, 1fr); }
 .mewiki-ai-rendered-diff-row > .mewiki-ai-diff-sign { padding-top: 8px; }
 .mewiki-ai-rendered-diff-row + .mewiki-ai-rendered-diff-row { border-top: 1px solid #dce1e8; }
+.mewiki-ai-review-before:not(:empty) + .mewiki-ai-review-after > .mewiki-ai-rendered-diff-row:first-child { border-top: 1px solid #dce1e8; }
 .mewiki-ai-review-rendered-change { display: block; min-width: 0; padding: 8px 12px; text-decoration: none; }
 .mewiki-ai-review-rendered-change > :first-child { margin-top: 0; }
 .mewiki-ai-review-rendered-change > :last-child { margin-bottom: 0; }
@@ -48,9 +79,14 @@
 .mewiki-ai-review-rendered-change :is(.research-markdown, .research-markdown-code, .research-markdown-table) { max-width: 100%; }
 .mewiki-ai-review-term-field { margin-top: 22px; }
 .mewiki-ai-review-term-field > h2 { margin: 0 0 8px; color: #536176; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 500; }
+.mewiki-ai-review-conflict { margin-bottom: 20px; border: 1px solid #cbd1da; border-radius: 4px; background: #fffaf1; }
+.mewiki-ai-review-conflict > summary { padding: 8px 12px; color: #83520c; cursor: pointer; }
+.mewiki-ai-conflict-versions { display: grid; gap: 12px; padding: 0 12px 12px; }
+.mewiki-ai-conflict-versions > section { min-width: 0; overflow-wrap: anywhere; }
+.mewiki-ai-conflict-versions h3 { margin: 0 0 5px; color: #536176; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 500; }
+.mewiki-ai-conflict-versions .research-markdown > :first-child { margin-top: 0; }
+.mewiki-ai-conflict-versions .research-markdown > :last-child { margin-bottom: 0; }
 @container research-notebook (max-width: 999px) {
-  .mewiki-ai-review { z-index: 7; grid-column: 1 / -1; }
-  .research-notebook-layout:has(> .mewiki-ai-review-host > .mewiki-ai-review) > :is(.research-note-outline, .research-notebook-mode-tabs, .research-notebook-divider) { visibility: hidden; }
   .mewiki-ai-review-toolbar { gap: 5px; }
   .mewiki-ai-review-counts { gap: 4px; }
   .mewiki-ai-review-page { padding-top: 20px; }
@@ -64,4 +100,7 @@
   .mewiki-ai-review-counts, .mewiki-ai-review-position, .mewiki-ai-review-leading > svg { display: none; }
   .mewiki-ai-review-actions { gap: 3px; }
   .mewiki-ai-review-leading { gap: 4px; }
+  .mewiki-ai-review[data-review-layout=split] .mewiki-ai-diff-number { display: none; }
+  .mewiki-ai-review[data-review-layout=split] .mewiki-ai-diff-row { grid-template-columns: 1.2em minmax(0, 1fr); }
+  .mewiki-ai-review[data-review-layout=split] .mewiki-ai-review-rendered-change { padding-inline: 5px; }
 }

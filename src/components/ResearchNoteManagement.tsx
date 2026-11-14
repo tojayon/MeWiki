@@ -295,15 +295,17 @@ export function ResearchNoteTags({
   state,
   note,
   onChange,
+  hidden = false,
 }: {
   state: ResearchNotebookState;
   note: ResearchNote;
   onChange: (state: ResearchNotebookState) => void;
+  hidden?: boolean;
 }) {
   useLocale();
   if (!note.tags?.length) return null;
   return (
-    <div className="research-note-tag-list" aria-label={t("笔记层级标签")}>
+    <div className="research-note-tag-list" aria-label={t("笔记层级标签")} aria-hidden={hidden || undefined} inert={hidden}>
       {note.tags.map((tag) => (
         <button
           className="research-note-tag"
@@ -356,16 +358,6 @@ export function ResearchNoteOrganizationBar({
     <div className="research-note-organization">
       <button
         data-ui="icon-action"
-        className="research-small-button research-note-manage-tags"
-        aria-label={t("管理笔记标签")}
-        title={t("管理笔记标签")}
-        aria-expanded={activePanel === "tags"}
-        onClick={event => onOpenPanel("tags", event.currentTarget)}
-      >
-        <Tags size={15} />
-      </button>
-      <button
-        data-ui="icon-action"
         className="research-small-button research-note-info"
         aria-label={t("笔记元数据")}
         title={t("笔记元数据")}
@@ -373,6 +365,16 @@ export function ResearchNoteOrganizationBar({
         onClick={event => onOpenPanel("metadata", event.currentTarget)}
       >
         <Info size={15} />
+      </button>
+      <button
+        data-ui="icon-action"
+        className="research-small-button research-note-manage-tags"
+        aria-label={t("管理笔记标签")}
+        title={t("管理笔记标签")}
+        aria-expanded={activePanel === "tags"}
+        onClick={event => onOpenPanel("tags", event.currentTarget)}
+      >
+        <Tags size={15} />
       </button>
     </div>
   );

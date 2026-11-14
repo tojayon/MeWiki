@@ -1,0 +1,3 @@
+.mewiki-ai-selection-toolbar { position: fixed; z-index: 1600; display: flex; box-sizing: border-box; border: 1px solid #dce1e8; border-radius: 4px; padding: 2px; background: #fff; color: #38485f; }
+:root .mewiki-ai-selection-toolbar [data-ui="menu-action"] { width: auto; min-height: 32px; gap: 6px; padding: 4px 8px; white-space: nowrap; }
+@media (pointer: coarse) { :root .mewiki-ai-selection-toolbar [data-ui="menu-action"] { min-height: 40px; } }

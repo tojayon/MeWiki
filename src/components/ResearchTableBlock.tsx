@@ -76,6 +76,7 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<ResearchReferenceEditorHandle>(null);
   const pendingReference = useRef<{ href: string; occurrence: number } | null>(null);
+  const pendingPoint = useRef<{ x: number; y: number } | null>(null);
   const sourceRef = useRef<HTMLTextAreaElement>(null);
   const valueRef = useRef(value);
   const modelRef = useRef<ResearchTable | null>(model);
@@ -136,7 +137,9 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
   useLayoutEffect(() => {
     if (!active) return;
     inputRef.current?.focus({ preventScroll: true });
-    inputRef.current?.setSelectionRange(active.initial.length, active.initial.length);
+    if (pendingPoint.current) inputRef.current?.setSelectionAtPoint(pendingPoint.current.x, pendingPoint.current.y);
+    else inputRef.current?.setSelectionRange(active.initial.length, active.initial.length);
+    pendingPoint.current = null;
     if (pendingReference.current) {
       inputRef.current?.inspectReference(pendingReference.current.href, pendingReference.current.occurrence);
       pendingReference.current = null;
@@ -146,7 +149,8 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
     if (!active) return;
     const place = () => {
       if (activeRef.current?.id !== active.id) return;
-      Object.assign(inputRef.current?.element.parentElement?.style ?? {}, Object.fromEntries(Object.entries(editorStyle(active.cell, active.host)).map(([key, entry]) => [key, typeof entry === "number" ? `${entry}px` : entry])));
+      const editor = inputRef.current?.element.closest<HTMLElement>(".research-table-cell-editor");
+      Object.assign(editor?.style ?? {}, Object.fromEntries(Object.entries(editorStyle(active.cell, active.host)).map(([key, entry]) => [key, typeof entry === "number" ? `${entry}px` : entry])));
     };
     place();
     const observer = new ResizeObserver(place);
@@ -217,7 +221,8 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
   return <div ref={rootRef} className="research-table-editor research-editable-text research-markdown" role="group" aria-label={label} tabIndex={0}
     aria-description={t("点击单元格编辑，Tab 切换单元格，Enter 保存，Ctrl/Cmd+Enter 完成本块并选择下一内容块，Shift+Enter 换行，Esc 放弃当前输入。聚焦表格后按 Enter 开始编辑。")}
     onClickCapture={event => {
-      if (!(event.target instanceof Element) || event.target.closest(".research-reference-editor")) return;
+      if (!(event.target instanceof Element) || !event.currentTarget.contains(event.target) || event.target.closest(".research-reference-editor")) return;
+      if (event.target.closest('[role="button"].research-dictionary-term-reference, button.research-dictionary-symbol-reference')) return;
       const reference = event.target.closest<HTMLElement>("[data-reference-href]"), cell = reference?.closest<HTMLTableCellElement>("td, th");
       if (!reference?.dataset.referenceHref || !cell) return;
       event.preventDefault(); event.stopPropagation();
@@ -233,7 +238,7 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
       else if (["Enter", "F2"].includes(event.key)) { event.preventDefault(); activate(selected, true); }
     }}
     onPointerDown={event => {
-      if (event.button !== 0 || event.ctrlKey || event.metaKey || !(event.target instanceof Element) || event.target.closest("textarea, button, a.research-note-link, .research-reference-editor")) return;
+      if (event.button !== 0 || event.ctrlKey || event.metaKey || !(event.target instanceof Element) || !event.currentTarget.contains(event.target) || event.target.closest("textarea, button, [role=button], a.research-note-link, .research-reference-editor")) return;
       const cell = event.target.closest<HTMLTableCellElement>("td, th");
       if (!cell) {
         if (event.target.closest("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, img") && !event.target.closest("a, input, select")) { event.preventDefault(); openSource(); }
@@ -241,6 +246,7 @@ export default function ResearchTableBlock({ value, model, label, headings, onCh
       }
       if (cell.closest("table") !== rootRef.current?.querySelector(":scope > .research-markdown-table > table")) return;
       event.preventDefault();
+      pendingPoint.current = { x: event.clientX, y: event.clientY };
       activate({ row: (cell.parentElement as HTMLTableRowElement).rowIndex, column: cell.cellIndex });
     }}
     onClick={event => { if (event.target instanceof Element && event.target.closest("td, th")?.closest("table") === rootRef.current?.querySelector(":scope > .research-markdown-table > table") && !event.ctrlKey && !event.metaKey) event.preventDefault(); }}>

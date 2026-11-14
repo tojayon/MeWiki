@@ -117,7 +117,7 @@ test("opens help from settings even when the manual tab is already available", a
   await runNotebookAction(panel, "使用手册");
   await panel.getByRole("tab", { name: "术语", exact: true }).click();
   const settings = await openSettingsSection(page, "about");
-  await settings.getByRole("button", { name: /使用手册.*完整说明/ }).click();
+  await settings.getByRole("button", { name: "使用手册", exact: true }).click();
   await expect(settings).toBeHidden();
   await expect(panel.getByRole("tab", { name: "使用手册", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(panel.getByLabel("搜索使用手册", { exact: true })).toBeVisible();
@@ -156,7 +156,8 @@ test("opens a collapsed sidebar and localizes the manual controls", async ({ pag
   await settings.getByRole("radio", { name: /English/ }).check();
   await closeSettingsPage(page);
   await panel.getByRole("button", { name: "Collapse note left panel", exact: true }).click();
-  await panel.getByRole("button", { name: "User manual", exact: true }).click();
+  await panel.locator('.research-notebook-mode-tabs').getByRole('tab', { name: 'Research notes', exact: true }).click();
+  await panel.locator('.research-sidebar-footer').getByRole("button", { name: "User manual", exact: true }).click();
   await expect(panel.getByRole("tab", { name: "User manual", exact: true })).toHaveAttribute("aria-selected", "true");
   const manual = panel.getByRole("complementary", { name: "User manual", exact: true });
   await expect(manual.getByLabel("Search user manual", { exact: true })).toBeVisible();

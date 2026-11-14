@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { AiCompletion, AiConnectionTest, AiMessage, AiProtocol, AiToolCall, AiToolDefinition, AiToolStreamUpdate } from '../src/ai/types.ts';
 import { checkedResponsesReasoning } from '../src/ai/types.ts';
 import { AiServiceError, type AiProviderSecret } from './aiProviderStore.ts';
+import { aiHttpFailure } from '../src/ai/failures.ts';
 
 export interface AiChatInput { messages: AiMessage[]; tools?: AiToolDefinition[]; model?: string }
 export interface AiTransportOptions {
@@ -11,6 +12,7 @@ export interface AiTransportOptions {
   onStreamDetected?: () => void;
   fetch?: typeof globalThis.fetch;
   timeoutMs?: number;
+  idleTimeoutMs?: number;
 }
 const MAX_UPSTREAM_BYTES = 2 * 1024 * 1024;
 const record = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -125,24 +127,34 @@ export function checkedAiChatInput(value: unknown): AiChatInput {
   return result;
 }
 
-async function transport<T>(options: AiTransportOptions, work: (signal: AbortSignal) => Promise<T>): Promise<T> {
+async function transport<T>(options: AiTransportOptions, work: (signal: AbortSignal, touch: () => void) => Promise<T>): Promise<T> {
   const timeout = new AbortController();
-  const timer = setTimeout(() => timeout.abort(), options.timeoutMs ?? 90000);
+  const timer = setTimeout(() => timeout.abort(), options.timeoutMs ?? 600000);
+  let idleTimer: ReturnType<typeof setTimeout>;
+  const touch = () => { clearTimeout(idleTimer); if (!timeout.signal.aborted && !options.signal?.aborted) idleTimer = setTimeout(() => timeout.abort(), options.idleTimeoutMs ?? 90000); };
+  touch();
   const signal = options.signal ? AbortSignal.any([options.signal, timeout.signal]) : timeout.signal;
-  try { return await work(signal); }
+  try { signal.throwIfAborted(); return await abortable(work(signal, touch), signal); }
   catch (cause) {
     if (options.signal?.aborted) throw new AiServiceError('AI 请求已取消。');
-    if (timeout.signal.aborted) throw new AiServiceError('AI 服务响应超时，请缩小任务或稍后重试。', 504);
+    if (timeout.signal.aborted) throw new AiServiceError('AI 服务响应超时，请稍后重试。', 504, { kind: 'timeout', recovery: 'retry', status: 504 });
     if (cause instanceof AiServiceError) throw cause;
-    throw new AiServiceError('无法连接 AI 服务，请检查 API 地址、网络和接口类型。', 502);
-  } finally { clearTimeout(timer); }
+    throw new AiServiceError('无法连接 AI 服务，请检查网络和 API 地址后重试。', 502, { kind: 'network', recovery: 'retry', status: 502 });
+  } finally { clearTimeout(timer); clearTimeout(idleTimer!); }
 }
-async function responseText(response: Response): Promise<string> {
+async function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) { void promise.catch(() => {}); signal.throwIfAborted(); }
+  let abort!: () => void;
+  const cancelled = new Promise<never>((_resolve, reject) => { abort = () => reject(signal.reason); signal.addEventListener('abort', abort, { once: true }); });
+  try { return await Promise.race([promise, cancelled]); } finally { signal.removeEventListener('abort', abort); }
+}
+async function responseText(response: Response, signal: AbortSignal, touch: () => void): Promise<string> {
   if (!response.body) throw new AiServiceError('AI 服务未返回内容。', 502);
   const reader = response.body.getReader(); const decoder = new TextDecoder(); let result = ''; let total = 0;
   try {
     for (;;) {
-      const { done, value } = await reader.read(); if (done) break;
+      const { done, value } = await abortable(reader.read(), signal); if (done) break;
+      if (value.byteLength) touch();
       total += value.byteLength; if (total > MAX_UPSTREAM_BYTES) throw new AiServiceError('AI 服务返回内容过大，请缩小任务。', 413);
       result += decoder.decode(value, { stream: true });
     }
@@ -152,7 +164,15 @@ async function responseText(response: Response): Promise<string> {
 function checkStatus(response: Response, models = false) {
   if (!response.ok) {
     void response.body?.cancel().catch(() => {});
-    throw new AiServiceError(models ? `无法获取模型列表（HTTP ${response.status}），可以手动填写模型名称。` : `AI 服务请求失败（HTTP ${response.status}），请检查密钥、模型和接口类型。`, 502);
+    const failure = aiHttpFailure(response.status);
+    if (response.status === 429) {
+      const retry = response.headers.get('retry-after')?.trim();
+      const wait = retry && /^\d+(?:\.\d+)?$/.test(retry) ? Number(retry) * 1000 : retry ? Date.parse(retry) - Date.now() : NaN;
+      if (Number.isFinite(wait) && wait >= 0) failure.retryAt = Date.now() + Math.min(86400000, Math.ceil(wait));
+    }
+    const message = failure.kind === 'rate-limit' ? 'AI 服务请求受限，请等待后重试。' : failure.kind === 'configuration' ? `AI 服务配置不可用（HTTP ${response.status}），请检查密钥、模型、API 地址和接口类型。`
+      : failure.kind === 'timeout' ? 'AI 服务响应超时，请稍后重试。' : `AI 服务暂时不可用（HTTP ${response.status}），请稍后重试。`;
+    throw new AiServiceError(models ? message + ' 模型列表也可手动填写。' : message, response.status, failure);
   }
 }
 interface StreamState {
@@ -167,7 +187,7 @@ function usage(state: StreamState, input: unknown, output: unknown) {
   if (output !== undefined) state.usage.outputTokens = tokens(output);
 }
 function incomplete(reason: unknown) {
-  if (['length', 'max_tokens', 'max_output_tokens', 'content_filter', 'refusal'].includes(str(reason))) throw new AiServiceError('AI 输出达到限制或被服务阻止，请缩小任务后重试。');
+  if (['length', 'max_tokens', 'max_output_tokens', 'content_filter', 'refusal'].includes(str(reason))) throw new AiServiceError('AI 输出达到限制或被服务阻止，请缩小任务后重试。', 400, { kind: 'request', recovery: 'revise', status: 400 });
 }
 function finalResponses(state: StreamState, value: unknown) {
   const response = record(value);
@@ -261,7 +281,7 @@ function parseFull(state: StreamState, protocol: AiProtocol, value: unknown) {
 
 export async function completeAi(provider: AiProviderSecret, input: AiChatInput, options: AiTransportOptions = {}): Promise<AiCompletion> {
   const checked = checkedAiChatInput(input);
-  return transport(options, async signal => {
+  return transport(options, async (signal, touch) => {
     const response = await (options.fetch ?? globalThis.fetch)(aiEndpoint(provider.baseUrl, provider.protocol), { method: 'POST', headers: headers(provider), body: JSON.stringify(chatPayload(provider, checked)), signal, redirect: 'error' });
     checkStatus(response);
     if (signal.aborted) throw new AiServiceError('AI 请求已取消。');
@@ -312,8 +332,9 @@ export async function completeAi(provider: AiProviderSecret, input: AiChatInput,
       const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = ''; let bytes = 0;
       try {
         for (;;) {
-          const { done, value } = await reader.read();
+          const { done, value } = await abortable(reader.read(), signal);
           if (done) { buffer += decoder.decode(); break; }
+          if (value.byteLength) touch();
           bytes += value.byteLength; if (bytes > MAX_UPSTREAM_BYTES) throw new AiServiceError('AI 服务返回内容过大，请缩小任务。', 413);
           buffer += decoder.decode(value, { stream: true });
           let match: RegExpExecArray | null;
@@ -327,7 +348,7 @@ export async function completeAi(provider: AiProviderSecret, input: AiChatInput,
       if (!state.complete || buffer.trim()) throw new AiServiceError('AI 流式输出未完整结束或已中断，请重试。', 502);
     } else {
       let value: unknown;
-      try { value = JSON.parse(await responseText(response)); } catch (cause) { if (cause instanceof AiServiceError) throw cause; throw new AiServiceError('AI 服务返回的内容不是有效 JSON，请检查接口类型。', 502); }
+      try { value = JSON.parse(await responseText(response, signal, touch)); } catch (cause) { if (signal.aborted) throw cause; if (cause instanceof AiServiceError) throw cause; throw new AiServiceError('AI 服务返回的内容不是有效 JSON，请检查接口类型。', 502, { kind: 'response', recovery: 'retry', status: 502 }); }
       parseFull(state, provider.protocol, value); emit(state.content);
     }
     if (signal.aborted) throw new AiServiceError('AI 请求已取消。');
@@ -344,10 +365,10 @@ export async function completeAi(provider: AiProviderSecret, input: AiChatInput,
 }
 
 export async function listAiModels(provider: AiProviderSecret, options: AiTransportOptions = {}): Promise<string[]> {
-  return transport(options, async signal => {
+  return transport(options, async (signal, touch) => {
     const response = await (options.fetch ?? globalThis.fetch)(aiEndpoint(provider.baseUrl, provider.protocol, true), { headers: headers(provider), signal, redirect: 'error' });
     checkStatus(response, true); let value: unknown;
-    try { value = JSON.parse(await responseText(response)); } catch (cause) { if (cause instanceof AiServiceError) throw cause; throw new AiServiceError('模型列表格式不受支持，可以手动填写模型名称。'); }
+    try { value = JSON.parse(await responseText(response, signal, touch)); } catch (cause) { if (signal.aborted) throw cause; if (cause instanceof AiServiceError) throw cause; throw new AiServiceError('模型列表格式不受支持，可以手动填写模型名称。'); }
     const models = [...new Set(array(record(value).data).map(item => str(record(item).id)).filter(id => id && id.length <= 256 && !hasControls(id) && !id.includes(provider.apiKey || '\u0000')))];
     if (!models.length) throw new AiServiceError('服务没有提供模型列表，可以手动填写模型名称。');
     return models.slice(0, 2000);

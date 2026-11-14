@@ -4,8 +4,81 @@ import { buildAiSystemPrompt, createAiToolContext } from './tools.ts';
 import { runAiTask } from './runner.ts';
 import type { AiCompletion, AiMessage } from './types.ts';
 import { createAiSession, readAiSession } from './session.ts';
+import { createNoteProposal, createTermProposal } from './proposals.ts';
+import { createNativeProposal } from './nativeProposals.ts';
+import { createAiTextSelection } from './textSelection.ts';
 
 describe('native AI task loop', () => {
+  it('reuses retried new terms without comparing newly generated identities', async () => {
+    const state = createNotebookFixture();
+    for (const native of [false, true]) {
+      const args = native ? { action: 'term-save', fields: { name: '重试术语', meaning: '同一份定义', aliases: ['同义名'], atoms: [{ text: '重试术语', meaning: '原子含义' }] } } : { name: '重试术语', meaning: '同一份定义' };
+      const existing = native ? createNativeProposal(state, 'a', args) : createTermProposal(state, 'a', { name: '重试术语', meaning: '同一份定义' });
+      let turn = 0;
+      const result = await runAiTask({ context: createAiToolContext(state, 'a', ['fixture-definition']), providerId: 'provider', prompt: '重试术语', signal: new AbortController().signal,
+        existingProposals: [existing], complete: async request => {
+          if (turn++) {
+            expect(JSON.parse(request.messages.at(-1)!.content)).toMatchObject({ proposalId: existing.id, reused: true });
+            return { message: { role: 'assistant', content: '仍是原建议' }, usage: { inputTokens: 0, outputTokens: 0 } };
+          }
+          return { message: { role: 'assistant', content: '', toolCalls: [{ id: 'term', name: native ? 'propose_edit' : 'propose_term', arguments: JSON.stringify(args) }] }, usage: { inputTokens: 0, outputTokens: 0 } };
+        } });
+      expect(result.proposals).toEqual([]);
+    }
+  });
+  it('reuses inserted formulas when their output identities are generated again on retry', async () => {
+    const state = createNotebookFixture();
+    const args = { action: 'block-insert', noteId: 'fixture-definition', blockType: 'formula', fields: { tex: 'x', outputs: [{ entryId: 'example-vector', bindings: {} }] } };
+    const existing = createNativeProposal(state, 'a', args);
+    const calls = [
+      { name: 'read_note', arguments: JSON.stringify({ noteId: 'fixture-definition' }) },
+      { name: 'read_dictionary_entry', arguments: JSON.stringify({ kind: 'symbol', entryId: 'example-vector' }) },
+      { name: 'propose_edit', arguments: JSON.stringify(args) },
+    ];
+    const result = await runAiTask({ context: createAiToolContext(state, 'a', ['fixture-definition']), providerId: 'provider', prompt: '重试公式', signal: new AbortController().signal,
+      existingProposals: [existing], complete: async request => {
+        const call = calls.shift();
+        if (call) return { message: { role: 'assistant', content: '', toolCalls: [{ id: `formula-${calls.length}`, ...call }] }, usage: { inputTokens: 0, outputTokens: 0 } };
+        expect(JSON.parse(request.messages.at(-1)!.content)).toMatchObject({ proposalId: existing.id, reused: true });
+        return { message: { role: 'assistant', content: '保留原建议' }, usage: { inputTokens: 0, outputTokens: 0 } };
+      } });
+    expect(result.proposals).toEqual([]);
+  });
+  it('revalidates then reuses identical suggestions from a failed attempt without counting them twice', async () => {
+    const state = createNotebookFixture();
+    const existing = createNoteProposal(state, 'a', { operation: 'replace-text', noteId: 'fixture-definition', blockId: 'fixture-definition:text', content: '润色后的内容。' });
+    const requests: AiMessage[][] = [];
+    let turn = 0;
+    const result = await runAiTask({ context: createAiToolContext(state, 'a', ['fixture-definition']), providerId: 'provider', prompt: '重试润色',
+      signal: new AbortController().signal, existingProposals: [existing], complete: async request => {
+        requests.push(structuredClone(request.messages));
+        const call = turn++ === 0 ? { name: 'read_note', arguments: '{"noteId":"fixture-definition"}' }
+          : turn === 2 ? { name: 'propose_note', arguments: '{"operation":"replace-text","noteId":"fixture-definition","blockId":"fixture-definition:text","content":"润色后的内容。"}' } : null;
+        return { message: { role: 'assistant', content: call ? '' : '等待审阅', ...(call ? { toolCalls: [{ id: `retry-${turn}`, ...call }] } : {}) }, usage: { inputTokens: 1, outputTokens: 1 } };
+      } });
+    expect(result.proposals).toHaveLength(0);
+    expect(JSON.parse(requests.at(-1)!.at(-1)!.content)).toMatchObject({ proposalId: existing.id, reused: true });
+    const denied = await runAiTask({ context: createAiToolContext(state, 'a', []), providerId: 'provider', prompt: '无权重试', signal: new AbortController().signal,
+      existingProposals: [existing], complete: async request => request.messages.some(message => message.role === 'tool')
+        ? { message: { role: 'assistant', content: request.messages.at(-1)!.content }, usage: { inputTokens: 0, outputTokens: 0 } }
+        : { message: { role: 'assistant', content: '', toolCalls: [{ id: 'denied', name: 'propose_note', arguments: '{"operation":"replace-text","noteId":"fixture-definition","blockId":"fixture-definition:text","content":"润色后的内容。"}' }] }, usage: { inputTokens: 0, outputTokens: 0 } } });
+    expect(denied.output).toContain('范围'); expect(denied.output).not.toContain('reused');
+  });
+  it('restricts selection edits to the selected text blocks while allowing original reading', async () => {
+    const state = createNotebookFixture(), note = state.notes.find(note => note.id === 'fixture-definition')!;
+    note.blocks.push({ id: 'not-selected', type: 'paragraph', text: '不要改动这里' });
+    const selection = createAiTextSelection(state, 'a', note.id, ['fixture-definition:text'], '通用');
+    const context = createAiToolContext(state, 'a', [note.id], selection);
+    let turn = 0;
+    const result = await runAiTask({ context, providerId: 'provider', prompt: '改选中内容', signal: new AbortController().signal, complete: async request => {
+      const name = turn++ === 0 ? 'read_note' : turn === 2 ? 'propose_note' : '';
+      const args = name === 'read_note' ? { noteId: note.id } : { operation: 'replace-text', noteId: note.id, blockId: 'not-selected', content: '错误修改' };
+      if (name) return { message: { role: 'assistant', content: '', toolCalls: [{ id: `selected-${turn}`, name, arguments: JSON.stringify(args) }] }, usage: { inputTokens: 0, outputTokens: 0 } };
+      return { message: { role: 'assistant', content: request.messages.at(-1)!.content }, usage: { inputTokens: 0, outputTokens: 0 } };
+    } });
+    expect(result.proposals).toEqual([]); expect(result.output).toContain('选区');
+    expect(buildAiSystemPrompt(context)).toContain('通用');
+  });
   it('finishes seven independent edits even when their reads and proposals need more than twelve rounds', async () => {
     const state = createNotebookFixture();
     const note = state.notes.find(note => note.id === 'fixture-definition')!;
@@ -255,12 +328,16 @@ describe('native AI task loop', () => {
   it('stops runaway tool loops and returns tool errors for unsupported operations', async () => {
     const context = createAiToolContext(createNotebookFixture(), 'a', ['fixture-definition']);
     let calls = 0;
-    await expect(runAiTask({ context, providerId: 'provider', prompt: '错误工具', signal: new AbortController().signal,
+    const result = await runAiTask({ context, providerId: 'provider', prompt: '错误工具', signal: new AbortController().signal,
       complete: async request => {
         calls++;
+        if (!request.tools?.length) return { message: { role: 'assistant', content: '无法执行此操作。' }, usage: { inputTokens: 0, outputTokens: 0 } };
         if (calls > 1) expect(request.messages.at(-1)!.content).toContain('未知或未授权');
         return { message: { role: 'assistant', content: '', toolCalls: [{ id: `tool-${calls}`, name: 'shell', arguments: '{}' }] }, usage: { inputTokens: 0, outputTokens: 0 } };
-      } })).rejects.toThrow(/已停止重复调用/);
-    expect(calls).toBe(3);
+      } });
+    expect(result.finishReason).toBe('stalled');
+    expect(result.tools).toEqual(Array(3).fill('shell: 未知或未授权的 AI 工具。'));
+    expect(result.output).toContain('已停止重复调用');
+    expect(calls).toBe(4);
   });
 });

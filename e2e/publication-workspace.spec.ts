@@ -83,7 +83,7 @@ test('groups export settings in full-width collapsible sections and preserves ed
       });
       expect(Math.abs(geometry.left)).toBeLessThanOrEqual(1);
       expect(Math.abs(geometry.right)).toBeLessThanOrEqual(1);
-      expect(geometry.align).toBe('right'); expect(geometry.radius).toBe('0px');
+      expect(geometry.align).toBe('left'); expect(geometry.radius).toBe('0px');
     }
     expect(await output.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await output.screenshot({ path: test.info().outputPath(`export-sections-${viewport.width}.png`) });
@@ -246,6 +246,7 @@ test('keeps a PDF page chosen in the source view for the actual export', async (
   await (await openNotebookMoreMenu(page.getByTestId('research-notebook'))).getByRole('menuitem', { name: '社交图文导出', exact: true }).click();
   output = await popup;
   await output.getByRole('tab', { name: '选择内容', exact: true }).click();
+  await output.getByLabel('导出此内容：1', { exact: true }).check();
   await output.getByRole('button', { name: 'PDF 下一页', exact: true }).click();
   await expect(output.getByLabel('PDF 页码', { exact: true })).toHaveValue('2');
   await output.getByRole('tab', { name: '样式预览', exact: true }).click();

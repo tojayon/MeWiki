@@ -12,9 +12,9 @@ type PopoverDrag = PopoverPosition & {
 export function useFormulaPopover({ ref, getAnchor, onCancel, triggerRef, side = "bottom", draggable = false }: {
   ref: RefObject<HTMLDivElement | null>;
   getAnchor: () => { left: number; top: number; bottom: number; right?: number };
-  onCancel: (restoreFocus?: boolean) => void;
+  onCancel: (restoreFocus?: boolean, nextTarget?: EventTarget | null) => void;
   triggerRef?: RefObject<HTMLElement | null>;
-  side?: "bottom" | "right";
+  side?: "bottom" | "right" | "top";
   draggable?: boolean;
 }) {
   const manualPosition = useRef<PopoverPosition | null>(null);
@@ -30,7 +30,8 @@ export function useFormulaPopover({ ref, getAnchor, onCancel, triggerRef, side =
       const below = anchor.bottom + 8;
       const preferredTop = side === "right"
         ? Math.max(12, Math.min(window.innerHeight - rect.height - 12, anchor.top))
-        : below + rect.height <= window.innerHeight - 12 ? below : Math.max(12, anchor.top - rect.height - 8);
+        : side === "top" ? anchor.top - rect.height - 8
+          : below + rect.height <= window.innerHeight - 12 ? below : Math.max(12, anchor.top - rect.height - 8);
       const top = Math.max(12, Math.min(Math.max(12, window.innerHeight - rect.height - 12), manualPosition.current?.top ?? preferredTop));
       if (manualPosition.current) manualPosition.current = { left, top };
       element.style.left = left + "px";
@@ -119,7 +120,7 @@ export function useFormulaPopover({ ref, getAnchor, onCancel, triggerRef, side =
   }, [ref]);
   useEffect(() => {
     const dismiss = (event: PointerEvent) => {
-      if (event.target instanceof Node && !ref.current?.contains(event.target) && !triggerRef?.current?.contains(event.target)) onCancel();
+      if (event.target instanceof Node && !ref.current?.contains(event.target) && !triggerRef?.current?.contains(event.target)) onCancel(false, event.target);
     };
     const escape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;

@@ -6,6 +6,7 @@ import { buildResearchOutline } from '../domain/researchOutline.ts';
 import { ResearchContentLibraryContext } from '../state/ResearchContentLibraryContext.ts';
 import { ResearchNoteLinkContext } from './ResearchNoteLinkContext.ts';
 import ResearchReadOnlyContent from './ResearchReadOnlyContent.tsx';
+import UiInfo from './UiInfo.tsx';
 import type { PublicationContentDiagnostic, PublicationDiagnosticCode } from '../domain/publicationDiagnostics.ts';
 
 const diagnosticMessages: Record<PublicationDiagnosticCode, string> = {
@@ -36,10 +37,9 @@ export default function PublicationContentSelection({ state, noteId, directory, 
   return <section ref={root} aria-label={t('原文与内容选择')} className="mewiki-publication-source">
     <fieldset className="mewiki-publication-scope-actions" disabled={disabled}>
       <button type="button" onClick={() => onAll(true)}>{t('全选')}</button><button type="button" onClick={() => onAll(false)}>{t('清空选择')}</button>
-      <span>{t`已选择 ${selected.size} / ${note.blocks.length} 项`}</span>
-      <label><input type="checkbox" checked={allTabs} onChange={event => onAllTabs(event.target.checked)} />{t('展开全部标签页（默认仅当前页签）')}</label>
+      <label title={t('展开全部标签页（默认仅当前页签）')}><input type="checkbox" aria-label={t('展开全部标签页（默认仅当前页签）')} checked={allTabs} onChange={event => onAllTabs(event.target.checked)} />{t('全部标签页')}</label>
+      <UiInfo label={t('内容选择说明')}><p>{t('在原文旁勾选要导出的内容，剪刀标记表示在此内容前另起一页。')}</p></UiInfo>
     </fieldset>
-    <p className="mewiki-publication-hint">{t('在原文旁勾选要导出的内容，剪刀标记表示在此内容前另起一页。')}</p>
     <ResearchContentLibraryContext.Provider value={{ notebook: state, directory, busy: disabled, status: directory ? 'saved' : 'browser', pdfPages, onSelectPdfPage }}><ResearchNoteLinkContext.Provider value={{ notes: state.notes, symbols: state.symbols, terms: state.terms ?? [], state, sourceNoteId: noteId, openNote: () => {} }}>
       <div className="mewiki-publication-source-paper research-notebook-editor is-readonly" inert={disabled}>
         <h1 className="research-note-title">{note.title}</h1>

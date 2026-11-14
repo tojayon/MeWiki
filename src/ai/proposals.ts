@@ -3,7 +3,8 @@ import { findResearchBlock, updateResearchBlockTree } from '../domain/researchBl
 import { parseMarkdownBlocks } from '../domain/researchMarkdown.ts';
 import { addTermEntry, createTermEntry, deleteTermEntry, listTermUses, termEntryError, updateTermEntry, type ResearchTermEntry } from '../domain/researchTerms.ts';
 import { applyNativeProposal, type AiNativeProposal } from './nativeProposals.ts';
-import { nativeEntity, nativeStoredSnapshotMatches, restoreNativeEffects, type AiNativeEffect, type AiNativeEntity, type AiNativeTarget } from './nativeEdits.ts';
+import { nativeEditEffects, nativeEntity, nativeFingerprint, restoreNativeEffects, type AiNativeEffect, type AiNativeEntity, type AiNativeTarget } from './nativeEdits.ts';
+import { noteEditDependenciesUnchanged } from './editDependencies.ts';
 
 export const AI_MAX_CONTENT = 40000;
 const newId = () => crypto.randomUUID();
@@ -26,7 +27,8 @@ export function createNoteProposal(state: ResearchNotebookState, libraryId: stri
   operation: string; noteId?: string; blockId?: string; title?: string; content: string;
 }): AiProposal {
   if (!['create', 'append', 'replace-text', 'delete-text'].includes(input.operation)) throw new Error('AI 修改操作无效。');
-  const content = input.operation === 'delete-text' && input.content === '' ? '' : aiText(input.content);
+  const validated = input.operation === 'delete-text' && input.content === '' ? '' : aiText(input.content);
+  const content = input.operation === 'replace-text' ? input.content : validated;
   if (input.operation === 'delete-text' && content !== '') throw new Error('删除文字块的建议内容必须为空。');
   const before = input.operation === 'create' ? null : state.notes.find(note => note.id === input.noteId);
   if (before === undefined) throw new Error('目标笔记已不存在。');
@@ -75,16 +77,13 @@ export function applyAiProposal(state: ResearchNotebookState, proposal: AiPropos
     next = proposal.before ? updateTermEntry(state, proposal.term) : addTermEntry(state, proposal.term);
   } else {
     const current = state.notes.find(note => note.id === proposal.targetId);
-    if (JSON.stringify(current ?? null) !== JSON.stringify(proposal.before)) {
-      const latest = approvedChanges.findLast(change => change.target === 'note' && change.targetId === proposal.targetId && change.libraryId === libraryId);
-      if (!current || !latest || proposal.kind === 'create' || !nativeStoredSnapshotMatches(latest.baseline, proposal.before) || !nativeStoredSnapshotMatches(latest.after, current)) throw new Error('目标内容已变化，请重新生成建议。');
-      if (proposal.kind === 'replace-text' || proposal.kind === 'delete-text') {
-        const originalBlock = proposal.before && findResearchBlock(proposal.before.blocks, proposal.blockId ?? '')?.block;
-        const currentBlock = findResearchBlock(current.blocks, proposal.blockId ?? '')?.block;
-        checkBaseline(currentBlock, originalBlock);
-      }
-      before = structuredClone(current);
+    if (nativeFingerprint(current) !== nativeFingerprint(proposal.before)) {
+      const independent = current && proposal.before && proposal.kind !== 'create' && (proposal.kind === 'append'
+        ? nativeFingerprint(current.blocks) === nativeFingerprint(proposal.before.blocks) && current.library === proposal.before.library
+        : noteEditDependenciesUnchanged(proposal.before, current, { action: proposal.kind === 'replace-text' ? 'block-update' : 'block-delete', blockId: proposal.blockId, fields: { text: proposal.content } }));
+      if (!independent) throw new Error('目标内容已变化，请重新生成建议。');
     }
+    before = current ? structuredClone(current) : null;
     if (proposal.kind === 'replace-text' || proposal.kind === 'delete-text') {
       const block = current && findResearchBlock(current.blocks, proposal.blockId ?? '')?.block;
       if (!block || !['paragraph', 'heading', 'markdown'].includes(block.type)) throw new Error('只能修改现有文字内容块。');
@@ -100,7 +99,7 @@ export function applyAiProposal(state: ResearchNotebookState, proposal: AiPropos
     }
   }
   const result = proposal.kind === 'term' ? next.terms?.find(term => term.id === proposal.targetId) : next.notes.find(note => note.id === proposal.targetId);
-  return { state: next, change: { proposalId: proposal.id, libraryId, target: proposal.kind === 'term' ? 'term' : 'note', targetId: proposal.targetId, before, after: fingerprint(result), baseline: JSON.stringify(proposal.before) } };
+  return { state: next, change: { proposalId: proposal.id, libraryId, target: proposal.kind === 'term' ? 'term' : 'note', targetId: proposal.targetId, before, after: fingerprint(result), baseline: JSON.stringify(proposal.before), effects: nativeEditEffects(state, next) } };
 }
 
 export type AiProposalPreview = {

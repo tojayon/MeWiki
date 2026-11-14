@@ -8,6 +8,7 @@ import { createNoteProposal, createTermProposal } from './proposals.ts';
 import { applyAiProposalGroup } from './proposalGroup.ts';
 import { rebaseAiReviewProposals } from './reviewDecisions.ts';
 import { createNativeProposal } from './nativeProposals.ts';
+import { parse } from 'parse5';
 
 const renderReview = (props: Pick<ComponentProps<typeof AiProposalReview>, 'state' | 'proposal'> & Partial<ComponentProps<typeof AiProposalReview>>) => renderToStaticMarkup(createElement(DeleteConfirmationProvider, null, createElement(AiProposalReview, {
   proposals: props.proposal ? [props.proposal] : [], libraryId: 'a', changes: [], disabledReason: '', mutating: false,
@@ -24,6 +25,118 @@ function fiveTabFixture() {
 }
 
 describe('AI proposal rendering', () => {
+  it('shows the captured original, current manual text and suggested text when a field conflicts', () => {
+    const { state, note } = fiveTabFixture();
+    const proposal = createNoteProposal(state, 'a', { operation: 'replace-text', noteId: note.id, blockId: 'target', content: 'AI 建议的新文字' });
+    const block = note.blocks.flatMap(item => item.type === 'examples' ? item.tabs.flatMap(tab => tab.blocks) : []).find(item => item.id === 'target')!;
+    if (!('text' in block)) throw new Error('fixture');
+    block.text = '用户手动修改的文字';
+    const html = renderReview({ state, proposal, proposals: [proposal] });
+    expect(html).toContain('内容冲突'); expect(html).toContain('当前内容');
+    expect(html).toContain('用户手动修改的文字'); expect(html).toContain('AI 建议的新文字');
+  });
+  it.each(['legacy', 'native'] as const)('marks only changed words inside rendered Markdown for %s suggestions', kind => {
+    const state = createNotebookFixture(), note = state.notes.find(item => item.id === 'fixture-definition')!;
+    const before = '保留 **加粗** 与 [参考](#research-note/fixture-conditions)，系统始终稳定，$x^2$ 不变。';
+    const after = before.replace('始终', '局部');
+    note.blocks = [{ id: 'rich', type: 'markdown', kind: 'markdown', text: before }];
+    const proposal = kind === 'legacy' ? createNoteProposal(state, 'a', { operation: 'replace-text', noteId: note.id, blockId: 'rich', content: after })
+      : createNativeProposal(state, 'a', { action: 'block-update', noteId: note.id, blockId: 'rich', fields: { text: after } });
+    const html = renderReview({ state, proposal });
+    expect(html).toMatch(/<del[^>]*>始终<\/del>/);
+    expect(html).toMatch(/<ins[^>]*>局部<\/ins>/);
+    expect(html).toContain('<strong>加粗</strong>');
+    expect(html).toContain('class="katex"');
+    expect(html).not.toContain('title="目标笔记已移除"');
+    expect(html).not.toContain('<del class="mewiki-ai-review-rendered-change"');
+  });
+  it('marks only changed words in a plain heading without striking the shared sentence', () => {
+    const state = createNotebookFixture(), note = state.notes.find(item => item.id === 'fixture-definition')!;
+    note.blocks = [{ id: 'heading', type: 'heading', level: 2, text: '系统始终稳定' }];
+    const proposal = createNoteProposal(state, 'a', { operation: 'replace-text', noteId: note.id, blockId: 'heading', content: '系统局部稳定' });
+    const html = renderReview({ state, proposal });
+    expect(html).toMatch(/<del[^>]*>始终<\/del>/);
+    expect(html).toMatch(/<ins[^>]*>局部<\/ins>/);
+    expect(html).not.toMatch(/<del[^>]*><span>系统/);
+  });
+  it('marks an edited native string field precisely while retaining its Markdown', () => {
+    const state = createNotebookFixture();
+    state.terms = [{ id: 'precise-term', name: '测试术语', meaning: '保留 **原有格式**，系统始终稳定。', aliases: [] }];
+    const proposal = createNativeProposal(state, 'a', { action: 'term-save', entryId: 'precise-term', fields: { meaning: '保留 **原有格式**，系统局部稳定。' } });
+    const html = renderReview({ state, proposal });
+    expect(html).toMatch(/<del[^>]*>始终<\/del>/);
+    expect(html).toMatch(/<ins[^>]*>局部<\/ins>/);
+    expect(html).toContain('<strong>原有格式</strong>');
+  });
+  it('keeps unchanged escapes and entities outside the marked word', () => {
+    const state = createNotebookFixture(), note = state.notes.find(item => item.id === 'fixture-definition')!;
+    note.blocks = [{ id: 'encoded-text', type: 'markdown', kind: 'markdown', text: '保留 &amp; \\*字面符号\\*，系统始终稳定。' }];
+    const proposal = createNoteProposal(state, 'a', { operation: 'replace-text', noteId: note.id, blockId: 'encoded-text', content: '保留 &amp; \\*字面符号\\*，系统局部稳定。' });
+    const html = renderReview({ state, proposal });
+    expect(html).toMatch(/<del[^>]*>始终<\/del>/);
+    expect(html).toMatch(/<ins[^>]*>局部<\/ins>/);
+    expect(html).toContain('保留 &amp; *字面符号*，系统');
+  });
+  it.each([
+    ['quote', '> 保留说明', '保留说明', 'blockquote'],
+    ['table', '| 列 |\n| --- |\n| 保留值 |', '| 列 |\n| ---: |\n| 保留值 |', 'table'],
+    ['taskList', '- [ ] 保留任务', '- [x] 保留任务', 'li'],
+    ['orderedList', '- 保留项', '1. 保留项', 'li'],
+  ] as const)('marks the rendered %s structure when only its syntax changes', (kind, before, after, tag) => {
+    const state = createNotebookFixture(), note = state.notes.find(item => item.id === 'fixture-definition')!;
+    note.blocks = [{ id: 'structure', type: 'markdown', kind, text: before }];
+    const proposal = createNoteProposal(state, 'a', { operation: 'replace-text', noteId: note.id, blockId: 'structure', content: after });
+    const html = renderReview({ state, proposal });
+    expect(html).toMatch(new RegExp(`<${tag}[^>]*data-ai-change="(?:remove|add)"`));
+    if (kind === 'taskList') {
+      expect(html).toContain('class="contains-task-list"');
+      expect(html).toContain('class="task-list-item"');
+    }
+    const errors: string[] = [];
+    parse(html, { onParseError: error => { if (error.code !== 'missing-doctype') errors.push(error.code); } });
+    expect(errors).toEqual([]);
+    expect(html).not.toMatch(/<(?:ul|ol)>\s*<(?:del|ins)/);
+  });
+  it.each([
+    ['code', '```js\nconst value = 1;\n```', '```js\nconst value = 2;\n```', 'code'],
+    ['markdown', '$$\nx^2\n$$', '$$\nx^3\n$$', 'div'],
+  ] as const)('retains visible change markers on rendered %s nodes', (kind, before, after, tag) => {
+    const state = createNotebookFixture(), note = state.notes.find(item => item.id === 'fixture-definition')!;
+    note.blocks = [{ id: 'atomic', type: 'markdown', kind, text: before }];
+    const proposal = createNoteProposal(state, 'a', { operation: 'replace-text', noteId: note.id, blockId: 'atomic', content: after });
+    const html = renderReview({ state, proposal });
+    expect(html).toMatch(new RegExp(`<${tag}[^>]*data-ai-change="remove"`));
+    expect(html).toMatch(new RegExp(`<${tag}[^>]*data-ai-change="add"`));
+    if (kind === 'markdown') expect(html).toContain('class="katex"');
+  });
+  it('marks paragraph merges without treating an ordinary soft line wrap as a replaced paragraph', () => {
+    const state = createNotebookFixture(), note = state.notes.find(item => item.id === 'fixture-definition')!;
+    note.blocks = [{ id: 'paragraphs', type: 'markdown', kind: 'markdown', text: '**第一段**。\n\n第二段。' }];
+    const proposal = createNoteProposal(state, 'a', { operation: 'replace-text', noteId: note.id, blockId: 'paragraphs', content: '**第一段**。第二段。' });
+    const html = renderReview({ state, proposal });
+    expect(html).toContain('data-ai-change="remove"');
+    expect(html).toContain('data-ai-change="add"');
+    note.blocks = [{ id: 'paragraphs', type: 'markdown', kind: 'markdown', text: '**第一段**。\n第二段。' }];
+    const softWrap = createNoteProposal(state, 'a', { operation: 'replace-text', noteId: note.id, blockId: 'paragraphs', content: '**第一段**。 第二段。' });
+    expect(renderReview({ state, proposal: softWrap })).not.toMatch(/<p[^>]*data-ai-change/);
+  });
+  it('marks links whose definition target changes inside a quoted definition', () => {
+    const state = createNotebookFixture(), note = state.notes.find(item => item.id === 'fixture-definition')!;
+    note.blocks = [{ id: 'definitions', type: 'markdown', kind: 'markdown', text: '> [src]: https://old.test\n\n[打开来源][src]' }];
+    const proposal = createNoteProposal(state, 'a', { operation: 'replace-text', noteId: note.id, blockId: 'definitions', content: '> [src]: https://new.test\n\n[打开来源][src]' });
+    const html = renderReview({ state, proposal });
+    expect(html).toMatch(/<del[^>]*><a[^>]*href="https:\/\/old.test"/);
+    expect(html).toMatch(/<ins[^>]*><a[^>]*href="https:\/\/new.test"/);
+  });
+  it('keeps an ordinary soft wrap neutral when the same Markdown contains table cell breaks', () => {
+    const state = createNotebookFixture(), note = state.notes.find(item => item.id === 'fixture-definition')!;
+    const before = '第一段。\n第二段。\n\n| 列 |\n| --- |\n| 第一行<br>第二行 |';
+    note.blocks = [{ id: 'cell-breaks', type: 'markdown', kind: 'markdown', text: before }];
+    const proposal = createNoteProposal(state, 'a', { operation: 'replace-text', noteId: note.id, blockId: 'cell-breaks', content: before.replace('。\n第二段', '。 第二段') });
+    const html = renderReview({ state, proposal });
+    expect(html).not.toMatch(/<(?:p|table)[^>]*data-ai-change/);
+    expect(html).toMatch(/第一行<br\/>\s*第二行/);
+  });
   it('places independent decision controls at the changed text and native tab, with no duplicate container controls', () => {
     const { state, note } = fiveTabFixture();
     const text = createNoteProposal(state, 'a', { operation: 'replace-text', noteId: note.id, blockId: 'target', content: '待审文字' });
@@ -99,7 +212,7 @@ describe('AI proposal rendering', () => {
     expect(html.match(/role="tabpanel"/g)).toHaveLength(1);
     expect(html.match(/class="research-examples-label"/g)).toHaveLength(1);
     expect(html).toMatch(/data-example-id="event-3" aria-selected="true"/);
-    expect(html).toContain('原来的事件说明。');
+    expect(html.replace(/<[^>]*>/g, '')).toContain('原来的事件说明。');
     if (operation === 'replace-text') expect(html).toContain('<strong>新的事件说明</strong>');
     else expect(html).not.toContain('data-kind="add"');
     expect(JSON.stringify(state)).toBe(saved);
@@ -150,10 +263,10 @@ describe('AI proposal rendering', () => {
     const proposal = createNoteProposal(state, 'a', { operation: 'replace-text', noteId: note.id, blockId: 'rich', content: '## 新标题\n\n新 **定义** 与 $x^3$。\n\n- 新条件\n\n| 条目 | 值 |\n| --- | --- |\n| 新值 | 2 |' });
     const html = renderReview({ state, proposal });
     expect(html).toContain('data-review-mode="rendered"');
-    expect(html).toContain('<h2>旧标题</h2>');
-    expect(html).toContain('<h2>新标题</h2>');
+    expect(html).toContain('<h2><del class="mewiki-ai-inline-change">旧</del>标题</h2>');
+    expect(html).toContain('<h2><ins class="mewiki-ai-inline-change">新</ins>标题</h2>');
     expect(html).toContain('<strong>定义</strong>');
-    expect(html).toContain('<li>新条件</li>');
+    expect(html).toContain('<li><ins class="mewiki-ai-inline-change">新</ins>条件</li>');
     expect(html).toContain('<table>');
     expect(html).toContain('class="katex"');
     expect(html).not.toContain('**定义**');
@@ -168,8 +281,8 @@ describe('AI proposal rendering', () => {
     expect(html).toContain('<h2>');
     expect(html).toContain('data-kind="remove"');
     expect(html).toContain('data-kind="add"');
-    expect(html).toContain('<strong>始终</strong>');
-    expect(html).toContain('<strong>局部</strong>');
+    expect(html).toMatch(/<del[^>]*>始终<\/del>/);
+    expect(html).toMatch(/<ins[^>]*>局部<\/ins>/);
   });
 
   it('renders an appended list and links as content inside a green addition', () => {

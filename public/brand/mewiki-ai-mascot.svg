@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="100 100 1080 1080" role="img" aria-labelledby="title description">
+  <title id="title">MeWiki AI 吉祥物</title>
+  <desc id="description">戴加大蓝色耳机的黑色正圆头像，蓝白 M，无嘴巴。仅用黑、白、蓝三种实色色块与少量平滑曲线绘制，背景透明，适合小尺寸头像。</desc>
+  <defs>
+    <circle id="head-outline" cx="640" cy="640" r="450"/>
+    <path id="ribbon-outline" d="M229 679C254.09 512.06 425.6 381.24 530 369C664.41 353.24 604.06 484.99 610 532C612.02 548 625.13 555.17 644 540C732.62 468.77 804.11 404.41 850 400C960.38 389.39 896.97 528.99 860 608C816.96 699.98 794.16 750.5 875 733C909.71 725.48 955 711 995 697L1005 732C950 812 866.99 900.36 800 902C682.97 904.87 667.51 829.84 695 747C716.61 681.87 747.3 618.8 755 593C774.26 528.46 679.65 624.32 604 693C564.73 728.65 525.04 768.06 503 784C439.13 830.18 466.91 692.01 465 669C459.76 606.02 414.57 635.47 394 660C337.54 727.32 333 833 365 907C300 861 213.02 785.3 229 679Z"/>
+    <mask id="face-shape" maskUnits="userSpaceOnUse" x="100" y="100" width="1080" height="1080"><use href="#head-outline" fill="#fff"/></mask>
+    <clipPath id="ribbon-shape"><use href="#ribbon-outline"/></clipPath>
+  </defs>
+
+  <g id="left-ear" transform="rotate(-5 194 670)">
+    <ellipse cx="194" cy="670" rx="80" ry="153" fill="#080a0d"/>
+    <ellipse cx="194" cy="670" rx="58" ry="125" fill="#2f94c7"/>
+  </g>
+
+  <g id="head" mask="url(#face-shape)">
+    <rect x="100" y="100" width="1080" height="1080" fill="#080a0d"/>
+    <g id="monogram" transform="translate(650 650) scale(1.08) translate(-650 -650)">
+      <use href="#ribbon-outline" fill="#fff"/>
+      <path id="blue-ribbon" clip-path="url(#ribbon-shape)" fill="#2f94c7" d="M100 980C280 650 422.97 480.38 503 486C563.98 490.29 554.06 532.1 550 568C545.24 610.16 542.03 647.13 580 638C621.03 628.14 682.77 567.05 735 528C813.18 469.55 864.74 478.41 814 588C791.43 636.74 768 695 768 732C768 801 829 820 1005 730L1200 1200L100 1200Z"/>
+    </g>
+  </g>
+
+  <g id="right-ear" transform="rotate(12 1060 691)">
+    <ellipse cx="1060" cy="691" rx="100" ry="170" fill="#080a0d"/>
+    <ellipse cx="1070" cy="691" rx="66" ry="134" fill="#2f94c7"/>
+  </g>
+</svg>

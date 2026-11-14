@@ -36,6 +36,7 @@ function SourceTextBlock({ value, label, readOnly = false, kind = "paragraph", p
   const ref = useRef<ResearchReferenceEditorHandle>(null);
   const codeRef = useRef<HTMLTextAreaElement>(null);
   const pendingReference = useRef<{ href: string; occurrence: number } | null>(null);
+  const pendingPoint = useRef<{ x: number; y: number } | null>(null);
   const composing = useRef(false);
   const draft = researchTextEditorState(value, kind);
   const source = readOnly ? value : draft.source;
@@ -51,8 +52,12 @@ function SourceTextBlock({ value, label, readOnly = false, kind = "paragraph", p
     if (!editing || !input) return;
     initialSource.current = input.value;
     input.focus({ preventScroll: true });
-    const caret = researchTextEditorState(input.value, kind).caret;
-    input.setSelectionRange(caret, caret);
+    if (kind !== "code" && pendingPoint.current) ref.current?.setSelectionAtPoint(pendingPoint.current.x, pendingPoint.current.y);
+    else {
+      const caret = researchTextEditorState(input.value, kind).caret;
+      input.setSelectionRange(caret, caret);
+    }
+    pendingPoint.current = null;
     if (kind !== "code" && pendingReference.current) {
       ref.current?.inspectReference(pendingReference.current.href, pendingReference.current.occurrence);
       pendingReference.current = null;
@@ -80,14 +85,14 @@ function SourceTextBlock({ value, label, readOnly = false, kind = "paragraph", p
       setEditing(false);
       if (accepted) onComplete();
     } else if (event.shiftKey && !event.ctrlKey && !event.metaKey) {
+      if ("replaceRange" in input) return;
       const next = continueResearchMarkdownLine(input.value, input.selectionStart, input.selectionEnd, kind);
       if (!next) return;
       event.preventDefault(); event.stopPropagation();
       let start = 0, end = input.value.length, nextEnd = next.text.length;
       while (start < end && start < nextEnd && input.value[start] === next.text[start]) start++;
       while (end > start && nextEnd > start && input.value[end - 1] === next.text[nextEnd - 1]) { end--; nextEnd--; }
-      if ("replaceRange" in input) input.replaceRange(next.text.slice(start, nextEnd), start, end, next.caret);
-      else {
+      {
         input.setSelectionRange(start, end);
         if (!document.execCommand("insertText", false, next.text.slice(start, nextEnd))) {
           input.setRangeText(next.text.slice(start, nextEnd), start, end, "end");
@@ -102,7 +107,8 @@ function SourceTextBlock({ value, label, readOnly = false, kind = "paragraph", p
   return <div className="research-editable-text research-markdown" data-kind={kind} data-plain-text={plainText}
     role={editing ? undefined : "textbox"} aria-label={editing ? undefined : label} aria-multiline={editing ? undefined : true} tabIndex={editing ? undefined : 0}
     onClickCapture={event => {
-      if (editing || kind === "code" || !(event.target instanceof Element)) return;
+      if (editing || kind === "code" || !(event.target instanceof Element) || !event.currentTarget.contains(event.target)) return;
+      if (event.target.closest('[role="button"].research-dictionary-term-reference, button.research-dictionary-symbol-reference')) return;
       const reference = event.target.closest<HTMLElement>("[data-reference-href]");
       if (!reference?.dataset.referenceHref) return;
       event.preventDefault(); event.stopPropagation();
@@ -111,8 +117,14 @@ function SourceTextBlock({ value, label, readOnly = false, kind = "paragraph", p
       setEditing(true);
     }}
     onPointerDown={(event) => {
-      if (editing || (event.target instanceof Element && event.target.closest("a, button, input"))) return;
+      if (editing || !(event.target instanceof Element) || !event.currentTarget.contains(event.target) || event.target.closest("a, button, input, [role=button]")) return;
       event.preventDefault();
+      pendingPoint.current = { x: event.clientX, y: event.clientY };
+      if (kind !== "code") {
+        const move = (pointer: PointerEvent) => { if (pointer.pointerId === event.pointerId) ref.current?.setSelectionAtPoint(pointer.clientX, pointer.clientY, true); };
+        const finish = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", finish); window.removeEventListener("pointercancel", finish); };
+        window.addEventListener("pointermove", move); window.addEventListener("pointerup", finish, { once: true }); window.addEventListener("pointercancel", finish, { once: true });
+      }
       setEditing(true);
     }}
     onFocus={(event) => { if (event.target === event.currentTarget) setEditing(true); }}
@@ -128,5 +140,6 @@ function SourceTextBlock({ value, label, readOnly = false, kind = "paragraph", p
     }}
     onKeyDown={handleKeys}
     placeholder={hint}
+    headings={headings}
   /> : rendered}</div>;
 }

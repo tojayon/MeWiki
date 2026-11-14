@@ -10,6 +10,7 @@ import { localizeError } from '../i18n/locale.ts';
 import { useContext } from 'react';
 import { LibraryWorkspaceContext } from '../state/LibraryWorkspaceContext.ts';
 import { openImageCreation } from '../state/publicationNavigation.ts';
+import UiInfo from '../components/UiInfo.tsx';
 function capabilityLabel(plugin: PluginManifest) {
   const context = plugin.capabilities.includes('context.read');
   const open = plugin.capabilities.includes('content.open');
@@ -38,11 +39,10 @@ export default function PluginManager() {
     try { await action(); } catch (cause) { setError(cause instanceof Error ? cause.message : '插件管理失败。'); } finally { setBusy(false); }
   };
   return <section aria-label={t("插件管理")} data-testid="mewiki-plugin-manager" className="mewiki-plugin-manager">
-    <p>{t("插件为外部程序提供专门的内容卡片与操作。停用或卸载插件会保留笔记中的全部内容。")}</p>
-    <div className="mewiki-plugin-install"><input ref={input} type="file" accept=".json,.zip,.mewiki-plugin,application/json,application/zip" aria-label={t('选择插件包')} disabled={busy} onChange={event => {
+    <div className="mewiki-plugin-install"><div className="mewiki-plugin-install-control"><input ref={input} type="file" accept=".json,.zip,.mewiki-plugin,application/json,application/zip" aria-label={t('选择插件包')} disabled={busy} onChange={event => {
       const file = event.target.files?.[0]; event.target.value = ''; setPreview(null);
       if (file) void run(async () => { const result = await inspectPluginPackage(file); setPreview({ file, ...result }); });
-    }} /><p>{t('支持声明式 JSON 或 ZIP 插件包，最大 1 MiB。')}</p></div>
+    }} /><UiInfo label={t('插件说明')}><p>{t("插件为外部程序提供专门的内容卡片与操作。停用或卸载插件会保留笔记中的全部内容。")}</p></UiInfo></div><p>{t('支持声明式 JSON 或 ZIP 插件包，最大 1 MiB。')}</p></div>
     {preview && <section className="mewiki-plugin-preview" aria-label={t('插件安装预览')}>
       <h3>{preview.manifest.name} <small>{preview.manifest.version}</small></h3><p>{preview.manifest.description}</p><p>{t('来源：本地文件')} · {preview.file.name}</p><code>{preview.manifest.id}</code><small>SHA-256: {preview.sha256}</small>
       <p>{capabilityLabel(preview.manifest)}</p>
@@ -60,13 +60,11 @@ export default function PluginManager() {
       const bundled = availablePlugins.some(item => item.id === plugin.id);
       const record = installed.find(item => item.manifest.id === plugin.id);
       return <section className="mewiki-plugin-row" key={plugin.id}>
-        <Plug size={22} /><div><h3>{t(plugin.name)} <small>{plugin.version}</small></h3><p>{t(plugin.description)}</p>
-          <small>{bundled ? t('随应用提供') : t('来源：本地文件')}</small><code>{plugin.id}</code>
-          <small>{capabilityLabel(plugin)}</small>
+        <Plug size={20} /><div><div className="mewiki-plugin-heading"><h3>{t(plugin.name)} <small>{plugin.version}</small></h3><span className="mewiki-plugin-state" data-status={status}>{status === 'available' ? bundled ? t('未安装') : t('已安装，未启用') : status === 'enabled' ? t('已启用') : t('已停用')}</span></div><p>{t(plugin.description)}</p>
+          <details className="mewiki-plugin-metadata"><summary>{t('能力与来源')}</summary><div><small>{bundled ? t('随应用提供') : t('来源：本地文件')}</small><code>{plugin.id}</code><p>{capabilityLabel(plugin)}</p></div></details>
           {record && record.versions.length > 1 && <label>{t('已安装版本')}<select aria-label={t`切换 ${plugin.name} 的版本`} value={plugin.version} disabled={busy} onChange={event => void run(async () => {
             await activatePluginVersion(plugin.id, event.target.value); integration.setPlugin(plugin.id, 'disabled'); notifyPluginPackagesChanged(); await refresh(); setNotice('版本已切换，请重新启用插件。');
           })}>{record.versions.map(version => <option key={version} value={version}>{version}</option>)}</select></label>}
-          <span className="mewiki-plugin-state">{status === 'available' ? bundled ? t('未安装') : t('已安装，未启用') : status === 'enabled' ? t('已启用') : t('已停用')}</span>
         </div><div className="mewiki-plugin-actions">
           {status === 'enabled' && workspace && plugin.exporters?.map(exporter => <button key={exporter.id} type="button" disabled={busy} onClick={() => openImageCreation(plugin, exporter, workspace.profile.id, workspace.profile.directory, setError, t('图片创作'))}>{t('打开图片创作')}</button>)}
           <button type="button" disabled={busy} onClick={() => integration.setPlugin(plugin.id, status === 'enabled' ? 'disabled' : 'enabled')}>{status === 'available' && bundled ? t('安装并启用') : status === 'enabled' ? t('停用') : t('启用')}</button>

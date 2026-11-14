@@ -1,5 +1,87 @@
 # MeWiki 开发说明
 
+正文源码入口与删除按钮共用内容块右侧操作列：`ResearchReferenceEditor` 仅将普通笔记正文的切换按钮 portal 到最近的 `.research-note-block`，源码／删除／提示设置分别占据顶部 6／32／58px。`ResearchNotebook.css` 用直接正文或提示容器保持槽位，不能只依赖 live editor，否则失焦卸载会在 pointerdown 和 click 之间移动删除按钮。portal 按钮须纳入 `sessionContains`，自身 blur 在离开会话时沿原保存链处理；不调整正文高度、padding 或滚动。表格工具与 AI 独立建议编辑器继续保留各自入口。
+
+AI 符号书写：工具 v6 为词典返回解析后的默认写法与稳定引用；`read_note`／`read_block` 附有界约定并计入原读取预算。`symbolNotation.ts` 仅在 AI 建议登记前检查唯一默认实例的新增字体简化，错误交回模型纠正，不静默替换正文、不强制自定义角标、不拦用户审阅调整。比较保留分组和非字体命令，稳定链接按实际 bindings、公式按渲染 tex 核对。修改范围、读取授权和 controller 保存沿原链。见[计划](plans/2026-11-14-ai-symbol-notation.md)、第 5／22 章和 AI 架构；专项单测及 Edge 使用虚构资料、独立 `5595`／`.mewiki/ai-notation-checks/`，评测 `symbol-notation-repair` 验证纠正后的建议可批准。
+
+进入正文编辑的布局（2026-11-14）：行内公式 node view 不能仅 `createRoot().render()` 后立即按坐标选区，因为独立 React root 尚未提交，公式宽高为零会改变换行并触发浏览器滚动锚定，光标也可能落错行。先同步绘制 `.research-inline-formula > .formula` 与同配置的 KaTeX HTML，再挂载原交互组件，不能以延迟复位 scrollTop 掩盖布局变化。`ResearchReferenceEditor.css` 的零间距只用于 `data-plain-text=true`，不要覆盖普通 paragraph 的 1px margin。回归 `e2e/rendered-click-scroll.spec.ts` 检查点击前后及退出编辑的整页坐标、块高、总高度、光标与多次切换，覆盖 50 项虚构正文和含公式的长列表；不改变资料或 Agent 保存链。
+
+底栏快捷配置：`ResearchFooterQuickSettings` 复用资料库／插件上下文和 `LanguageSettings`，三个图标各自提供顶部优先的非模态卡片，单例、原生控件、短窗内部滚动，完整管理经底部入口进入既有设置。`useFormulaPopover` 的 `top` 仅改变首选垂直定位；外部点击、Esc、焦点离开和内容／库／设置／侧栏范围变化清理。切库继续沿原有 flush／稳定 ID／失败保护，不接新 API；成功后工作区会 remount，焦点恢复到新库可见的资料库按钮或左展开开关。隐藏设置页仍挂载，因此快捷语言控件须传独立 groupName。专项为 `e2e/footer-quick-settings.spec.ts`，相关国际化、插件包、多资料库、手册和双侧竖栏用例同步；见[计划](plans/2026-11-14-footer-quick-settings.md)。
+
+词典浮层关闭与滚动（2026-11-14）：`useFormulaPopover` 的取消回调第二个可选参数为 pointerdown 的实际 `nextTarget`。捕获阶段不能根据 `hasFocus()` 独自判断是否离开编辑器，此时焦点仍在即将关闭的面板内。`ResearchReferenceEditor.closeInspection` 对同一编辑会话的目标只关闭面板，保留文档供原生点击定位；外部目标在下一帧复核实际焦点，沿原链失焦保存，避免在点击途中卸载旧文档。详情与 F2 面板都要透传目标，Esc 焦点返回不变。长列表回归为 `e2e/dictionary-inspection-scroll.spec.ts`；不以重置滚动位置掩盖卸载问题。
+
+工作区控件布局：`ResearchSidebarTabs` 同时用于左栏、右栏图标页签和两侧竖栏；`trailing` 保留嵌入 AI 标签，键盘按实际 DOM 的标签集合导航，`elementId` 保留原 tabpanel 关联。右侧 `focusGroup` 在切换大纲／符号反链与嵌入 AI 时查找可见的同名标签恢复焦点，`AiFloatingPanel` 不覆盖该标签焦点。右开关始终位于展开头部最右，收起竖栏仍第一位。全局图标动作归左底栏，手册最后，库名在数据库图标 tooltip；中间正文与引用页 footer 透明且无上边框，更多功能无分组线。操作见[第 2 章](wiki/02-workspace.md)，改动时运行 `workspace-chrome`、`workspace-ribbons`、`manual-sidebar`、`ai-docking` 与响应式工具栏检查；本轮使用 `5587`／`.mewiki/workspace-chrome-checks/`，不操作其他服务或真实资料。
+
+笔记顶栏的 `useResearchNoteTitleLayout` 以当前 input 实际值、计算字体和字距测量标题，预留组织按钮及右侧操作区后判断整组徽标是否可见。非紧凑网格按标题字宽分配，剩余宽度分给两侧；隐藏徽标保留子项自然尺寸供恢复判断，并通过 `aria-hidden`／`inert` 退出导航。正文列尺寸、操作区、字体就绪和根字体变量变化均重新测量，不能仅按窗口宽度或固定三列比例处理；不要重建标题 input 或改变原有草稿同步。手册第 2／3 章、UI 规范及[标题布局计划](plans/2026-11-14-note-title-priority.md)同步，回归为 `e2e/research-responsive-toolbar.spec.ts`。
+
+符号引用聚焦排版（2026-11-14）：编辑原子共用正文 `.katex` 的 1.08em 字号，不再单独缩为 1.05em，避免多处符号的宽度差累积成正文左移。`e2e/rendered-text-spacing.spec.ts` 在 1863／390px、15／20px 正文字号下核对普通公式和词典符号引用的段落／有序列表，逐字比较位置、公式宽高及字号，退出编辑后恢复完全相同的几何。只改显示样式，资料及 AI 保存路径不变。
+
+左右侧栏开关放在本侧顶部首位，固定展开使用 header，收起使用 ribbon，临时浮层不复制开关。右开关迁移后在布局提交后的帧恢复焦点；词典、地图、正文和 AI 审阅不再注入旧开关或竖线。窄屏审阅使用正文列，原正文继续 inert，侧栏和聊天可交互。维护与 Edge 检查见[竖栏计划](plans/2026-11-14-workspace-ribbons.md)。
+
+正文排版编辑（2026-11-14）：实现与兼容边界见[计划](plans/2026-11-14-rendered-text-editing.md)。点击按 `posAtCoords` 放置光标，拖选扩展同一选区；开发态挂载重演恢复 state、选区和焦点。阅读／编辑共用文档字体与排版，自动标题编号不进入编辑内容或 AI 选区。术语渲染使用可自然断行的 `span[role=button]`，保留 Tab、Enter、Space 和详情焦点返回，正文捕获阶段仅放行有效交互引用，缺失引用仍可修复。表格重定位必须更新 `.research-table-cell-editor` 根，不能把定位和内边距写入 PM 的 mount。源码只由显式图标进入；资料版本、稳定链接、controller 与 AI 工具注册表均沿用既有路径。维护测试为 `researchRichText.test.ts`、`researchReferenceEditor.test.ts`、`e2e/rendered-text-editing.spec.ts`、`e2e/term-reference-wrapping.spec.ts` 及引用／mentions／AI 选区回归。
+
+双侧收起导航由 `ResearchSidebarTabs.tsx` 与 `ResearchSidebarRibbons.css` 维护；临时面板复用原 aside，保持正文列宽和收起／宽度偏好。全局资料库／语言／插件入口在左底栏，中间顶部工具栏不画底线；AI 嵌入浮层继续使用原实例与挂起显示流程。专项 `e2e/workspace-ribbons.spec.ts` 覆盖位置、几何、键盘、窄屏和草稿，隔离 5581／`.mewiki/workspace-ribbon-checks/`，参见[计划](plans/2026-11-14-workspace-ribbons.md)。
+
+AI 记忆、检索与恢复（2026-11-14）：完整聊天不再裁成 20 条，按对话保留最多 2000 条／4 Mi 字符，UI 每批展示 40 条；模型使用同范围有效问答的有界摘录、固定要求与近期正文。工具 v5 支持检索分页、总数、相关性及命中块路径。失败类型与 Retry-After 经服务端、NDJSON 和会话传递，倒计时结束仍须明确重试；流式请求采用 90 秒空闲与 10 分钟总时限。结构化执行记录可收起并跳原文。固定虚构任务以 npm run ai:evaluate 离线验证，不请求真实模型。维护见[实施计划](plans/2026-11-14-ai-memory-search-recovery.md)、[第 22 章](wiki/22-ai-workspace.md)和[架构](ai/ARCHITECTURE.md)，隔离 5575／.mewiki/ai-memory-checks，实际验收见 [VERIFICATION](VERIFICATION.md)。
+
+AI 撤回后再次应用：不要把 `appliedIds` 的历史批准误当作当前状态；统一使用 `session.isAiProposalApplied()`，只有有效 change 或合并项才算当前已应用。撤回仅删除有效记录、保留历史 ID，并将该建议的 `before` 设为最近一次 change 的实际 `before`，使组内重叠修改可反复批准／撤回；重新批准复用 controller 和冲突校验，去重历史 ID、不扩展 v1 格式。待审预览、调整和拒绝同样允许已撤回项，拒绝状态可刷新恢复。维护 `session.test.ts`、`reviewDecisions.test.ts` 与 `e2e/ai-redo.spec.ts`，隔离检查用 `5568`／`.mewiki/ai-redo-checks/`；操作示例见[第 22 章](wiki/22-ai-workspace.md)，状态约束见[架构](ai/ARCHITECTURE.md)。
+
+AI 输入区布局：范围选择由 `AiMaterials.scopeControl` 与添加文件共同放在输入框上方，模型／快捷提问／发送保留在输入框内。`mewiki-ai-footer-controls` 在输入框外承接导航顶部居中的 40×14px 扁把手；同一个按钮随状态更新名称与 aria-expanded，不再挂载两个入口和交接焦点。隐藏 `session-bar` 释放原导航高度，只保留把手；不能重新把展开按钮塞回输入框。见[计划](plans/2026-11-14-ai-context-controls.md)、第 22 章与 UI 规范，验收含 `e2e/ai-floating-panel.spec.ts` 中英文／嵌入位置与运行中短窗的实际命中。
+
+AI 选区与并行编辑的维护入口为[协作可靠性计划](plans/2026-11-14-ai-collaboration-reliability.md)。`AiSelectionToolbar` 在编辑器失焦保存后取最新快照，用每块 DOM 前文定位重复词；`selectionRanges.ts` 保守映射 Markdown 可见文字与源码范围，工具和未闭合流式草稿共用保护，旧引用无法唯一定位时拒绝扩权。`editDependencies.ts` 比较实际修改字段、容器路径与公式隐式依赖，`reviewDecisions` 的批准后重定基线也必须复用，不能只比较 text／tex。应用前当前快照成为撤回的 before，独立手改保留，同字段冲突通过 `AiProposalConflict` 三份只读版本说明。结构和破坏性操作保持严格依赖，组合批准仍先预检全部项。
+
+任务接续由 `checkpoint.ts`、`runner`、`chatActions`、v1 session 和 `AiWorkspace` 共用：预算／停滞结束显式 partial；checkpoint 限 40000 字符，最新 40 次成功只读参数及最多 6000 字公开摘要，不持久模型私有推理或权限。继续与重试复用原请求的范围／服务／材料及资料基线检查，请求前重读设置，再通过普通执行器重放读取并计入当前段读取预算。每段仍最多 32 轮、40 调用和 20 建议；整会话 40 建议，完整批次内也须拦截超额。不得重复用户消息、挪动旧建议归属或覆盖下一问草稿。刷新只恢复 UI，继续须显式点击；测试用虚构资料与受控回复，专项 `e2e/ai-reliability.spec.ts` 及隔离配置使用 `5566`，常用 AI 配置已纳入。第 22 章包含选词保护、手改冲突与继续示例，最终验收见 [VERIFICATION](VERIFICATION.md)。
+
+AI 修改审阅直接编辑与对比布局：`AiReviewChanges` 的 pair 统一红侧／中间操作／绿侧，`AiNativeProposalReview.renderComparison` 与 `AiInlineSuggestion` 负责原位编辑，不再单独在差异顶部插表单。`AiProposalReview` 在当前可见变化字段定位唯一按钮组，按库保存上下／左右偏好，布局切换保留局部表单并停止回放。绿色编辑沿用 schema 与 `reviseAiProposal`，保留只写待审会话，同意才经 controller。修改该路径时运行 `e2e/ai-direct-review.spec.ts`，并回归 `ai-inline-review`、`ai-workspace`、`ai-text-cannon`；新版 pair 有真实盒子，不能依赖旧 display contents 假设。使用说明和示例见第 22 章，设计见[计划](plans/2026-11-14-ai-direct-review.md)。
+
+聊天头像使用 `AiMascot` 的模块级 data URL，源自同一 `public/brand/mewiki-ai-mascot.svg?raw` 导入，构建时随代码发布。不要恢复手写带版本参数的运行时路径，缺失 SVG 被 SPA 以 200 HTML 回退时会导致所有共用头像裂图。外部品牌 SVG／PNG 仍保留；浏览器测试应校验图片 complete 与 naturalWidth／naturalHeight，并注入旧路径返回 HTML，覆盖回复、刷新、选区和设置。见[资源修正计划](plans/2026-11-14-ai-mascot-bundled-assets.md)、`e2e/ai-brand-assets.spec.ts`、品牌说明和第 22 章；测试用 `.mewiki/ai-brand-assets-*` 与隔离端口，不读取真实资料。
+
+内容行菜单的 AI 入口由 `ResearchBlockInsert.onSendToAi` 接入现有引用／浮窗激活流程；必须读取编辑器 blur 后的 controller 快照，不拼正文到任务草稿，也不自动请求。`AiTextSelection.kind?: 'block'` 区分整行与旧文字选区，可读摘要有界，权限从实际块树和原生 schema 推导，工具与流式共用断言。保持 v1 恢复、原生读取、审阅与 controller 保存。维护见[本行菜单计划](plans/2026-11-14-ai-block-menu.md)、第 4／22 章与架构；回归用 `blockSelection.test.ts`、`playwright.ai-block-menu.config.ts`，隔离 `5561`／`.mewiki/ai-block-menu-*`，保留其他工作的修改和服务。
+
+AI 浮窗四边直接使用 `aiFloatingBounds()` 的 dialog／visualViewport 交集，`clampAiPanelFrame()` 与八边 resize 均无外边距；`launcherMargin` 仅用于头像胶囊的竖直安全范围。移除气泡侧预留和 launcherEdge 状态链，气泡 z-index 34 高于浮窗 30，允许重叠并保持气泡点击／拖动，不能以移动入口改变面板边界。旧 v1 位置偏好、临时视口投影、选区附近避让、嵌入右栏及任务生命周期继续使用。维护见[零边距计划](plans/2026-11-14-ai-floating-panel-flush-edges.md)、几何单测与浮窗 Edge；第 2／22 章、UI 规范和架构同步。隔离 `5559`／`.mewiki/ai-flush-*`，不操作真实资料。下文边缘预留描述为历史阶段记录。
+
+红绿对照中的激光与填字（2026-11-13）：旧／新两段始终按原审阅布局排列，红绿行号／符号从首帧可见。`aiCannonTextReveal` 分别登记等待新增、已扫描原文、已命中新增三个 Highlight，旧字先正常再标红并保留，下段的绿底和文字在同次命中同步出现；不能在扫描期间预铺绿色空壳。删除叠层尺寸及偏移逻辑，重播和取消只重置绘制，不动 React 正文／换行和保存。长文从下段当前行起播时标记屏外旧文已扫描，避免倒跳。像素回归、操作说明及后续维护见[计划](plans/2026-11-13-ai-cannon-diff-fill.md)、第 22 章与架构；隔离 `5557`／`.mewiki/ai-cannon-diff-fill/`，最终结果见 [VERIFICATION](VERIFICATION.md)。下文共享排版槽为旧实现记录。
+
+原文与激光删除（2026-11-13）：文字大炮实时及回放改为“完整原文→激光逐字删除→炮弹新增”。`AiReviewPair` 默认 contents、播放共享排版槽；`aiCannonTextReveal` 管理可恢复的阶段和文字范围，`AiTextCannon` 按组串行删写，长删除按视口分段扫描，保留后半篇起播锚点。新增与删除文本行不能用整行兜底误认未改文字；流式拆分的删除节点必须同步登记。见[计划](plans/2026-11-13-ai-cannon-laser.md)、第 22 章与架构，隔离 `5555`／`.mewiki/ai-cannon-laser/`；测试只用虚构笔记，最终实测见 [VERIFICATION](VERIFICATION.md)。下文旧实现的同时呈现与命中才移除旧字描述保留为历史。
+
+文字大炮回放覆盖修正（2026-11-13）：`cannonReplayTargets()` 统一采集、DOM 排序与当前视口起点，冻结的 `replayTargetsRef` 共用于素材前后暂存。删除全文 `slice(0, 8)`，改用 generator 逐目标产生最多 4 个标签片段，所有后续范围都参与；`holdMany()` 单次刷新避免逐目标重绘整篇。无可见改动时就近向下，末尾就近向上；长 span 从可见行偏移开始，不能把完全在上方的回退目标误判为已经播放完。回放只向后、不自动绕回前文，停止／失败／结束完整恢复；不改建议和保存。见[计划](plans/2026-11-13-ai-cannon-replay-coverage.md)、第 22 章、架构和 12 处改动／后部起点／跨屏回归。隔离 `5553`／`.mewiki/ai-cannon-coverage/`，保留其他修改。
+
+文字大炮命中呈现（2026-11-13）：`aiCannonTextReveal.ts` 用按实例注册的 CSS Highlight 控制临时文字范围，炮弹完成飞行后才显现新增前缀并隐去对应旧文字，不改正文 DOM、排版、建议和保存时机。回放分段记录原文偏移；末段揭示余文，停止／结束／异常恢复完整审阅。`followScrollRef` 区分父级自动定位与用户滚动，防止定位提前解除等待；素材加载前由布局阶段准备，失败后不再遮住后续流式文字。自动跟随尊重减少动态，主动回放只为本次启用完整运动。见[计划](plans/2026-11-13-ai-cannon-arrival.md)、第 22 章、AI 架构与新增截图像素／真实位移 Edge。隔离 `5551`／`.mewiki/ai-cannon-visibility/`；下文减少动态回放描述为历史实现。
+
+文字大炮支持完成后的手动回放，维护见[回放计划](plans/2026-11-13-ai-cannon-replay.md)。顶部回放／停止图标只控制当前建议的局部呈现，不能调用 runner 或 controller；`cannonReplayFragments()` 按 grapheme 有界分段，`AiTextCannon.setReplay()` 重用现有测量与发射。自身滚动定位通过 expectedScroll 与用户滚动区分，用户干预、尺寸／可见性／偏好变化以及预览状态变化均停止并清理。回放期间原审批与保存权限保持，Escape 先停回放；新增单测和 Edge 回放场景均复用原专项。使用隔离 `5549`／`.mewiki/ai-cannon-replay/`，不读写真实资料；下条为首版实时实现。
+
+AI 文字大炮由 `AiTextCannon.tsx` 在中央笔记渲染预览的运行／跟随阶段挂载。底座固定，炮身转向和后坐复用 `public/brand/mewiki-text-cannon.svg` 分组，实际炮口使用 SVG 屏幕矩阵；文字片段按 grapheme 限长并合并发射。滚动清轨迹，尺寸／页面可见性／偏好变化和卸载清理资源，减少动态仅透明度提示；呈现层不得写入笔记或会话。见[实施计划](plans/2026-11-13-ai-text-cannon.md)、AI 架构与第 22 章；回归为 `aiTextCannon.test.ts`、`e2e/ai-text-cannon.spec.ts`，已纳入 AI 专项配置。验收使用隔离 `5547`／`.mewiki/ai-text-cannon/`，最终结果见 [VERIFICATION](VERIFICATION.md)。
+
+基础理论条件／结论的 AI 选区与研究记录共用 `AiSelectionToolbar`、`textSelection.ts` 及工具／草稿校验。`aiSelectionTextFields()` 按当前块允许 paragraph／heading／markdown／callout 的 text、list 的 items；列表／提示须用原生 block-update，旧 replace-text 适用类型不变。保留块 ID、完整摘要、4000 字／20 块限制、条件／结论 section 及批准保存；不能从缓存字段扩大权限。AI 来源与中央预览中的引用通过 `openLibraryNote(..., false)` 打开实际分区，不硬编码 notes。回归见 `foundationParity.test.ts`、`e2e/ai-foundations.spec.ts`，后者已加入 `playwright.ai.config.ts`；[方案](plans/2026-11-13-ai-foundation-parity.md)与第 2／22 章同步。专项使用隔离 `5541`／`.mewiki/ai-foundations-*`，不读写真实资料。
+
+辅助文件导入警示由 `AiMaterialNotice.tsx` 作为面板内覆盖层呈现，样式在 `AiMaterials.css`，不增加依赖或全局通知总线。fixed 包含块沿用浮窗／嵌入面板的 transform，位于各自标题栏下方并跟随移动、缩放；不能使用全窗口 popover。浅橙背景、深色文字和警示图标提高辨识度，关闭按钮在右上角，宽高受面板限制且长文局部滚动。保留完整文件名／原因与 live alert；八秒定时、悬停／聚焦暂停、关闭与祖先可见性清理不改变资料和会话。`AiMaterials` 下一批添加替换旧警示，原取消和迟到解析保护继续使用；不要把持久保存失败改为会自动消失的提示。维护与浏览器回归见[计划](plans/2026-11-13-ai-material-warning-bubbles.md)、`e2e/ai-materials.spec.ts` 和第 22 章。
+
+AI 聊天可选嵌入右侧栏，见[实施计划](plans/2026-11-13-ai-right-panel.md)。`ResearchNotebook` 按库记忆模式和此前大纲开关，单实例 `AiFloatingPanel` 通过 `docked` 改变布局，`AiWorkspace` 不因切换卸载；右侧工具标签、收起、气泡恢复和选区激活沿现有流程。浮窗几何与嵌入模式分开存储，窄屏复用右栏抽屉；中央审阅覆盖嵌入栏时必须同时隔离交互。修改此边界须检查 `e2e/ai-docking.spec.ts` 与浮窗、会话、材料相邻回归，并同步第 2／22 章。以下仅浮窗说明为历史阶段记录。
+
+AI 输入区选区用两行灰底摘要，CSS 省略不修改完整原文；参考来源位于标题栏下方，不随聊天历史滚动。范围原生 select 的正常／disabled 状态共用尺寸和灰底，选区仍锁定范围。短窗中的引用与输入文字局部滚动，发送／停止和底栏继续可见，尺寸变化仅保持已聚焦主输入的局部可见性。`AiSelectionToolbar` 仅正文左键进入拖选，在捕获阶段结束／取消／丢失捕获及失焦时复位；选区清空或变化释放 Escape 隐藏签名，保证再次选择可用。维护见[选区与来源计划](plans/2026-11-13-ai-context-panel.md)、`e2e/ai-chat-actions.spec.ts` 和 `e2e/ai-conversation.spec.ts`，操作见第 2／22 章。
+
+中文产品名为“觅维”，AI 浮窗标题为“觅维 智能助理”，释义“寻觅知识，以多维链接万物”。显式 UI 名称通过现有语言表翻译，英文保留 MeWiki／MeWiki AI Assistant；浏览器元信息随语言切换，设置和导出页保留各自标题。仓库／源码路径、资料协议、ID、缓存键与已有手册笔记不随名称修改。含义见[品牌说明](BRANDING.md#中文名称与释义)，验收范围见[名称落地计划](plans/2026-11-13-chinese-product-name.md)。
+
+辅助材料文件扩展名由 `src/ai/materials.ts` 的单一登记表维护，`AI_MATERIAL_ACCEPT` 和 `aiMaterialKindForName()` 共用，避免选择器与拖放／解析支持脱节。JSON、TeX、BibTeX、YAML、XML、配置／日志、常见代码等原样读取为通用 `text` 材料；新增格式不改变工具 v4 与旧 v1。原文不做语法解析、脚本执行、TeX 编译或引用文件访问，仍受编码、二进制和大小校验。维护见[扩展计划](plans/2026-11-13-ai-material-text-formats.md)、`materials.test.ts` 与 `e2e/ai-materials.spec.ts`。
+
+AI 胶囊按实际头像轮廓平衡留白：62×56px 可见命中区、124×56px 背景、40px 图片，浮窗边缘预留 70px；SVG 自带上下透明区，不能只比较图片元素盒子的 padding。`AiWorkspace` 折叠时隐藏完整 footer、清除材料容器的导航间距，把展开按钮放入已有 composer 控件行；折叠／展开后交接焦点，初始化不主动聚焦。Edge 同时测量实际非透明像素留白、表单释放高度、底部剩余间距与窄屏命中。操作和后续修正见第 2／22 章及[计划](plans/2026-11-13-ai-footer-capsule.md)。
+
+AI 辅助文件由 `src/ai/materials.ts` 定义快照与范围、`materialImport.ts/materialPdf.ts` 负责本地解析、`materialTools.ts` 提供契约 v4 的列表／检索／分页读取。`AiMaterials` 包含输入区文件选择、拖放与解析反馈，`AiWorkspace` 管理单一预览及保存；不新增服务端文件访问接口。会话 v1 的可选材料字段保持旧记录兼容；解析快照按库／对话保存，重试与消息分支沿原材料，新增／移除需先持久化成功。修改解析、内容结构或任务范围时同步 `materials.test.ts`、`e2e/ai-materials.spec.ts`、[架构](ai/ARCHITECTURE.md#对话辅助文件)和[第 22 章](wiki/22-ai-workspace.md#添加辅助文件)。上限与实现顺序见[本轮计划](plans/2026-11-13-ai-materials.md)，验收使用独立测试配置、虚构文件及受控 AI。
+
+AI 底栏折叠与半露胶囊：[本轮计划](plans/2026-11-13-ai-footer-capsule.md)。`AiWorkspace` 自行管理 `ai-footer-collapsed:v1`，底栏箭头只隐藏导航组，开关始终留在右侧；关闭底栏菜单，不隐藏输入、错误或任务。`AiFloatingPanel` 删除整窗最小化及 context，标题按语言居中；`AiFloatingLauncher.onToggle` 开关完整面板，设置页先返回打开，关闭沿原 dispose。可见入口 62×56px 贴边，伪元素 200% 宽绘制白色胶囊及阴影，半部在窗口外，头像 40px 完整显示；保存 v1 edge／ratio 不变。用户消息背景在 `ui-surfaces.css` 只选 `.mewiki-ai-user-bubble`，外部操作行透明；仅 AI textarea 去聚焦 outline／shadow。专项更新浮窗几何、Edge 浮窗／消息操作及原关闭流程，手册第 2／22 章同步。下列整窗最小化描述是此前阶段记录。
+
+AI 视觉身份统一由 `AiMascot.tsx` 与 `AiMascot.css` 提供，直接读取本地 `public/brand/mewiki-ai-mascot.svg`。常驻入口、标题、欢迎、助手回复、选区按钮与 AI 设置导航共用同一原件；头像为装饰图片，语义由原有按钮或消息提供，禁止图片拖动与指针拦截。品牌脚本生成透明 1024px PNG 并检查一致性；曲线与裁切规范见[品牌资源](BRANDING.md#ai-吉祥物)。本次头像接入不改变 AI 权限、会话协议、工具或保存流程，操作说明见[第 22 章](wiki/22-ai-workspace.md#悬浮-ai-面板)。
+
+AI 紧凑浮窗与消息编辑：`AiFloatingPanel` 使用 28px 标题栏、四边／四角透明缩放命中区及独立滚动条沟槽；`resizeAiPanelFrame()` 固定相反边并约束视口。收起通过 `AiFloatingPanelControls` context 放在底栏，展开留在紧凑栏，继续保留工作区挂载。`AiWorkspace` 用户气泡外操作支持复制／编辑；`messageEdit` 是会话 v1 可选持久化字段，编辑停止当前请求，重发通过 `forkAiChatBeforeMessage()` 保留前缀并创建新分支，归档成功才请求，底部草稿和原选区各自保留。延迟焦点恢复及浮窗激活优先编辑框。回归为 `aiFloatingPanelLayout.test.ts`、`chatActions.test.ts`、`session.test.ts`、`e2e/ai-floating-panel.spec.ts`、`e2e/ai-chat-actions.spec.ts`，操作和边界见第 2／22 章与[实施计划](plans/2026-11-13-ai-compact-window-message-edit.md)。
+
+编辑态暂停历史自动跟随，避免长回复把旧消息编辑框带走；刷新恢复须等祖先 dialog 打开及字体加载解除 inert 后聚焦，局部 MutationObserver 成功即断开。此路径须用固定生产构建的 Edge 验证，开发构建的慢加载可能掩盖时序问题。
+
+AI 常驻入口由 `AiFloatingLauncher.tsx` 提供，位于 dialog 内且不随笔记 shell 隐藏。44px 气泡替代底栏 AI 图标，可拖动贴边、键盘移动，`ai-launcher:v1` 按库保存 edge／高度比例；设置页保留入口，库管理与存储 busy 经 `SettingsPage.onBusyChange` 传回并禁用，不能绕过离开限制。`AiFloatingPanel` 根据气泡 edge 预留 56px，保持输入可用；淡蓝灰底和深蓝标题栏与笔记区分。两组件移动用 rAF 直接绘制 translate3d，结束才保存 React／偏好，compact 菜单使用 transform 容器内坐标。操作见[第 22 章](wiki/22-ai-workspace.md#悬浮-ai-面板)，实现与隔离验收见[入口计划](plans/2026-11-13-ai-floating-launcher.md)。
+
+AI 浮窗由 `AiFloatingPanel.tsx` 管理拖动、尺寸、收起及按库位置偏好，`aiFloatingPanelLayout.ts` 集中边界和选区避让。它必须位于笔记原生 dialog 内，使用非模态区域，不监听外部点击关闭；收起保留 `AiWorkspace`，关闭才卸载中断。`ResearchNotebook` 的大纲／配方和聊天打开状态独立，原侧栏 AI 标签及插槽已移除。`AiSelectionToolbar` 传递临时矩形，激活位置与待消费选区请求分开，避免消费后回跳；不将界面坐标写入模型请求或资料。回归见 `aiFloatingPanelLayout.test.ts`、`e2e/ai-floating-panel.spec.ts` 与[本轮计划](plans/2026-11-13-ai-floating-panel.md)。
+
+AI 聊天基础操作由 `chatActions.ts` 负责新任务／重试与可复制文本，`textSelection.ts` 负责固定来源、摘要与选区权限。`AiSelectionToolbar` 从 reading rail 抓取正文选区，普通编辑器失焦保存后再附加，`ResearchNotebook` 必须消费父级请求；不得用渲染文字偏移直接替换 Markdown 源码。任务范围、旧会话可选字段恢复、重复建议与失败草稿由 `chatActions.test.ts`、`runner.test.ts`、`drafts.test.ts` 和 `e2e/ai-chat-actions.spec.ts` 维护，用户说明见[第 22 章](wiki/22-ai-workspace.md#快捷提问与选中文字)。
+
 AI 原位置逐项审阅：`AiInlineSuggestion` 在块／标签／属性附近提供同意、拒绝、调整；`reviewDecisions.ts` 保留原建议身份与基线，复用字段和操作校验，调整只写本库会话。`AiWorkspace` 逐项批准后对独立的未处理项衔接基线，已批准项不得重写，常规手动编辑不得触发此转换；保持同页、手选标签及滚动。会话 v1 的可选 `rejectedIds` 按库恢复，存储失败不丢建议。手册及回归见[第 22 章](wiki/22-ai-workspace.md)、[计划](plans/2026-11-12-ai-inline-decisions.md)、`reviewDecisions.test.ts` 和 `e2e/ai-inline-review.spec.ts`。
 
 图片创作画布由 `src/domain/publicationComposition.ts` 的版本化白名单场景驱动，仍只有左侧 `PublicationOptions.width/height` 一套画幅尺寸。文字、系统贴纸和本地装饰分别放在 canvas/screen 百分比空间；screen 随设备主体整体变换。预览和最终 Edge 使用 `publicationImagePages.ts` 与 `publicationCompositionLayout.ts`，新增图层属性时同时维护解析、逐图属性合并、静态构造、布局诊断、英文、模板 v2 与作品备份。iframe 节点跨 window，DOM 增量更新使用 nodeType、稳定层 ID 与 importNode，避免 instanceof 使样式更新失效。
@@ -38,7 +120,7 @@ AI 原位置逐项审阅：`AiInlineSuggestion` 在块／标签／属性附近�
 
 品牌 SVG 原件统一保存在 `public/brand/`，文件选择与预览见 [Logo 与应用图标](BRANDING.md)。导航、设置和关于页使用黑底方形 M；笔画按方形重新延展，左下和右侧延伸至画幅外，不能复用圆形版的截断弧线收尾。`mewiki-app-icon.svg` 是方形笔画的单一来源，圆角、白底、透明前景和 App PNG 均由它生成；圆角版对背景与笔画整体裁切。浏览器标签页与中英文 README 使用圆形 Logo，由 `mewiki-mark.svg` 去除外围留白，派生 `public/mewiki.svg`、透明 `mewiki-favicon-{16,32,48}.png` 与 ICO。`index.html` 的 SVG、PNG、ICO 版本参数一同更新以刷新缓存。180px 主屏幕图标和 `manifest.webmanifest` 的 192/512px 图标继续使用满版方形，源图不预裁切系统圆角。
 
-修改 SVG 后运行 `npm run brand:generate`，通过 `scripts/generate-brand-assets.mjs` 和已有 Sharp 依赖统一生成本地 PNG、ICO、SVG 别名和产品介绍横幅。横幅布局在 `scripts/branding/hero-template.svg` 维护，圆形图标由原件注入；不要直接修改派生曲线或引用项目外资源。`npm run brand:check` 检查派生文件与原件一致，已纳入 `npm run check`。资源变更同步快速开始手册，完成桌面与窄屏 Edge 检查。README 的产品理念、能力和文档入口保持中英文一致，公开截图通过 `npm run docs:screenshots` 在隔离配置与虚构资料上更新。
+修改 SVG 后运行 `npm run brand:generate`，通过 `scripts/generate-brand-assets.mjs` 和已有 Sharp 依赖统一生成本地 PNG、ICO、SVG 别名和产品介绍横幅。圆形标志先合成黑底与蓝白笔画，再用圆形蒙版统一处理外边缘，避免白色出口叠出灰线；独立标志和两种完整 Logo 保持相同图案与蒙版。横幅布局在 `scripts/branding/hero-template.svg` 维护，圆形图标由原件注入；不要直接修改派生曲线或引用项目外资源。`npm run brand:check` 检查派生文件与原件一致，已纳入 `npm run check`。资源变更同步快速开始手册，完成桌面与窄屏 Edge 检查。README 的产品理念、能力和文档入口保持中英文一致，公开截图通过 `npm run docs:screenshots` 在隔离配置与虚构资料上更新。
 
 ## 手册内容展示与离线素材
 
@@ -50,7 +132,9 @@ AI 原位置逐项审阅：`AiInlineSuggestion` 在块／标签／属性附近�
 
 ## 流程图放大预览
 
-查看入口位于 `ResearchDiagramBlock.tsx`，点击图形或工具栏放大图标均使用图片的 `DeviceInspectorModal`；草图只由工具栏打开，保留画布绘制事件。流程图从已挂载且校准完整边界的 SVG 生成独立图片快照，避免重复 Mermaid 元素 ID 与样式；草图共用 `drawingSvg()` 的矢量输出。dialog 保持挂载，通过 `open` 控制原生关闭及焦点恢复，并用组件唯一 ID 关联标题。开窗时只阻断 Escape 冒泡，保留原生 cancel，避免在 AI 审阅内连带退出外层。内容、模式或库上下文变化丢弃快照；界面状态不进入资料或 Agent 工具。相邻回归在 `e2e/research-rich-content.spec.ts` 和 `e2e/ai-workspace.spec.ts`，操作见[绘图手册](wiki/14-diagrams.md#放大查看)。
+查看入口位于 `ResearchDiagramBlock.tsx`，点击图形或工具栏放大图标打开 `ResearchDiagramViewer.tsx`；草图只由工具栏打开，保留画布绘制事件。流程图从已挂载且校准完整边界的 SVG 生成独立图片，避免重复 Mermaid 元素 ID 与样式；草图共用 `drawingSvg()` 的矢量输出。查看器以原始 SVG 尺寸加视图变换连续缩放和自由平移，不做栅格快照；滚轮监听明确非 passive，围绕指针缩放，Pointer Events 捕获鼠标及触屏单指／双指手势。几何逻辑和窗口中心保持在 `researchDiagramViewport.ts`，视图范围为原始尺寸的 0.0001%–6400%，全图拟合独立计算，重新打开重置。适应状态随窗口变化重新拟合，手动操作后只保持当前视图中心。
+
+外层沿用常驻 `DeviceInspectorModal`，通过 `open` 控制原生关闭及焦点恢复，并用组件唯一 ID 关联名称；查看器自己提供单行 44px 图标工具栏。开窗时只阻断 Escape 冒泡，保留原生 cancel，避免在 AI 审阅内连带退出外层。内容、模式或库上下文变化丢弃快照；界面状态不进入资料或 Agent 工具。相邻回归在 `researchDiagramViewport.test.ts`、`e2e/research-rich-content.spec.ts` 和 `e2e/ai-workspace.spec.ts`，操作见[绘图手册](wiki/14-diagrams.md#放大查看)。
 
 ## 符号与术语词典
 
@@ -64,7 +148,7 @@ AI 原位置逐项审阅：`AiInlineSuggestion` 在块／标签／属性附近�
 
 术语可选 `atoms: ResearchTermAtom[]`。`termEntryError()` 要求原子词汇名称和解释非空，并要求按数组顺序拼接后的名称与术语名称完全相同；这同时保证完整覆盖和片段不重叠。旧资料缺少 `atoms` 时，`researchTermAtoms()` 提供完整术语名称的单个只读兜底片段。`ResearchTermDiagram.tsx` 在中央只渲染一次完整术语并强制单行，术语下方按原子顺序渲染不含文字的下划线入口；解释卡片在下一行按原子顺序横排，不使用左右分栏或多行堆叠。术语详情容器使用中间面板的全部宽度，长名称与卡片行各自提供横向滚动。`ResizeObserver` 和两个滚动区域共同驱动几何测量，SVG 连接线从可见下划线连接到下方卡片顶部，完全离开各自视口的端点不绘线；点击解释入口只滚动卡片行并聚焦对应卡片。悬停中央术语中的原子片段时只改变该片段的颜色，不重复渲染原子名称。`data-term-atom-piece`、`data-term-atom-link`、`data-term-callout` 和 `data-term-connection` 供验收使用。原子解释不再由单个选中状态驱动，也不把拆分结果写入正文引用。
 
-正文中的稳定词典引用由 `ResearchMarkdown.tsx` 渲染为可访问按钮：默认继承正文样式，悬停或键盘聚焦才显示术语点状下划线或符号虚线下划线。术语按钮由 `ResearchTermReference` 管理打开状态，并通过 `createPortal` 渲染 `ResearchTermPopover.tsx`；该组件复用 `useFormulaPopover` 与 `.research-formula-inline-editor` 的定位、Escape、外部点击和焦点恢复逻辑。浮层中的词典按钮才分发 `research-dictionary-open` 事件，由笔记容器切换词典类型和选中条目；符号引用内部的 `ResearchInlineFormula` 禁用行内符号检查，避免嵌套按钮抢走点击事件。
+正文中的稳定词典引用由 `ResearchMarkdown.tsx` 渲染为可访问交互文字：默认继承正文样式，悬停或键盘聚焦才显示术语点状下划线或符号虚线下划线。术语由 `ResearchTermReference` 的 `span[role=button]` 管理打开状态，允许跨行，并通过 `createPortal` 渲染 `ResearchTermPopover.tsx`；符号由 `ResearchSymbolReference` 复用 `FormulaSymbolPopover`，保留当前实例 bindings、定义公式与词典入口。这些组件复用 `useFormulaPopover` 与 `.research-formula-inline-editor` 的定位、Escape、外部点击和焦点恢复逻辑，portal 宿主来自触发引用所在 dialog。浮层中的词典按钮才分发 `research-dictionary-open` 事件，由笔记容器切换词典类型和选中条目；符号引用内部的 `ResearchInlineFormula` 禁用行内符号检查，避免嵌套按钮抢走点击事件。
 
 词典引用的基础、悬停和键盘焦点样式直接作用于 `.research-dictionary-term-reference` 与 `.research-dictionary-symbol-reference`，不依赖 `.research-markdown` 祖先。`ResearchMathText` 也用于右侧阅读、同步引用和选择预览的列表，这些位置可能没有 Markdown 外层；收窄样式作用域时必须保留这些路径。`e2e/dictionary-reference-rendering.spec.ts` 将同一列表直接打开时的样式与上述三个入口对比，并覆盖桌面、窄屏、术语解释、Escape 与键盘打开。
 
@@ -72,9 +156,11 @@ AI 原位置逐项审阅：`AiInlineSuggestion` 在块／标签／属性附近�
 
 ## 应用设置页
 
+界面外壳颜色共用 `--mewiki-ui-*`，`ui-surfaces.css` 只覆盖工作区与设置、词典、地图、AI、导出面板的指定控件，不使用通配选择器改写正文、画布对象、审阅状态或导出成品。常规帮助使用 `UiInfo.tsx/.css`，沿用 `useFormulaPopover` 的原生顶层定位与关闭流程。设置页、词典和导出帮助的 Escape、外部关闭、焦点恢复、中英文和窄屏回归见 `e2e/ui-clarity.spec.ts`；重要费用、发送范围、校验及保存状态不可默认折叠。
+
 `SettingsPage.tsx` 提供统一的应用内设置视图，URL 使用 `?page=settings&section=general` 等分类。`settingsNavigation.ts` 负责进入、返回和搜索；URL 保留资料库、宿主入口、嵌入参数及正文定位。浏览器历史导航继续固定当前窗口资料库。
 
-设置页与笔记界面共用应用外壳。进入设置时只隐藏笔记界面，保留组件、滚动与草稿；外壳以外的资料操作仍由原有 controller、workspace 和 integration provider 负责。语言、资料库管理、存储和插件内容组件直接嵌入设置页，不创建额外的管理弹窗。
+设置页与笔记界面共用应用外壳。进入设置时只隐藏笔记界面，保留组件、滚动与草稿；外壳以外的资料操作仍由原有 controller、workspace 和 integration provider 负责。语言、资料库管理、存储和插件内容组件直接嵌入设置页；底栏快捷卡片只承接日常切库、语言和启停，不复制完整管理流程。
 
 存储、备份、历史共用 `ResearchLibraryStorage.tsx` 的操作会话，切换分类不清空路径草稿或恢复预览。异步任务进行中禁用返回、分类和搜索，刷新或关闭前使用浏览器离开提醒。偏好即时生效，资料库迁移与恢复保留预览确认。版本号在构建时读取 `package.json`。
 
@@ -132,7 +218,7 @@ AI 原位置逐项审阅：`AiInlineSuggestion` 在块／标签／属性附近�
 
 旧折叠偏好的首次转换使用完整分类树。各导航入口通过 `foldingItems` 提供未筛选的原始条目，`ResearchClassifiedList` 构建 `preferenceBranches` 传给分类树；笔记入口包含基础理论和研究记录的所有非手册笔记，以覆盖共用偏好里的另一笔记库分类。不要使用当前搜索结果转换旧偏好，否则清空搜索或切换笔记库后会漏掉子分类。手册使用完整章节候选，符号与术语使用当前资料库全部词条。
 
-底栏左侧 `.research-sidebar-account-slot` 预留账户头像和菜单位置，当前显示禁用的登录占位；接入真实账户控件时替换该按钮并恢复对应菜单行为。资料库切换入口可收缩并截断长名称，设置入口固定在最右端。回归入口为 `e2e/sidebar-interactions.spec.ts`，覆盖五个入口的图标、单行工具条、滚轮、短窗口、键盘导航、搜索焦点和底栏布局。
+底栏左侧 `.research-sidebar-account-slot` 预留账户头像和菜单位置，当前显示禁用的登录占位；接入真实账户控件时替换该按钮并恢复对应菜单行为。账户、资料库、语言、插件、设置、手册均为纯图标，库名留在 tooltip，手册在最右端；资料库、语言和插件打开快捷卡片，设置打开完整页面。回归入口为 `e2e/sidebar-interactions.spec.ts` 和 `footer-quick-settings.spec.ts`，覆盖图标、单行工具条、滚轮、短窗口、键盘导航、搜索焦点与底栏卡片。
 
 ## 公共分类选择组件
 
@@ -165,9 +251,11 @@ AI 原位置逐项审阅：`AiInlineSuggestion` 在块／标签／属性附近�
 
 ## 内容引用
 
-正文与表格单元格使用 `ResearchReferenceEditor.tsx`。ProseMirror 只管理普通 Markdown 文本与有来源的原子引用；`researchReferenceEditor.ts` 通过 remark 的位置识别 `mewiki-term:`、`mewiki-symbol:`、内部笔记和 `webbench-asset:` 链接，代码、数学、图片与未知链接保持原文。节点保存完整原 Markdown、href 和旧标签，显示由当前库上下文解析；未修改引用逐字往返，不升级版本 8。浏览器生成的多段或换行会规范为一段可换行文本，不丢弃后续行。
+正文与表格单元格使用 `ResearchReferenceEditor.tsx`。`researchRichText.ts` 用 ProseMirror 的段落、六级标题、强调 marks、列表、引用和数学原子表达排版；remark 构建可见文字与原文 UTF-16 位置的映射，`prosemirror-markdown` 负责结构变化后的可靠转义。纯文字修改优先局部回写，并以重新解析的结构与文字等价检查保护分隔符；未知内容保留原始片段。`researchReferenceEditor.ts` 通过 remark 的位置识别 `mewiki-term:`、`mewiki-symbol:`、内部笔记和 `webbench-asset:` 链接，代码、数学、图片与未知链接保持原文。节点保存完整原 Markdown、href 和旧标签，显示由当前库上下文解析；未修改引用逐字往返，不升级版本 8。Enter 保留独立段落或续写列表，Shift+Enter 创建行内换行或续写列表；空列表项必须包含合法 paragraph，不能每次输入重新解析并替换整篇 live 文档。IME 组合阶段保持浏览器输入，格式规则只删除两端标记并添加 mark，不能把中间引用原子扁平化。
 
-`ResearchReferencePopover` 只修改当前节点，术语形式、别名 ID 与符号角标沿用现有协议；来源选择复用公共分类窗口。编辑器节点重建时，在布局阶段按当前位置恢复待打开引用的 NodeView DOM，浮层锚点和 portal 宿主继续来自当前节点，避免开发态挂载重演后沿用旧节点而落在主对话框外。`ResearchReferencePresentation` 用安全 KaTeX 输出符号，不向可编辑 DOM 放阅读态导航按钮。编辑会话包含候选、修改面板及嵌套选择器，离开会话才提交；代码块和显式表格源码保留 `ResearchMentionTextarea`。`MentionPicker` 在两种编辑器中共用，触发规则仍由领域检测器维护。
+`ResearchReferencePopover` 只修改当前节点，术语形式、别名 ID 与符号角标沿用现有协议；来源选择复用公共分类窗口。编辑器节点重建时，在布局阶段按当前位置恢复待打开引用的 NodeView DOM，浮层锚点和 portal 宿主继续来自当前节点，避免开发态挂载重演后沿用旧节点而落在主对话框外。`ResearchReferencePresentation` 用安全 KaTeX 输出符号，引用默认点击查看词典详情，F2 才打开本次引用修改；修改和 mentions 插入继承周围 marks。编辑会话包含候选、修改面板及嵌套选择器，离开会话才提交；代码块和显式表格源码保留 `ResearchMentionTextarea`。`MentionPicker` 在两种编辑器中共用，触发规则仍由领域检测器维护。
+
+全局编辑模式和块内编辑会话分别处理。`SourceTextBlock`／`ResearchTableBlock` 的 `onClickCapture` 对渲染态有效术语／符号按钮直接放行，由引用本身打开详情，不能先激活源码或单元格编辑器；普通文字仍按原有 pointer／focus 入口进入编辑。捕获点击及 pointer 激活还必须用 `currentTarget.contains(target)` 验证真实 DOM 子树，排除 portal 事件沿 React 逻辑树冒泡，避免点击或选择详情文字时激活正文／表格源码。已经进入 `ResearchReferenceEditor` 后，术语／符号点击仍查看详情，F2 修改本处引用；缺失引用的修复、笔记与附件引用维持既有行为。专项 `e2e/dictionary-reference-inspection.spec.ts` 覆盖段落、标题、列表、提示、表格、标签页与窄屏，验证详情内点击／选字、渲染和资料不变。仅 UI 事件分流，不增加 Agent 工具、权限或保存操作。
 
 Chromium 在行末不可编辑引用后插入 `img.ProseMirror-separator` 和辅助换行，以保持光标可达；`ResearchReferenceEditor.css` 将该图片辅助元素限定为零尺寸的行内元素，避免 Markdown 正文的块级图片样式增加空行。不要删除或隐藏这些光标辅助节点，也不要把它们写入资料；验收同时覆盖四类行末引用、窄屏高度、单项删除与来源保留。
 
@@ -281,13 +369,15 @@ Playwright 的异常传输会丢失自定义属性，渲染器必须显式返回
 
 维护入口为 [Agent 架构约定](ai/ARCHITECTURE.md)，用户操作见 [AI 工作区手册](wiki/22-ai-workspace.md)。`src/ai/tools.ts` 的单一注册表负责工具 schema、能力发现和执行；`readable.ts` 对已知正文做受限投影，不能使用包含备份 JSON 的序列化器向模型提供资料。`proposals.ts` 复用原生领域操作并验证基线，工作区只在用户点击后通过现有 controller 保存。
 
-同一笔记的旧文字与原生建议经 `proposalGroup.ts` 累积为整篇差异，预览与批准共用原始基线预检和顺序组合；中央顶部一次应用整页，修改附近及右侧均可逐项操作。统一 renderer 只显示一套可切换标签栏，手选保留在预览内，显式选择建议重新定位到具体页与块。无效果项由会话 v1 可选 `mergedIds` 标记，不生成空撤回记录。runner 正常工具交互最多 32 轮、40 次调用／20 项建议，预留一次无工具总结；相同读取缓存、重复改写去重与连续三轮无进展停止均不能省略权限校验。维护和回归见[整篇统一审阅计划](plans/2026-11-12-ai-note-review-unified.md)。
+同一笔记的旧文字与原生建议经 `proposalGroup.ts` 累积为整篇差异，预览与批准共用原始基线预检和顺序组合；中央顶部一次应用整页，修改附近及悬浮聊天均可逐项操作。统一 renderer 只显示一套可切换标签栏，手选保留在预览内，显式选择建议重新定位到具体页与块。无效果项由会话 v1 可选 `mergedIds` 标记，不生成空撤回记录。runner 正常工具交互最多 32 轮、40 次调用／20 项建议，预留一次无工具总结；相同读取缓存、重复改写去重与连续三轮无进展停止均不能省略权限校验。维护和回归见[整篇统一审阅计划](plans/2026-11-12-ai-note-review-unified.md)。
 
 原生工具契约 v3 在 `nativeSchema.ts` 定义字段，`nativeTools.ts` 共用 schema、授权和完整读取检查，`nativeEdits.ts` / `nativeProposals.ts` 负责纯领域转换、基线与副作用。块清单保留容器及标签路径，`read_block` 定位具体子块；笔记正文、块清单和 `{metadata,theory}` 属性文档分别分页，连续读完后才允许整篇操作。中央 `AiNativeProposalReview` 默认用原生块与语义字段显示红删绿增，复杂结构完整到达后展示，字符串更新可通过共享权限校验逐步预览。新增内容类型与动作有穷尽检查，新增字段仍须主动维护投影、schema、领域转换、恢复和审阅。详见[原生操作计划](plans/2026-11-12-ai-native-editing.md)。
 
-AI 工作区使用右侧“AI”标签，与大纲、反向链接和变量配方互斥显示，首次访问后保持挂载；标签切换保留草稿和运行任务。底栏入口同时展开面板，无原生大纲的视图也可使用。收起整个面板沿用取消与中断恢复，桌面打开参考来源保留 AI。布局维护见[右侧面板计划](plans/2026-11-12-ai-right-panel.md)，测试需覆盖正文可操作、标签生命周期、窄屏与来源对照。
+AI 工作区使用独立悬浮面板，与大纲、反向链接及变量配方分别显示。移动、调整大小、收起与右侧标签切换保留草稿和运行任务；明确关闭才卸载中断。底栏或正文选区均可唤起，无原生大纲的视图也可使用。布局维护见[悬浮面板计划](plans/2026-11-13-ai-floating-panel.md)，测试覆盖正文操作、选区避让、窗口／键盘视口恢复、窄屏、任务生命周期和来源对照。
 
 对话工作区采用固定底部输入区与独立历史滚动，模型 / 服务设置收在向上展开的 details 菜单，范围选择与发送 / 停止保持在底部。输入法确认不发送；回复期间保留下一条草稿；只在用户跟随最新消息时滚动。布局验收见[对话工作区计划](plans/2026-11-12-ai-chat-workspace.md)，不修改资料或会话版本。
+
+多会话维护在 `conversations.ts`、`AiConversationPanel` 与 `AiWorkspace`，旧活动 v1 key 保留，会话 ID／稳定标题／更新时间为可选元信息。切换前先写完整历史快照，再写活动槽；失败不切换、不停止当前任务，清空只更新当前 ID。成功后沿原代次保护取消迟到回复，中央审阅与暂态草稿清理，未保留的建议调整锁定切换。`AiUsagePanel` 使用工作区的受控打开状态，与历史、模型互斥。修改卡片默认折叠，相关动作测试先调用 `expandAiProposalCards`，默认状态由新专项单独证明。详见[聊天面板计划](plans/2026-11-13-ai-chat-polish.md)和第 22 章手册。
 
 AI 会话标题和操作放在输入框下方，顶部只保留与正文 44px 工具栏对齐的面板标签。回复复用 `ResearchMarkdown`，用户提问保留原始输入；对话内标题、列表、表格与代码样式不能受大纲导航选择器覆盖。验收包含底栏长标题、按钮位置、清空确认、Markdown 结构、公式与长代码滚动，以及窄屏英文。
 
@@ -307,4 +397,4 @@ AI 会话标题和操作放在输入框下方，顶部只保留与正文 44px �
 
 中英文界面复用同一资料模型；翻译只在显示边界进行，不改用户内容、稳定 ID 或协议。新增组件订阅语言、补充消息和参数校验，细节见[翻译约定](i18n/README.md)。
 
-`npm run check` 同时执行翻译校验、代码检查、单测与构建。`npm run docs:screenshots` 用隔离虚构内容更新 README 的 8 张截图；发布前目视核对，不以真实资料充当演示。
+`npm run check` 同时执行品牌与翻译校验、代码检查、单测与构建。`npm run docs:screenshots` 用隔离虚构内容更新 README 的 11 张截图，AI 展示使用预设对话与建议并拦截请求；发布前目视核对，不以真实资料充当演示。

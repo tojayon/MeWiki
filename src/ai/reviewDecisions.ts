@@ -1,10 +1,9 @@
-import { findResearchBlock } from '../domain/researchBlockTree.ts';
 import type { ResearchNote, ResearchNotebookState } from '../domain/researchNotebook.ts';
-import { getResearchNoteMetadata } from '../domain/researchFrontmatter.ts';
 import { ensureTheoryMaps } from '../domain/researchTheoryMap.ts';
 import { applyAiProposal, createNoteProposal, createTermProposal, type AiChange, type AiProposal } from './proposals.ts';
 import { nativeEntity, nativeFingerprint, prepareNativeEdit, runNativeEdit } from './nativeEdits.ts';
 import { aiProposalTarget } from './proposalGroup.ts';
+import { noteEditDependenciesUnchanged } from './editDependencies.ts';
 
 export interface AiReviewLocation { kind: 'page' | 'block' | 'tab' | 'field'; blockId?: string; tabId?: string; field?: string }
 export interface AiProposalAdjustment { content?: string; title?: string; fields?: Record<string, unknown> }
@@ -88,28 +87,16 @@ export function rebaseAiReviewProposals(before: ResearchNotebookState, after: Re
       if (proposal.kind === 'native') {
         const edit = proposal.edit;
         const fieldsEqual = (a: unknown, b: unknown) => Object.keys(edit.fields).every(key => equal(record(a)[key], record(b)[key]));
-        if (edit.action === 'block-update' || edit.action === 'block-delete' || edit.action === 'block-move') {
-          const a = findResearchBlock((left as ResearchNote).blocks, edit.blockId!)?.block, b = findResearchBlock((right as ResearchNote).blocks, edit.blockId!)?.block;
-          independent = !!a && !!b && a.type === b.type && (edit.action === 'block-update' ? fieldsEqual(a, b) : equal(a, b));
-        } else if (edit.action.startsWith('tab-')) {
-          const a = findResearchBlock((left as ResearchNote).blocks, edit.blockId!)?.block, b = findResearchBlock((right as ResearchNote).blocks, edit.blockId!)?.block;
-          if (a?.type === 'examples' && b?.type === 'examples') {
-            const x = a.tabs.find(tab => tab.id === edit.tabId), y = b.tabs.find(tab => tab.id === edit.tabId);
-            independent = edit.action === 'tab-insert' ? true : !!x && !!y && (edit.action === 'tab-update' ? x.title === y.title : equal(x, y));
-          }
-        } else if (edit.action === 'block-insert') {
-          if (!edit.container) independent = true;
-          else {
-            const a = findResearchBlock((left as ResearchNote).blocks, edit.container.exampleBlockId)?.block, b = findResearchBlock((right as ResearchNote).blocks, edit.container.exampleBlockId)?.block;
-            independent = a?.type === 'examples' && b?.type === 'examples' && a.tabs.some(tab => tab.id === edit.container!.tabId) && b.tabs.some(tab => tab.id === edit.container!.tabId);
-          }
-        } else if (edit.action === 'note-update') independent = fieldsEqual({ ...getResearchNoteMetadata(left as ResearchNote), frontmatter: (left as ResearchNote).frontmatter }, { ...getResearchNoteMetadata(right as ResearchNote), frontmatter: (right as ResearchNote).frontmatter });
+        if (edit.action === 'note-update' || edit.action.startsWith('block-') || edit.action.startsWith('tab-')) {
+          independent = noteEditDependenciesUnchanged(left as ResearchNote, right as ResearchNote, edit);
+        }
         else if (edit.action.endsWith('-save') || edit.action === 'map-update') independent = edit.action === 'relation-save'
           ? equal(record(left).relations, record(right).relations) && equal(record(left).theory, record(right).theory) : fieldsEqual(left, right);
       } else if (proposal.kind === 'append') independent = true;
       else if (proposal.kind === 'replace-text' || proposal.kind === 'delete-text') {
-        const a = findResearchBlock((left as ResearchNote).blocks, proposal.blockId!)?.block, b = findResearchBlock((right as ResearchNote).blocks, proposal.blockId!)?.block;
-        independent = !!a && !!b && a.type === b.type && (proposal.kind === 'delete-text' ? equal(a, b) : equal(record(a).text, record(b).text));
+        independent = noteEditDependenciesUnchanged(left as ResearchNote, right as ResearchNote, {
+          action: proposal.kind === 'delete-text' ? 'block-delete' : 'block-update', blockId: proposal.blockId, fields: proposal.kind === 'delete-text' ? {} : { text: proposal.content },
+        });
       }
       if (!independent) return proposal;
       const rebased = { ...proposal, before: structuredClone(right) } as AiProposal;

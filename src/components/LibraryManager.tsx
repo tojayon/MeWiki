@@ -8,6 +8,7 @@ import { createMeWikiNotebook } from "../domain/meWikiWorkspace.ts";
 import { libraryEntryChoices } from "../state/researchLibraryCatalog.ts";
 import { useIntegration } from "../integrations/IntegrationContext.ts";
 import { useDeleteConfirmation } from "./useDeleteConfirmation.ts";
+import UiInfo from './UiInfo.tsx';
 
 const client = new ResearchLibraryClient();
 export default function LibraryManager({ onClose, onBusyChange }: { onClose: () => void; onBusyChange: (busy: boolean) => void }) {
@@ -57,14 +58,15 @@ export default function LibraryManager({ onClose, onBusyChange }: { onClose: () 
       data-testid="mewiki-library-manager"
       className="mewiki-library-manager"
     >
-      <p>
-        {t("每个资料库独立保存笔记、符号、附件和历史版本。切换前自动保存当前修改。")}</p>
+      <div className="mewiki-library-toolbar">
       {entry && <label className="mewiki-library-entry-select">
         {t("默认资料库入口")}
         <select aria-label={t("默认资料库入口")} value={entry.id} disabled={busy} onChange={event => setEntryId(event.target.value)}>
           {entries.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
       </label>}
+      <UiInfo label={t('资料库说明')}><p>{t("每个资料库独立保存笔记、符号、附件和历史版本。切换前自动保存当前修改。")}</p></UiInfo>
+      </div>
       {!workspace.catalog.libraries.some(
         (item) => item.id === workspace.profile.id,
       ) && (

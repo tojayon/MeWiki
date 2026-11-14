@@ -3,6 +3,16 @@
 /* Interface sizes scale text only. Document sizes use an independent unit;
    keep fixed canvas / PDF geometry and toolbar dimensions in pixels. */
 :root {
+  --mewiki-ui-ink: #202936;
+  --mewiki-ui-muted: #626e7c;
+  --mewiki-ui-border: #dce1e6;
+  --mewiki-ui-field-border: #c7cfd8;
+  --mewiki-ui-divider: #edf0f3;
+  --mewiki-ui-surface: #fff;
+  --mewiki-ui-surface-muted: #f7f8fa;
+  --mewiki-ui-hover: #eff2f5;
+  --mewiki-ui-selected: #edf2fb;
+  --mewiki-ui-accent: #2459b8;
   font-family: var(--mewiki-interface-font-family,
     "Noto Sans SC Variable", "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif);
   color: #172033;

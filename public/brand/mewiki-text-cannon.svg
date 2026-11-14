@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="224 224 576 576" role="img" aria-labelledby="title description" data-muzzle-x="512" data-muzzle-y="295" data-direction-x="0" data-direction-y="-1" data-recoil-x="0" data-recoil-y="1" data-pivot-x="512" data-pivot-y="551.7231">
+  <title id="title">觅维 MeWiki 文字大炮</title>
+  <desc id="description">炮尾上方视角的蓝黑圆润大炮，单个浅灰蓝底座与略微伸出底盘的深色正圆炮耳，炮耳上侧保留圆头弧形高亮。炮嘴为两端圆滑的同向拱形厚沿，背面薄暗壁紧贴厚沿，只在两侧水平线下略微露出，内部不可见。炮嘴、炮管与左肩保留宽圆高亮，炮管与肩部连续连接。炮身直接显示蓝白 M，左侧笔画顺着弧势向下延伸以平衡左右重心，主笔画比例保持，不加圆形底托。各部件独立分层，背景透明。</desc>
+  <defs>
+    <linearGradient id="base-light" x1="0" y1="0" x2=".7" y2="1">
+      <stop stop-color="#f6faff"/><stop offset=".5" stop-color="#e4edf4"/><stop offset="1" stop-color="#afc5d5"/>
+    </linearGradient>
+    <linearGradient id="brand-blue" x1="0" y1="0" x2="1" y2=".15">
+      <stop stop-color="#236789"/><stop offset=".35" stop-color="#51b2db"/><stop offset=".65" stop-color="#2f94c7"/><stop offset="1" stop-color="#205775"/>
+    </linearGradient>
+    <linearGradient id="body-dark" x1="0" y1=".1" x2="1" y2=".65">
+      <stop stop-color="#284354"/><stop offset=".4" stop-color="#142936"/><stop offset=".8" stop-color="#080a0d"/><stop offset="1" stop-color="#142b39"/>
+    </linearGradient>
+    <linearGradient id="saddle-dark" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#35546a"/><stop offset=".6" stop-color="#1d394c"/><stop offset="1" stop-color="#102330"/>
+    </linearGradient>
+    <path id="shell-outline" d="M454 330C459 362 464 403 464 434C464 456 443.27 464.54 418 487C391 511 374 543 374 580C374 656.2 435.8 718 512 718C588.2 718 650 656.2 650 580C650 543 633 511 606 487C580.73 464.54 560 456 560 434C560 403 565 362 570 330C538 319 486 319 454 330Z"/>
+    <clipPath id="shell-clip"><use href="#shell-outline"/></clipPath>
+    <path id="muzzle-rim-curve" d="M428 346C448 321 478 309 512 309C546 309 576 321 596 346"/>
+  </defs>
+  <g id="cannon">
+    <g id="carriage">
+      <g id="turntable">
+        <ellipse cx="512" cy="563.7231" rx="184" ry="172.9034" fill="#829aab"/>
+        <ellipse id="turntable-plane" cx="512" cy="551.7231" rx="184" ry="172.9034" fill="#a6bdcd"/>
+        <ellipse cx="512" cy="549.7231" rx="178" ry="167.2653" fill="url(#base-light)"/>
+      </g>
+    </g>
+    <g id="aim" data-pivot-x="512" data-pivot-y="551.7231">
+      <g id="saddle">
+        <g id="saddle-left">
+          <circle cx="360" cy="583" r="52" fill="#080a0d"/>
+          <circle cx="360" cy="583" r="46" fill="url(#saddle-dark)"/>
+          <path id="saddle-left-highlight" d="M326 583A34 34 0 0 1 384.0416 558.9584" fill="none" stroke="#b9e3f2" stroke-width="7" stroke-linecap="round" opacity=".72"/>
+        </g>
+        <g id="saddle-right">
+          <circle cx="664" cy="583" r="52" fill="#080a0d"/>
+          <circle cx="664" cy="583" r="46" fill="url(#saddle-dark)"/>
+          <path id="saddle-right-highlight" d="M630 583A34 34 0 0 1 688.0416 558.9584" fill="none" stroke="#b9e3f2" stroke-width="7" stroke-linecap="round" opacity=".72"/>
+        </g>
+      </g>
+      <g id="elevation">
+        <g id="barrel">
+          <g id="gun-form">
+            <g id="breech">
+              <use href="#shell-outline" fill="url(#body-dark)" stroke="#080a0d" stroke-width="12" stroke-linejoin="round"/>
+              <path id="body-highlight" d="M440 492C414 510 398 536 398 561" fill="none" stroke="#b9e3f2" stroke-width="14" stroke-linecap="round" opacity=".82"/>
+            </g>
+            <path id="muzzle-rear-wall" d="M428 346C448 321 478 309 512 309C546 309 576 321 596 346C588 355 575 357 560 357C539 346 485 346 464 357C449 357 436 355 428 346Z" fill="#1b465c" stroke="#080a0d" stroke-width="6" stroke-linejoin="round"/>
+            <g id="tube" clip-path="url(#shell-clip)">
+              <path d="M450 318H574V426C547 436 477 436 450 426Z" fill="url(#brand-blue)"/>
+              <path id="tube-highlight" d="M476 351C478 371 480 393 480 411" fill="none" stroke="#d7f1fc" stroke-width="14" stroke-linecap="round" opacity=".85"/>
+            </g>
+            <g id="muzzle" data-bore-visible="false" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <use id="muzzle-outer-wall" href="#muzzle-rim-curve" stroke="#080a0d" stroke-width="28"/>
+              <use href="#muzzle-rim-curve" stroke="url(#brand-blue)" stroke-width="16"/>
+              <use id="muzzle-highlight" href="#muzzle-rim-curve" transform="translate(0 -3)" stroke="#d7f1fc" stroke-width="6" opacity=".9"/>
+              <g id="muzzle-origin" transform="translate(512 295)"/>
+            </g>
+            <g id="rear-emblem" transform="translate(512 599)">
+              <svg id="product-monogram" x="-96" y="-96" width="192" height="192" viewBox="0 0 192 192" preserveAspectRatio="xMidYMid meet">
+
+
+  <defs><mask id="product-monogram-emblem-mask" maskUnits="userSpaceOnUse" x="40" y="26" width="183.5" height="157"><circle cx="145" cy="104.5" r="78.5" fill="#fff"/><rect x="45" y="100" width="75" height="83" fill="#fff"/></mask></defs>
+  <g transform="translate(-49 -8.5)">
+  <g id="product-monogram-emblem" mask="url(#product-monogram-emblem-mask)">
+
+    <g>
+      <path id="product-monogram-white-ribbon" fill="#fff" d="M 58.5 165
+        C 62 120 90.8 70.2 116.8 58.4
+        C 128.2 53.2 137.1 54.1 140.1 62.2
+        C 144.4 73.8 135.1 94.9 141.8 94.1
+        C 147.5 93.5 166.3 72.5 181.4 64.1
+        C 192.9 57.7 200.4 59.8 201.8 66.2
+        C 205.1 80.8 187.2 110.8 185.4 122.3
+        C 183.4 135.1 195.1 133.4 222.4 121.7
+        L 231 121.7 L 231 130.8 L 218.5 130.8
+        C 196.4 145.2 177.1 148 173.4 134.1
+        C 170.9 125.1 177.5 110.6 182.9 97.1
+        C 189.1 81.5 180.1 77.8 166.6 87.1
+        C 155.6 94.7 138.5 110.8 131.8 112.4
+        C 125.9 113.9 127.8 103.5 128.1 97.1
+        C 128.8 84.8 125.3 77.2 109.4 82.7
+        C 93.7 88.2 72 116 59 161
+        C 58.2 163.8 58.1 164.3 58.5 165 Z"/>
+      <path id="product-monogram-blue-ribbon" fill="#2f94c7" d="M 59 161
+        C 72 116 93.7 88.2 109.4 82.7
+        C 125.3 77.2 128.8 84.8 128.1 97.1
+        C 127.8 103.5 125.9 113.9 131.8 112.4
+        C 138.5 110.8 155.6 94.7 166.6 87.1
+        C 180.1 77.8 189.1 81.5 182.9 97.1
+        C 177.5 110.6 170.9 125.1 173.4 134.1
+        C 177.1 148 196.4 145.2 218.5 130.8
+        C 215 140.4 207.4 150.6 195.9 157.5
+        C 183.3 165 168 168.6 160.5 162
+        C 149 151.9 160.5 122.8 167.5 107.7
+        C 172.5 96.9 169.8 95.5 161.8 101.4
+        C 147.2 112.1 134.5 129.7 123.5 139.7
+        C 114.7 147.7 111.5 141.6 112 130.5
+        C 112.4 121 114.3 109.1 108 110.2
+        C 101.7 111.3 91 139 84 160
+        C 81.2 168.4 52.5 183.5 59 161 Z"/>
+    </g>
+  </g>
+  </g>
+</svg>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

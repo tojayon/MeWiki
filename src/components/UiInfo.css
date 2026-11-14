@@ -1,0 +1,9 @@
+.mewiki-ui-info { display: inline-flex; flex: 0 0 auto; align-items: center; vertical-align: middle; }
+:root .mewiki-ui-info > button[data-ui="icon-action"][aria-label] { --action-size: 26px; --action-ink: var(--mewiki-ui-muted); --action-accent: var(--mewiki-ui-ink); --action-hover: var(--mewiki-ui-hover); }
+.mewiki-ui-info-panel { position: fixed; inset: auto; box-sizing: border-box; width: min(360px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); margin: 0; border: 1px solid var(--mewiki-ui-border); border-radius: 4px; padding: 0; overflow: auto; overscroll-behavior: contain; background: var(--mewiki-ui-surface); color: var(--mewiki-ui-ink); box-shadow: 0 6px 24px #17203314; font: calc(var(--mewiki-interface-unit, 1px) * 12)/1.7 var(--mewiki-interface-font-family, "Noto Sans SC Variable", sans-serif); }
+.mewiki-ui-info-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 38px; border-bottom: 1px solid var(--mewiki-ui-divider); padding: 4px 8px 4px 12px; }
+.mewiki-ui-info-panel > header > strong { min-width: 0; font-size: inherit; font-weight: 600; overflow-wrap: anywhere; }
+.mewiki-ui-info-content { display: grid; gap: 10px; padding: 12px; }
+.mewiki-ui-info-content > :is(p, ul) { margin: 0; color: inherit; font-size: inherit; line-height: inherit; overflow-wrap: anywhere; }
+.mewiki-ui-info-content > ul { padding-left: 18px; }
+@media (pointer: coarse) { :root .mewiki-ui-info > button[data-ui="icon-action"][aria-label] { --action-size: 36px; } }

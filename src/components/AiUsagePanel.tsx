@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { ChartNoAxesColumn } from 'lucide-react';
 import type { AiSession } from '../ai/session.ts';
 import { currentAiUsage } from '../ai/usage.ts';
@@ -6,9 +6,8 @@ import { t } from '../i18n/locale.ts';
 import { useLocale } from '../i18n/react.ts';
 import './AiUsagePanel.css';
 
-export default function AiUsagePanel({ session, onOpen }: { session: AiSession; onOpen: () => void }) {
+export default function AiUsagePanel({ session, open, onOpenChange }: { session: AiSession; open: boolean; onOpenChange: (open: boolean) => void }) {
   const locale = useLocale();
-  const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const id = useId();
@@ -35,21 +34,20 @@ export default function AiUsagePanel({ session, onOpen }: { session: AiSession; 
   useEffect(() => {
     if (!open) return;
     const dismiss = (event: PointerEvent) => {
-      if (event.target instanceof Node && !root.current?.contains(event.target)) setOpen(false);
+      if (event.target instanceof Node && !root.current?.contains(event.target)) onOpenChange(false);
     };
     document.addEventListener('pointerdown', dismiss);
     return () => document.removeEventListener('pointerdown', dismiss);
-  }, [open]);
+  }, [open, onOpenChange]);
 
   return <div ref={root} className="mewiki-ai-usage-control" onKeyDown={event => {
     if (event.key !== 'Escape' || !open) return;
-    event.preventDefault(); event.stopPropagation(); setOpen(false); trigger.current?.focus({ preventScroll: true });
+    event.preventDefault(); event.stopPropagation(); onOpenChange(false); trigger.current?.focus({ preventScroll: true });
   }} onBlur={event => {
-    if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+    if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) onOpenChange(false);
   }}>
     <button ref={trigger} type="button" data-ui="icon-action" aria-label={t('Token 使用记录')} title={t('Token 使用记录')} aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => {
-      if (!open) onOpen();
-      setOpen(value => !value);
+      onOpenChange(!open);
     }}><ChartNoAxesColumn size={14} aria-hidden="true" /></button>
     {open && <div id={id} role="dialog" aria-label={t('Token 使用记录')} className="mewiki-ai-usage-panel">
       <header><strong>{t('Token 使用记录')}</strong><span>{t('输入')}</span><span>{t('输出')}</span></header>
