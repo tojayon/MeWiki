@@ -268,7 +268,7 @@ export const nativeAiTools: AiExecutableTool[] = [
   { name: 'read_theory_maps', description: '浏览理论地图，或传 mapId 读取一张地图。列表用 offset 分页。仅返回本次授权笔记相关的成员与关系；只有完整范围均获授权并读取原文后才能修改地图，全局地图要求全库范围。', parameters: aiObject({ mapId: aiString, offset: { type: 'integer', minimum: 0 } }), execute: (ctx, args) => {
     const documents = ensureAiTheoryMaps(ctx.state).theoryMaps!.documents;
     const fullScope = ctx.state.notes.every(note => isMeWikiManualNote(note) || ctx.noteIds.has(note.id));
-    const readableMap = (doc: TheoryMapDocument) => fullScope || [...mapNoteIds(ctx, doc)].some(noteId => ctx.noteIds.has(noteId));
+    const readableMap = (doc: TheoryMapDocument) => fullScope || !!ctx.support?.references.some(reference => reference.kind === 'map' && reference.id === doc.id) || [...mapNoteIds(ctx, doc)].some(noteId => ctx.noteIds.has(noteId));
     const scoped = (doc: typeof documents[number]) => {
       const selected = nodeReference(doc.view.selectedNodeId);
       return { id: doc.id, kind: doc.kind, createdAt: doc.createdAt, updatedAt: doc.updatedAt,

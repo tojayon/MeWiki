@@ -23,9 +23,7 @@
 .mewiki-ai-floating-panel[data-compact=true] .mewiki-ai-task-form textarea { min-height: 38px; max-height: 44px; padding-block: 5px; }
 .mewiki-ai-floating-panel[data-compact=true] .mewiki-ai-selection { margin-top: 2px; padding-block: 2px; }
 .mewiki-ai-floating-panel[data-compact=true] .mewiki-ai-composer-controls { padding-block: 0; }
-.mewiki-ai-floating-panel[data-compact=true] :is(.mewiki-ai-model-options, .mewiki-ai-quick-options, .mewiki-ai-conversation-panel, .mewiki-ai-usage-panel) { position: fixed; left: 8px; right: auto; top: 28px; bottom: auto; box-sizing: border-box; width: calc(var(--ai-floating-width) - 16px); max-height: calc(var(--ai-floating-height) - 36px); }
-.mewiki-ai-floating-panel[data-compact=true] :is(.mewiki-ai-conversation-list, .mewiki-ai-usage-list) { max-height: max(0px, calc(var(--ai-floating-height) - 84px)); }
-.mewiki-ai-floating-resize { position: absolute; z-index: 5; display: block; border: 0; border-radius: 0; padding: 0; background: transparent; touch-action: none; }
+.mewiki-ai-floating-resize { position: absolute; z-index: 11; display: block; border: 0; border-radius: 0; padding: 0; background: transparent; touch-action: none; }
 .mewiki-ai-floating-resize:is([data-ai-resize-edge=n], [data-ai-resize-edge=s]) { left: 8px; right: 8px; height: 5px; cursor: ns-resize; }
 .mewiki-ai-floating-resize:is([data-ai-resize-edge=e], [data-ai-resize-edge=w]) { top: 8px; bottom: 8px; width: 5px; cursor: ew-resize; }
 .mewiki-ai-floating-resize:is([data-ai-resize-edge=n], [data-ai-resize-edge=ne], [data-ai-resize-edge=nw]) { top: 0; }

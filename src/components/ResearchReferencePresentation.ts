@@ -23,6 +23,7 @@ export function paintReference(element: HTMLElement, node: EditorNode, context: 
   const presentation = referencePresentation(node, context);
   element.dataset.referenceKind = node.attrs.kind;
   element.dataset.mewikiReference = node.attrs.source;
+  element.dataset.mewikiReferenceLabel = node.attrs.label;
   const dictionaryClass = !presentation.missing && ["term", "symbol"].includes(node.attrs.kind) ? ` research-dictionary-${node.attrs.kind}-reference` : "";
   element.className = `research-reference-atom${dictionaryClass}${presentation.missing ? " is-missing" : ""}`;
   element.title = presentation.title;

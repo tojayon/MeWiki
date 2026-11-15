@@ -11,7 +11,7 @@ describe('separate complete chat and bounded model memory', () => {
   it('retains more than twenty messages across sending, restoring and branching', () => {
     const previous = createAiSession('fixture');
     const key = aiHistoryContextKey(provider, provider.model, ids);
-    previous.history = Array.from({ length: 60 }, (_, index) => ({ role: index % 2 ? 'assistant' as const : 'user' as const, id: `m-${index}`, content: `消息${index}`, contextKey: key, ...(index % 2 ? { status: 'complete' as const } : {}) }));
+    previous.history = Array.from({ length: 60 }, (_, index) => ({ role: index % 2 ? 'assistant' as const : 'user' as const, id: `m-${index}`, content: `消息${index}`, contextKey: key, ...(index % 2 ? { status: 'complete' as const } : { libraryScope: false, references: [{ kind: 'note' as const, id: ids[0] }] }) }));
     const task = beginAiChatTask(previous, provider, provider.model, '下一问', ids, createNotebookFixture());
     expect(task.session.history).toHaveLength(62);
     expect(restoreAiSession('fixture', JSON.stringify(task.session))?.history).toHaveLength(62);

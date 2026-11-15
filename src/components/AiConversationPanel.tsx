@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { Check, History, MessageSquare, Plus } from 'lucide-react';
 import { aiConversationTitle } from '../ai/conversations.ts';
 import type { AiSession } from '../ai/session.ts';
@@ -15,18 +15,6 @@ export default function AiConversationPanel({ sessions, currentId, open, disable
   const trigger = useRef<HTMLButtonElement | null>(null);
   const id = useId();
   const date = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' });
-  useLayoutEffect(() => {
-    const control = root.current, workspace = control?.closest('.mewiki-ai-workspace'), composer = control?.closest('form');
-    if (!open || !control || !workspace || !composer) return;
-    const place = () => {
-      const headerHeight = control.querySelector('header')?.getBoundingClientRect().height ?? 40;
-      control.style.setProperty('--ai-conversations-max-height', `${Math.max(0, composer.getBoundingClientRect().top - workspace.getBoundingClientRect().top - headerHeight - 10)}px`);
-    };
-    place();
-    const observer = new ResizeObserver(place);
-    observer.observe(workspace); observer.observe(composer);
-    return () => observer.disconnect();
-  }, [open]);
   useEffect(() => {
     if (!open) return;
     const dismiss = (event: PointerEvent) => {

@@ -1,0 +1,18 @@
+.mewiki-ai-reference-control { display: flex; flex: 0 0 auto; align-items: center; }
+.mewiki-ai-reference-picker { position: absolute; z-index: 5; right: 10px; bottom: calc(100% + 8px); left: 10px; overflow: hidden; min-width: 0; border: 1px solid #dce1e8; border-radius: 4px; background: #fff; color: #38485f; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.6; }
+.mewiki-ai-reference-picker > header { display: grid; gap: 5px; box-sizing: border-box; padding: 5px 8px 8px; border-bottom: 1px solid #e5e8ed; }
+.mewiki-ai-reference-picker > header > div { display: flex; min-height: 24px; align-items: center; justify-content: space-between; gap: 8px; }
+.mewiki-ai-reference-picker strong { font-size: inherit; font-weight: 500; }
+.mewiki-ai-reference-picker > header > label { display: flex; min-width: 0; align-items: center; gap: 5px; }
+.mewiki-ai-reference-picker > header > label > svg { flex: 0 0 auto; color: #718094; }
+.mewiki-ai-reference-picker input { box-sizing: border-box; width: 100%; min-width: 0; height: 29px; padding: 3px 6px; border: 1px solid #dce1e8; border-radius: 4px; background: #fff; color: inherit; font: inherit; }
+.mewiki-ai-reference-picker .mewiki-ai-reference-list { box-sizing: border-box; max-height: min(320px, var(--ai-references-max-height, 320px)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; margin: 0; padding: 4px; list-style: none; }
+.mewiki-ai-reference-list > li > button { display: flex; box-sizing: border-box; width: 100%; min-width: 0; align-items: center; gap: 8px; padding: 5px 6px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.mewiki-ai-reference-list > li[aria-selected=true] > button, .mewiki-ai-reference-list > li > button:hover:not(:disabled) { background: #f0f3f7; color: #192436; }
+.mewiki-ai-reference-list > li > button:disabled { opacity: .5; cursor: default; }
+.mewiki-ai-reference-list button > svg { flex: 0 0 auto; color: #718094; }
+.mewiki-ai-reference-list button > span { display: grid; flex: 1 1 auto; min-width: 0; gap: 1px; }
+.mewiki-ai-reference-list button strong, .mewiki-ai-reference-list button small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-ai-reference-list button small { color: #718094; font-size: calc(var(--mewiki-interface-unit, 1px) * 10); }
+.mewiki-ai-reference-empty { margin: 0; padding: 12px; color: #718094; }
+@media (pointer: coarse) { .mewiki-ai-reference-list > li > button { min-height: 44px; } }

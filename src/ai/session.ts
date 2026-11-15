@@ -18,9 +18,12 @@ import { restoreAiTaskCheckpoint } from './checkpoint.ts';
 import { AI_CHAT_MESSAGE_LIMIT, AI_SESSION_CHAR_LIMIT } from './memory.ts';
 import { restoreAiFailure, type AiFailure } from './failures.ts';
 import { restoreAiExecutionSteps, restoreAiRunMetrics, type AiExecutionStep } from './execution.ts';
+import { restoreAiReferences, type AiObjectReference } from './references.ts';
+import { hasAiTaskSupport, restoreAiSkillIds, restoreAiTaskSupport, type AiTaskSupport } from './taskSupport.ts';
+import { reconcileAiInlineReferences, restoreAiInlineReferences, type AiInlineReference } from './inlineReferences.ts';
 
 export interface AiReplyActivity { tools: string[]; proposalIds: string[]; steps?: AiExecutionStep[] }
-export type AiConversationMessage = AiMessage & { id?: string; status?: AiSession['status']; selection?: AiTextSelection; materialIds?: string[]; providerName?: string; model?: string; contextKey?: string; activity?: AiReplyActivity };
+export type AiConversationMessage = AiMessage & { id?: string; status?: AiSession['status']; selection?: AiTextSelection; materialIds?: string[]; references?: AiObjectReference[]; pinnedReferences?: AiObjectReference[]; inlineReferences?: AiInlineReference[]; inlineReferencesInvalid?: boolean; referenceNames?: string[]; libraryScope?: boolean; skillIds?: string[]; skillNames?: string[]; libraryGuidance?: boolean; providerName?: string; model?: string; contextKey?: string; activity?: AiReplyActivity };
 export interface AiSession extends AiRunProgress {
   version: 1; libraryId: string; status: 'idle' | 'running' | 'interrupted' | 'cancelled' | 'complete' | 'partial' | 'error';
   contextKey?: string;
@@ -29,8 +32,14 @@ export interface AiSession extends AiRunProgress {
   updatedAt?: string;
   draft?: string;
   memoryInstructions?: string;
+  references?: AiObjectReference[];
+  referenceMode?: 'auto' | 'explicit';
+  libraryScope?: boolean;
+  inlineReferences?: AiInlineReference[];
+  inlineReferencesInvalid?: boolean;
+  skillIds?: string[];
   failure?: AiFailure;
-  messageEdit?: { index: number; content: string };
+  messageEdit?: { index: number; content: string; inlineReferences?: AiInlineReference[]; inlineReferencesInvalid?: boolean };
   selection?: AiTextSelection;
   materials?: AiMaterial[];
   activeMaterialIds?: string[];
@@ -41,8 +50,11 @@ export interface AiSession extends AiRunProgress {
   history: AiConversationMessage[]; changes: AiChange[]; appliedIds: string[]; error: string; providerName: string; model: string;
 }
 /** Reuse natural-language history only within the same configured destination and scope. */
-export function aiHistoryContextKey(provider: Pick<AiProvider, 'id' | 'baseUrl' | 'protocol'>, model: string, noteIds: string[], selection?: AiTextSelection, materials: AiMaterial[] = []): string {
-  const bytes = new TextEncoder().encode(JSON.stringify([provider.id, provider.baseUrl, provider.protocol, model, [...new Set(noteIds)].sort(), ...(selection ? [selection] : []), ...(materials.length ? [aiMaterialContext(materials)] : [])]));
+export function aiHistoryContextKey(provider: Pick<AiProvider, 'id' | 'baseUrl' | 'protocol'>, model: string, noteIds: string[], selection?: AiTextSelection, materials: AiMaterial[] = [], support?: AiTaskSupport): string {
+  const ids = [...new Set(noteIds)].sort();
+  // The current single note was already identified by the v1 scope. Keep its old history usable.
+  const redundantNote = support?.scope !== 'library' && support?.references.length === 1 && support.references[0].kind === 'note' && ids.length === 1 && support.references[0].id === ids[0] && !support.guidance.instructions && !support.guidance.skills.length;
+  const bytes = new TextEncoder().encode(JSON.stringify([provider.id, provider.baseUrl, provider.protocol, model, ids, ...(selection ? [selection] : []), ...(materials.length ? [aiMaterialContext(materials)] : []), ...(hasAiTaskSupport(support) && !redundantNote ? [support] : [])]));
   return [...sha256(bytes)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 export function createAiSession(libraryId: string): AiSession {
@@ -275,26 +287,55 @@ export function restoreAiSession(libraryId: string, value: string): AiSession | 
       const activity = restoredReplyActivity(message, available, claimed);
       const selection = message.role === 'user' ? restoreAiTextSelection(message.selection, libraryId) : undefined;
       const materialIds = message.role === 'user' ? restoreAiMaterialIds(message.materialIds) : undefined;
+      const references = message.role === 'user' ? restoreAiReferences(message.references) : undefined;
+      const pinnedReferences = message.role === 'user' ? restoreAiReferences(message.pinnedReferences) : undefined;
+      const inlineReferences = message.role === 'user' ? restoreAiInlineReferences(message.inlineReferences, message.content) : undefined;
+      const invalidReferences = message.role === 'user' && (message.inlineReferencesInvalid === true
+        || message.inlineReferences !== undefined && !inlineReferences || message.pinnedReferences !== undefined && !pinnedReferences
+        || [...(pinnedReferences ?? []), ...(inlineReferences ?? []).map(item => item.reference)].some(item => !references?.some(reference => reference.kind === item.kind && reference.id === item.id)));
+      const skillIds = message.role === 'user' ? restoreAiSkillIds(message.skillIds) : undefined;
       return { role: message.role, content: message.content,
         ...(text(message.id, 100) && /^[\w-]+$/.test(message.id) ? { id: message.id } : {}),
         ...(message.role === 'assistant' && ['running', 'complete', 'partial', 'error', 'cancelled', 'interrupted'].includes(message.status ?? '') ? { status: message.status === 'running' ? 'interrupted' : message.status } : {}),
-        ...(selection ? { selection } : {}), ...(materialIds ? { materialIds } : {}), ...(message.contextKey ? { contextKey: message.contextKey } : {}), ...(message.providerName ? { providerName: message.providerName } : {}), ...(message.model ? { model: message.model } : {}), ...(activity ? { activity } : {}) };
+        ...(message.role === 'user' && strings(message.referenceNames, 12, 180) ? { referenceNames: message.referenceNames } : {}),
+        ...(inlineReferences ? { inlineReferences } : {}),
+        ...(pinnedReferences ? { pinnedReferences } : {}), ...(invalidReferences ? { inlineReferencesInvalid: true } : {}),
+        ...(message.role === 'user' && typeof message.libraryScope === 'boolean' ? { libraryScope: message.libraryScope } : {}),
+        ...(selection ? { selection } : {}), ...(materialIds ? { materialIds } : {}), ...(references ? { references } : {}), ...(skillIds ? { skillIds } : {}), ...(message.role === 'user' && strings(message.skillNames, 6, 100) ? { skillNames: message.skillNames } : {}), ...(message.role === 'user' && message.libraryGuidance === true ? { libraryGuidance: true } : {}), ...(message.contextKey ? { contextKey: message.contextKey } : {}), ...(message.providerName ? { providerName: message.providerName } : {}), ...(message.model ? { model: message.model } : {}), ...(activity ? { activity } : {}) };
     });
     const request = session.lastRequest, lastUser = history.findLast(message => message.role === 'user');
+    const rawLastUser = session.history.findLast(message => message.role === 'user');
+    const requestSupport = restoreAiTaskSupport(request?.support);
+    const requestInline = request && lastUser ? restoreAiInlineReferences(request.inlineReferences ?? [], lastUser.content) : undefined;
+    const messageInline = rawLastUser ? restoreAiInlineReferences(rawLastUser.inlineReferences ?? [], rawLastUser.content) : undefined;
+    const inlineSnapshotValid = !!requestInline && !!messageInline && JSON.stringify(requestInline) === JSON.stringify(messageInline)
+      && requestInline.every(item => requestSupport?.references.some(reference => reference.kind === item.reference.kind && reference.id === item.reference.id));
     const lastRequest = record(request) && text(request.messageId, 100) && lastUser?.id === request.messageId &&
       text(request.providerId, 300) && !!request.providerId && text(request.model, 300) && !!request.model &&
       strings(request.noteIds, 1000) && new Set(request.noteIds).size === request.noteIds.length &&
       text(request.contextKey, 64) && /^[a-f0-9]{64}$/.test(request.contextKey) && request.contextKey === lastUser.contextKey &&
       request.scopeKey === aiRequestScopeKey(request.noteIds, lastUser.selection) && typeof request.baseline === 'string' && /^[a-f0-9]{64}$/.test(request.baseline) && (!lastUser.selection || request.noteIds.length === 1 && request.noteIds[0] === lastUser.selection.noteId)
       && (request.memoryInstructions === undefined || text(request.memoryInstructions, 4000))
-      ? { messageId: request.messageId, providerId: request.providerId, model: request.model, noteIds: request.noteIds, contextKey: request.contextKey, scopeKey: request.scopeKey, baseline: request.baseline, ...(text(request.memoryInstructions, 4000) ? { memoryInstructions: request.memoryInstructions } : {}) } : undefined;
+      && (request.support === undefined || !!requestSupport)
+      && (lastUser.libraryScope === true) === (requestSupport?.scope === 'library')
+      && (lastUser.libraryScope === undefined || requestSupport?.scope === (lastUser.libraryScope ? 'library' : 'references'))
+      && (!(lastUser.references?.length || lastUser.skillIds?.length || lastUser.libraryGuidance) || request.support !== undefined)
+      && inlineSnapshotValid
+      && !lastUser.inlineReferencesInvalid
+      ? { messageId: request.messageId, providerId: request.providerId, model: request.model, noteIds: request.noteIds, contextKey: request.contextKey, scopeKey: request.scopeKey, baseline: request.baseline, ...(text(request.memoryInstructions, 4000) ? { memoryInstructions: request.memoryInstructions } : {}), ...(requestSupport ? { support: requestSupport } : {}), ...(request.inlineReferences ? { inlineReferences: requestInline! } : {}) } : undefined;
     const checkpoint = lastRequest && restoreAiTaskCheckpoint(session.checkpoint, libraryId, lastRequest, session.proposals.map(item => item.id));
     const selection = restoreAiTextSelection(session.selection, libraryId);
     const materials = session.materials === undefined ? undefined : restoreAiMaterials(session.materials, libraryId);
     const activeMaterialIds = restoreAiMaterialIds(session.activeMaterialIds);
     const edit = session.messageEdit;
-    const messageEdit = record(edit) && Number.isInteger(edit.index) && typeof edit.index === 'number' && edit.index >= 0 && history[edit.index]?.role === 'user' &&
-      history[edit.index].content.length <= 12000 && text(edit.content, 12000) ? { index: edit.index, content: edit.content } : undefined;
+    const validEdit = record(edit) && Number.isInteger(edit.index) && typeof edit.index === 'number' && edit.index >= 0 && history[edit.index]?.role === 'user' &&
+      history[edit.index].content.length <= 12000 && text(edit.content, 12000);
+    const editedInline = validEdit && edit.inlineReferences !== undefined ? restoreAiInlineReferences(edit.inlineReferences, edit.content) : undefined;
+    const messageEdit = validEdit ? { index: edit.index, content: edit.content,
+      ...(editedInline ? { inlineReferences: editedInline } : history[edit.index].inlineReferences ? { inlineReferences: reconcileAiInlineReferences(history[edit.index].content, edit.content, history[edit.index].inlineReferences!) } : {}),
+      ...(edit.inlineReferencesInvalid === true || edit.inlineReferences !== undefined && !editedInline
+        || edit.inlineReferences === undefined && (history[edit.index].inlineReferencesInvalid || session.history[edit.index].inlineReferences !== undefined && !history[edit.index].inlineReferences) ? { inlineReferencesInvalid: true } : {}) } : undefined;
+    const draftInline = restoreAiInlineReferences(session.inlineReferences, session.draft ?? '');
     const mergedIds = strings(session.mergedIds, 40) ? [...new Set(session.mergedIds)].filter(id => available.has(id) && session.appliedIds.includes(id) && !session.changes.some(change => change.proposalId === id)) : [];
     const approvals = { appliedIds: session.appliedIds, changes: session.changes, mergedIds };
     return { version: 1, libraryId, status: session.status === 'running' ? 'interrupted' : session.status,
@@ -304,6 +345,13 @@ export function restoreAiSession(libraryId: string, value: string): AiSession | 
       ...(text(session.updatedAt, 40) && Number.isFinite(Date.parse(session.updatedAt)) ? { updatedAt: session.updatedAt } : {}),
       ...(text(session.draft, 12000) ? { draft: session.draft } : {}),
       ...(text(session.memoryInstructions, 4000) ? { memoryInstructions: session.memoryInstructions } : {}),
+      ...(restoreAiReferences(session.references) ? { references: restoreAiReferences(session.references) } : {}),
+      ...(session.referenceMode === 'auto' || session.referenceMode === 'explicit' ? { referenceMode: session.referenceMode }
+        : session.referenceMode !== undefined || session.libraryScope !== undefined || session.references?.length || session.inlineReferences?.length || session.selection || session.references !== undefined && !restoreAiReferences(session.references) ? { referenceMode: 'explicit' as const } : {}),
+      ...(session.libraryScope === true ? { libraryScope: true } : {}),
+      ...(draftInline ? { inlineReferences: draftInline } : {}),
+      ...(session.inlineReferencesInvalid === true || session.inlineReferences !== undefined && !draftInline ? { inlineReferencesInvalid: true } : {}),
+      ...(restoreAiSkillIds(session.skillIds) ? { skillIds: restoreAiSkillIds(session.skillIds) } : {}),
       ...(restoreAiFailure(session.failure) ? { failure: restoreAiFailure(session.failure) } : {}),
       ...(restoreAiExecutionSteps(session.steps) ? { steps: restoreAiExecutionSteps(session.steps) } : {}),
       ...(restoreAiRunMetrics(session.metrics) ? { metrics: restoreAiRunMetrics(session.metrics) } : {}),

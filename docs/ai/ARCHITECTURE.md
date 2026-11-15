@@ -1,12 +1,34 @@
 # MeWiki Agent 维护约定
 
-符号书写约束（工具契约 **v6**）：`symbolNotation.ts` 复用词典 resolver 与稳定引用构造器，`search_dictionary`／`read_dictionary_entry` 返回 `resolved: {tex,bindings,markdown}`；查询还匹配别名与完整默认写法。`read_note`／`read_block` 附 `symbolConventions`，最多 12 项、8000 字符，不切断 LaTeX，`hasMore` 提示继续检索；随整个响应一起计入读取预算，不授予词典编辑权限。系统提示将数学字体、大小写与角标设为定义，要求聊天与建议使用完整书写，正文优先稳定引用、公式优先已读 entryId／bindings。
+## 产品情境、对象引用与资料库技能
+
+统一引用入口见[计划](../plans/2026-11-14-ai-unified-context.md)。`composerContext.ts` 是主输入可见引用与笔记授权的共同解析入口，移除旧 `scope` React 状态和 `AiMaterials.scopeControl`。草稿可选 `referenceMode: auto|explicit` 与 `libraryScope` 按库、按对话保存；默认当前对象可移除，显式引用或移除后不再自动补回当前页面。`@` 菜单同时提供当前对象固定、句内对象搜索与独立“整库检索”，普通 module 仍不授权笔记。固定标签和整库状态保留用于追问，句内引用仅随本条正文发送；选区附加时退出整库，冲突笔记引用必须移除，选区／本行卡片保留严格边界。
+
+`AiTaskSupport.scope` 是可选 `references|library` 快照，统一入口发送时由实际引用重新生成授权 ID，不合并旧隐含当前笔记；整库排除手册，仅显式引用的手册可单独加入。原 v1 无 scope 的调用和恢复继续兼容。`contextKey` 包含整库标记以隔离范围；重试／继续使用冻结的原笔记 ID，不因导航或新笔记而扩大。消息保存 `libraryScope`，编辑分支沿用原对象及整库状态，底部下一问的引用与草稿独立保留。新字段恢复采用白名单，坏范围快照不能重试，移除默认引用的明确模式可跨刷新保存。未选择笔记仍可使用帮助和词典，不以自然语言提及同名对象作为授权。
+
+当前工具契约 **v7**，实现见[计划](../plans/2026-11-14-ai-product-context-skills.md)，操作与 Markdown 示例见[第 22 章](../wiki/22-ai-workspace.md#资料库规范与技能)。`productCatalog.ts` 是模块标准名称、别称、入口和已接入操作的单一目录，`AiProductHelp`、引用选择器、`get_capabilities`／`get_product_help` 与系统提示共用。帮助工具只返回产品信息并计入读取预算；`mewiki-module:` 链接经过固定模块白名单，仅用户点击时导航，不把模型输出当路由指令。`dictionarySearch.ts` 保留 `terms`／`symbols` 数组，增加 `kind: all|symbol|term`、分页、各类 total／nextOffset 以及名称、别名、完整默认写法相关性；搜索不等于完整读取，不增加修改权限。
+
+`references.ts` 用 `{kind,id}` 固定模块、笔记、符号、术语与地图，最多 12 个不同对象；显示名称按当前资料解析，任务消息另记发送时名称。`aiCurrentReference()` 依据实际当前页面取对象，词典／地图不借用旧 activeNoteId。`AiReferencePicker` 的 `@` 与按钮入口共用搜索、键盘和 IME 保护，选中后在原生 textarea 的光标处插入可读 `@名称`，直接成为自然语言句子的一部分。当前对象固定与旧独立引用标签继续兼容，导航不会暗换目标。只有显式笔记引用进入本次授权 ID 并集，模块引用不授权整库；选区／本行任务仍只允许来源笔记，不得以引用绕过边界。失效对象阻止发送或重试，不按同名内容回退。当前对象快捷提问仅填草稿，工具仍须先读后改。
+
+`inlineReferences.ts` 用 UTF-16 `[start,end)`、完整显示文字和稳定对象保存每处句内引用，最多 24 处／12 个不同对象，正文最多 12000 字符。恢复只接收排序后无重叠、范围与原文逐字一致的白名单副本。主输入与旧消息编辑均捕获原生 `beforeinput` 的实际选区及 `inputType`，验证为同一次编辑后才按范围平移／解除绑定；原生同值替换也通过 `input` 解除被覆盖关联，不依赖 React 是否触发 `onChange`。缺少真实范围且重复文字存在多种解释时保守解除歧义范围，不猜测同名对象。旧消息编辑逐次保存自己的引用草稿，避免把多次无关改动合成覆盖引用的一次替换；原消息与原分支保持不动。损坏草稿保留文字并以 `inlineReferencesInvalid` 阻止发送，用户明确清除失效关联后才恢复；清除状态可刷新保存。
+
+任务消息和 `lastRequest.inlineReferences` 保存相同范围快照，恢复／重试校验二者一致，且每处身份必须包含于 `support.references`；runner 同样验证，不能单靠可读名称获得权限。消息另存 `pinnedReferences`，保留固定对象与句内对象重叠时的来源，旧消息缺少该字段时兼容原推断。发送后 `@名称` 按原位置渲染成可访问按钮并打开稳定对象，复制保留原句，不重复列出句内引用；可选元数据损坏只禁用危险的重试或编辑发送，不丢弃有效对话文字。
+
+`skills.ts` 用独立 `mewiki:library:<encoded stable ID>:ai-guidance:v1` 保存 `AiLibraryGuidance`，与会话 v1 和笔记备份分离。无配置返回空值，损坏／超限或存储失败显式报错，不静默覆盖。默认规范最多 4000 字符；每库 40 项技能、单项正文 12000 字符、全部正文 160000 字符、序列化配置 256000 字符。技能包含名称、适用描述、正文、关键词、模块、启用与默认标记。`resolveAiGuidance()` 合并启用的默认技能和显式选择，最多 6 项／24000 字符正文，缺失或停用的显式 ID 报错；关键词／模块仅推荐，不能自动启用。`AiSkillsPanel` 保存失败保留草稿，模板与 Markdown 导入仅预填，导入初始停用且不自动保存；导出仅带可移植名称／描述／关键词／模块／正文。YAML 采用 core schema、唯一键和禁用别名展开，输入最多 20000 字符，不执行脚本、不跟随电脑路径或隐式资源。
+
+`taskSupport.ts` 的 `AiTaskSupport` 冻结引用和白名单 `AiGuidanceSnapshot`，`beginAiChatTask()` 复制到 `lastRequest.support`；重试／继续只用原快照，编辑旧消息的分支保留明确引用并使用当前规范与选择。`contextKey` 绑定引用身份、规范和技能正文，避免把旧规则下的问答混为新任务历史；句内位置随本次提问单独发送，不因位置变化隔离相同对象的历史。空规则与原范围中冗余的唯一笔记引用继续使用旧 v1 key。消息保存引用名、技能名和是否启用库规范，UI 以“本次生效规则”展示名称。会话／归档沿 v1 可选字段恢复，不持久脚本或工具权限。规则优先级为本次明确要求、本对话固定要求、启用技能、库默认规范；本次规则和固定要求置于历史之后，全部服从原任务权限与用户批准，不能替代读取原文或 controller 保存。相邻验证入口为 productCatalog／dictionarySearch／references／inlineReferences／inlineReferenceFlows／skills／taskSupport 单测及聊天范围、重试、分支与恢复回归；实际执行结果以验收记录为准。
+
+## 相邻功能约束
+
+符号书写约束（自工具契约 **v6** 接入）：`symbolNotation.ts` 复用词典 resolver 与稳定引用构造器，`search_dictionary`／`read_dictionary_entry` 返回 `resolved: {tex,bindings,markdown}`；查询还匹配别名与完整默认写法。`read_note`／`read_block` 附 `symbolConventions`，最多 12 项、8000 字符，不切断 LaTeX，`hasMore` 提示继续检索；随整个响应一起计入读取预算，不授予词典编辑权限。系统提示将数学字体、大小写与角标设为定义，要求聊天与建议使用完整书写，正文优先稳定引用、公式优先已读 entryId／bindings。
 
 `assertAiProposalSymbolNotation` 在三个建议工具 push 前执行，只用纯变换比较同一块前后；词典符号编辑本身仍沿原有授权与审阅流程。Markdown 通过 remark 提取数学节点，代码／HTML／普通 URL 不按公式检查；稳定符号链接按默认值加实际 bindings 解析，而非相信显示标签。公式块按实际渲染 tex 检查；Mermaid 源码不作正文。复用既有符号匹配器寻找默认实例，仅在去字体后的完整记号对应唯一规范字体、且没有合法精确词条时，拒绝新出现或增加的错误写法。比较保留多原子分组、重音和其他命令；不强制合法自定义角标，不借用其他块的旧错误配额，不静默改写。错误包含词条 ID 和规范 tex，runner 按既有工具错误机制交给模型纠正；不合格项不登记。用户在审阅中自行调整的内容仍经原 controller 保存，不被 AI 专用约束阻止。临时草稿与聊天正文没有做全局替换，该检查不是完整数学语义验证。专项为 `symbolNotation.test.ts`、`e2e/ai-symbol-notation.spec.ts`，虚构评测新增 `symbol-notation-repair`。
 
 左右侧栏开关统一在对应侧栏／ribbon 首位，AI 审阅与正文顶栏不再承接开关。`AiFloatingPanel.panelControls` 仅在固定嵌入时放右开关，临时嵌入沿用 ribbon 入口；同一聊天实例和任务不变。窄屏审阅使用中间正文列，只将被替换的原正文设为 inert，侧栏及聊天可继续操作，收起后扩大对照空间。此为界面布局变化，不扩展 Agent 权限、工具或保存流程。
 
 正文所见即所得编辑沿用现有 Markdown 与 controller，不新增 Agent 工具或改变权限。`ResearchReferenceEditor` 的富文本状态在失焦时序列化后提交；`AiSelectionToolbar` 附加选区前先完成这一提交，排除自动标题编号，再交给 `selectionRanges.ts` 计算稳定 UTF-16 原文范围。不要把 ProseMirror 位置或 DOM 字符数直接作为资料偏移。验收覆盖标题／强调内选区、中文输入与撤销后的保存，见[正文编辑计划](../plans/2026-11-14-rendered-text-editing.md)。
+
+`AiSelectionToolbar` 的 DOM 前文与选中文字使用同一原文投影：编辑器引用原子通过 `data-mewiki-reference-label` 提供解析后的原标签（含引用式链接），KaTeX 的 MathML／HTML 双重结构只取一份 TeX，避免显示名称变化和公式重复文字导致前文定位失败。主引用正文也沿用该投影；不修改用户源码、词典写法或范围校验。编辑器先失焦提交，再从 controller 取最终基线；失败通过 `onError` 显示现有笔记错误提示，成功附加清除旧提示，不能吞掉定位错误或改为整篇授权。回归见 `e2e/ai-chat-actions.spec.ts` 的未提交文字、鼠标／键盘、公式／符号／笔记引用前文、完整／局部范围及失败后重选。
 
 双侧竖栏临时打开不改变 Agent 的授权、读取投影、工具、建议或 controller 保存。`ResearchNotebook` 用独立临时状态复用右侧大纲／嵌入 AI，AI 保持同一 `AiWorkspace` 实例；悬停和点击导航不发请求。收起临时 AI 只挂起显示，不卸载、停止或清草稿；`AiFloatingPanel.onEscape` 仅临时侧栏传入，嵌套菜单先处理，独立浮窗行为不变。维护见[布局计划](../plans/2026-11-14-workspace-ribbons.md)、第 2／22 章及 `e2e/workspace-ribbons.spec.ts`。
 
@@ -31,7 +53,7 @@
 - `src/ai/runner.ts`、`tools.ts`、`readable.ts`：冻结本次资料快照和授权 ID，通过单一注册表发送说明、发现能力和执行工具。最多 32 轮工具交互、40 次调用、每轮 8 个工具及 20 项建议，读取与上下文另有字符上限。预算用尽后尝试一次 `tools: []` 的正文总结，不执行额外工具；无进展停止规则见下文。取消后再次检查信号，拒绝迟到工具。文档内容只作为资料，不能扩大权限。
 - `src/ai/proposals.ts`、`session.ts`、`AiWorkspace.tsx`：建议不写入资料；用户点击应用或撤回后重新检查库 ID、基线和保存状态，使用 controller 提交。会话逐字段校验、限制大小、按库存储，恢复运行态为中断态。
 
-`types.ts` 是传输的共享边界，不依赖 React。Responses 使用 `store:false` 和 `reasoning.encrypted_content`，加密推理续接字段仅在同一任务的内存消息中传递，不显示、不写历史或笔记。自然语言历史保留完整的 user/assistant 文本，模型另用有界摘录和近期对话，不复用旧工具调用配对；每条历史的 `contextKey` 绑定服务 ID/地址/协议、模型和授权笔记 ID 集合的 SHA-256，只发送与本次相同的历史，无标记的旧历史仅显示。
+`types.ts` 是传输的共享边界，不依赖 React。Responses 使用 `store:false` 和 `reasoning.encrypted_content`，加密推理续接字段仅在同一任务的内存消息中传递，不显示、不写历史或笔记。自然语言历史保留完整的 user/assistant 文本，模型另用有界摘录和近期对话，不复用旧工具调用配对；每条历史的 `contextKey` 绑定服务 ID/地址/协议、模型、授权笔记 ID 集合、选区、材料及可选引用／规则快照的 SHA-256，只发送与本次相同的历史，无标记的旧历史仅显示。
 
 ## 能力与提交
 
@@ -97,13 +119,15 @@ AI 不需要在每次颜色或排版微调时改工具。必须跟进的是它�
 
 ## 聊天面板的生命周期
 
+子面板呈现统一由 `useAiAnchoredPopover` 和 `AiChatPopovers.css` 维护，历史／用量／模型／快捷提问／引用／功能帮助为深色操作表面，记忆与规范／技能为浅色内容、深色标题和聊天局部淡遮罩。定位采用真实入口按钮和聊天可见范围，不避让整个输入表单；浮窗移动、缩放、嵌入及查询重建后继续跟随。遮罩点击或 Esc 只关闭子面板并恢复入口焦点，原组件的保存、草稿、检索和会话逻辑保持。修改此层须同步第 22 章及 `e2e/ai-popovers.spec.ts`、相邻面板回归；不新增 AI 工具、权限或资料协议。
+
 嵌入右栏的页签沿用 `ResearchSidebarTabs` 的纯图标、tooltip 与键盘导航；右栏的收起按钮位于头部最右端，收起后的竖栏展开按钮仍在顶部首位。大纲／符号反链与 AI 使用两份 header，键盘切换通过 `focusGroup="right"` 将焦点交给可见的同名标签，浮窗激活不覆盖该标签焦点。页签切换不重建聊天、不中断任务或丢失草稿；回归见 `e2e/workspace-chrome.spec.ts` 与 `e2e/ai-docking.spec.ts`。
 
 `conversations.ts` 在本库 `ai-conversations:v1` key 保存历史快照，当前会话继续使用原 `ai-session:v1` key；会话 v1 只增加可选 `conversationId`、稳定 `conversationTitle`、`updatedAt`，旧记录直接作为当前对话进入列表。两个入口共用 `restoreAiSession` 的严格逐字段校验，非法可选元信息不丢主体，历史损坏或跨库内容则明确拒绝改写归档。当前内存覆盖同 ID 的旧快照；按最近使用排序，50 段及 4 Mi 字符总量限制，失败不静默删除历史。空白项离开后不归档，清空只替换当前 ID 并去掉旧快照。
 
 切换先将当前和目标快照写入归档，再写当前 v1 槽；任一步失败不更新 UI、不取消当前任务。成功后才推进 generation、abort 旧请求、取消待写定时器并清除中央预览及暂态草稿。旧运行态归档为 interrupted，保留已收到的回复、用量和完整建议；迟到回调沿原 generation / abort 检查丢弃。未保留的局部建议调整锁定切换；批准及撤回仍经过现有基线检查和 controller，历史选择不触发工具或改变资料授权。
 
-`AiConversationPanel` 的入口在底栏标题之前，列表是向上展开的非模态浮层，按可用历史空间限制高度。与 `AiUsagePanel` 及模型 details 共用互斥打开状态，点击外部关闭，Escape 关闭并恢复入口焦点。修改预览为默认收起的原生 details，单行状态与图标操作；颜色与文字共同区分 applied / undone，不改变建议决策。模型弹层保留原生字段与简短范围，说明放信息提示。测试见 `conversations.test.ts`、`session.test.ts`、`e2e/ai-chat-panels.spec.ts` 与现有 AI 专项。
+`AiConversationPanel` 的入口在底栏标题之前，列表是非模态浮层，按入口附近的可用聊天空间限制高度。与其他子面板共用互斥打开状态，点击外部关闭，Escape 关闭并恢复入口焦点。修改预览为默认收起的原生 details，单行状态与图标操作；颜色与文字共同区分 applied / undone，不改变建议决策。模型弹层保留原生字段与简短范围，说明放信息提示。测试见 `conversations.test.ts`、`session.test.ts`、`e2e/ai-chat-panels.spec.ts`、`e2e/ai-popovers.spec.ts` 与现有 AI 专项。
 
 会话 v1 的可选 `draft` 保存最长 12000 字符的未发送输入；旧会话缺省为空，损坏草稿只丢弃该字段，不能抹掉有效聊天。输入和 runner 进度通过同一 `publish` 更新最新快照，发送成功写入提问后清空草稿，清空会话一并清除。常规写入合并 250ms；`pagehide`、页面隐藏和组件卸载同步保存最新快照，隐藏标签页只刷新存储，不取消任务。刷新后的 running 仍按既有规则恢复为 interrupted，不重发请求，未完成的原生修改草稿仍只在内存。`ResearchNotebook` 按稳定库 ID 记住 AI 面板是否显示，刷新恢复显示；主动关闭后不强行打开。浏览器与功能标签切换、草稿恢复及刷新前最后一段输出由 AI 专项 Edge 覆盖。
 
@@ -121,13 +145,13 @@ AI 不需要在每次颜色或排版微调时改工具。必须跟进的是它�
 
 用户期望位置与实际可见 frame 分开：只有拖动、调整大小或选区唤起才更新偏好，临时窗口／键盘视口变化只投影当前可见范围，恢复视口后回到期望尺寸。底栏折叠不改变完整面板尺寸或移动边界。短面板优先保留 composer 的发送／停止行与底栏，选区及 textarea 使用 `mewiki-ai-composer-content` 内部滚动，材料列表独立有界；ResizeObserver 与输入聚焦仅调整该局部滚动，保持活动输入框可见，不滚动笔记。极端高度下表单仍可滚动；内部菜单使用同一浮窗坐标限制，不被输入内容滚动容器裁切。删除笔记确认期间同设置页一起 suspended，确认取消后恢复聊天，避免盖住确认或争抢焦点。
 
-对话布局沿用[聊天工作区计划](../plans/2026-11-12-ai-chat-workspace.md)：独立历史滚动区与固定底部 composer，输入框下的控件栏显示会话首条用户提问的稳定标题，前方是对话历史入口，右侧放置复制、用量、清空及服务设置。输入框外、导航顶部中央的扁把手使用同一个原生按钮切换整行导航，收起时只保留 14px 把手区域，焦点自然保留；按库记忆 `mewiki:library:<编码 ID>:ai-footer-collapsed:v1`，不改变聊天、错误或输入区。28px 标题栏使用对称布局居中显示当前语言名称，中文为“觅维 智能助理”，无重复整窗收起／关闭按钮；整窗由气泡开关。模型菜单使用原生 details 向上展开，最小宽度 41px 保留模型与箭头图标的命中区，资料范围通过 `AiMaterials.scopeControl` 放在输入框上方的添加文件左侧，使用与添加文件一致的透明底色和前置图标，保留原生 select、选区锁定与运行中禁用，不再挤占发送／停止行。按 Enter 发送、Shift+Enter 换行，composition 状态及 keyCode 229 阻止输入法误发送。运行中可编辑追问草稿，但仍只允许一个请求。历史依照用户是否停留底部跟随输出，ResizeObserver 处理换行与面板尺寸变化；向上阅读时提供返回最新消息按钮。既有会话格式和工具、应用 / 撤回规则继续兼容。
+对话布局沿用[聊天工作区计划](../plans/2026-11-12-ai-chat-workspace.md)：独立历史滚动区与固定底部 composer，输入框下的控件栏显示会话首条用户提问的稳定标题，前方是对话历史入口，右侧放置复制、用量、清空及服务设置。输入框外、导航顶部中央的扁把手使用同一个原生按钮切换整行导航，收起时只保留 14px 把手区域，焦点自然保留；按库记忆 `mewiki:library:<编码 ID>:ai-footer-collapsed:v1`，不改变聊天、错误或输入区。28px 标题栏使用对称布局居中显示当前语言名称，中文为“觅维 智能助理”，无重复整窗收起／关闭按钮；整窗由气泡开关。模型菜单使用原生 details 向上展开，最小宽度 41px 保留模型与箭头图标的命中区，资料范围与对象共用输入区的 `@` 入口，可见标签和选区卡片决定实际授权，不再使用独立范围下拉框；运行中准备下一问不会改变原任务快照。按 Enter 发送、Shift+Enter 换行，composition 状态及 keyCode 229 阻止输入法误发送。运行中可编辑追问草稿，但仍只允许一个请求。历史依照用户是否停留底部跟随输出，ResizeObserver 处理换行与面板尺寸变化；向上阅读时提供返回最新消息按钮。既有会话格式和工具、应用 / 撤回规则继续兼容。
 
 用户消息由独立气泡和外部右对齐操作栏组成，复制与编辑不占用气泡正文；`ui-surfaces.css` 的用户背景只作用于气泡，消息外层和操作行透明，跟随聊天背景。按用户明确要求，仅聊天主输入和消息编辑 textarea 去除聚焦 outline／shadow，保留原边框与光标，其他控件继续原生焦点反馈。编辑先沿用 `stop()` 的 abort／generation 保护停止当前任务、暂停中央跟随，再保存会话 v1 可选 `messageEdit: { index, content }`；原消息和底部普通草稿、选区保持独立。恢复时单独校验编辑目标为用户消息及 12000 字符限制，坏编辑字段不丢有效会话。编辑框 Enter 换行、Ctrl／Cmd+Enter 重发、Escape 取消，composition 期间不提交；编辑入口、刷新／重新打开和切回历史时焦点优先给编辑框，延迟恢复不能抢回普通输入框。历史的会话更新及 ResizeObserver 自动跟随在 `messageEdit` 存在时暂停，避免聚焦旧消息后再滚回最新回复。
 
 刷新恢复的编辑框可能早于笔记原生 dialog 打开与字体加载解除 inert 挂载；编辑焦点 effect 只观察自身祖先的 open／inert／hidden 属性，等实际可交互再恢复焦点，成功或卸载即断开，不用固定延时或长期抢焦点。Edge 须检查生产构建中的刷新场景，开发构建的加载时序不足以覆盖此问题。
 
-`forkAiChatBeforeMessage()` 只复制编辑位置之前的消息及其关联建议／变更记录，保留原选区，以新会话身份从该位置重新发送；旧后续、建议与撤回记录保留在原历史，已保存的笔记不会自动回滚。新请求使用当前可见服务、模型及资料范围，原消息有选区时固定原来源并重新校验；失效选区禁止重发，须取消后重新选择。`switchAiConversation()` 成功保存原对话和新活动槽后才发出请求，写失败保留编辑草稿和原对话。编辑期间普通发送／重试禁用，现有建议调整、保存及切库锁继续生效。回归入口为 `chatActions.test.ts`、`session.test.ts`、`e2e/ai-chat-actions.spec.ts` 与浮窗 Edge 专项。
+`forkAiChatBeforeMessage()` 只复制编辑位置之前的消息及其关联建议／变更记录，保留原选区，以新会话身份从该位置重新发送；旧后续、建议与撤回记录保留在原历史，已保存的笔记不会自动回滚。新请求使用当前可见服务、模型和当前规范，沿用原消息的对象及整库检索状态，不混入下一问的资料范围；原消息有选区时固定原来源并重新校验；失效选区禁止重发，须取消后重新选择。`switchAiConversation()` 成功保存原对话和新活动槽后才发出请求，写失败保留编辑草稿和原对话。编辑期间普通发送／重试禁用，现有建议调整、保存及切库锁继续生效。回归入口为 `chatActions.test.ts`、`session.test.ts`、`e2e/ai-chat-actions.spec.ts` 与浮窗 Edge 专项。
 
 AI 回复与未归档的流式输出复用 `ResearchMarkdown`，支持 GFM、代码高亮与公式，沿用 HTML 跳过和链接校验；用户输入仍按原始文本显示。Markdown 包装使用独立界面字号，长代码与表格内部滚动。右侧大纲列表的样式仅作用于导航列表，不能覆盖对话里的有序列表或代码复制按钮。此变更不扩充 Agent 工具或资料读取范围。
 

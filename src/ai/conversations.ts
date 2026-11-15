@@ -20,7 +20,7 @@ export function listAiConversations(saved: AiSession[], current: AiSession): AiS
   return [...entries.values()].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
 }
 export function aiConversationHasContent(session: AiSession): boolean {
-  return !!(session.history.length || session.output || session.draft?.trim() || session.memoryInstructions?.trim() || session.selection || session.activeMaterialIds?.length || session.proposals.length || session.changes.length || session.tools.length || session.usageHistory?.length);
+  return !!(session.history.length || session.output || session.draft?.trim() || session.memoryInstructions?.trim() || session.references?.length || session.inlineReferences?.length || session.inlineReferencesInvalid || session.referenceMode === 'explicit' || session.libraryScope || session.skillIds?.length || session.selection || session.activeMaterialIds?.length || session.proposals.length || session.changes.length || session.tools.length || session.usageHistory?.length);
 }
 export function readAiConversations(libraryId: string, storage: Pick<Storage, 'getItem'>): AiSession[] {
   try {

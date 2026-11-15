@@ -1,3 +1,5 @@
-.mewiki-ai-selection-toolbar { position: fixed; z-index: 1600; display: flex; box-sizing: border-box; border: 1px solid #dce1e8; border-radius: 4px; padding: 2px; background: #fff; color: #38485f; }
-:root .mewiki-ai-selection-toolbar [data-ui="menu-action"] { width: auto; min-height: 32px; gap: 6px; padding: 4px 8px; white-space: nowrap; }
+.mewiki-ai-selection-toolbar { position: fixed; z-index: 1600; display: flex; box-sizing: border-box; border: 1px solid #4b5563; border-radius: 4px; padding: 2px; background: #263449; color: #f8fafc; box-shadow: 0 3px 12px #0f172a26; }
+:root .mewiki-ai-selection-toolbar [data-ui="menu-action"] { width: auto; min-height: 32px; gap: 6px; padding: 4px 8px; color: inherit; white-space: nowrap; }
+:root .mewiki-ai-selection-toolbar [data-ui="menu-action"]:is(:hover, :focus-visible):not(:disabled) { background: #36475f; color: #fff; }
+.mewiki-ai-selection-toolbar .mewiki-ai-mascot { border-radius: 4px; background: #fff; }
 @media (pointer: coarse) { :root .mewiki-ai-selection-toolbar [data-ui="menu-action"] { min-height: 40px; } }

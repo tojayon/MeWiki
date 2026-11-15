@@ -6,7 +6,7 @@ import { normalizeResearchNotebook } from '../src/domain/researchNotebook.ts';
 import { createNoteProposal } from '../src/ai/proposals.ts';
 import { createNativeProposal } from '../src/ai/nativeProposals.ts';
 import { createAiSession } from '../src/ai/session.ts';
-import { expandAiProposalCards, openAiWorkspace } from './helpers/ai.ts';
+import { expandAiProposalCards, openAiWorkspace, setAiReferenceScope } from './helpers/ai.ts';
 
 async function useNarrowReview(page: Page) {
   const collapse = page.getByRole('button', { name: '收起笔记左侧面板', exact: true });
@@ -61,7 +61,7 @@ async function suggestEdits(page: Page, suggestions: Record<string, string>[]) {
   return ai;
 }
 
-async function suggestNativeOperations(page: Page, reads: { name: string; args: Record<string, unknown> }[], edits: Record<string, unknown>[], scope = 'current') {
+async function suggestNativeOperations(page: Page, reads: { name: string; args: Record<string, unknown> }[], edits: Record<string, unknown>[], scope: 'current' | 'library' = 'current') {
   let turn = 0;
   await page.route('**/api/mewiki/ai/chat', route => {
     const operations = ++turn === 1 ? reads : turn === 2 ? edits.map(args => ({ name: 'propose_edit', args })) : [];
@@ -70,7 +70,7 @@ async function suggestNativeOperations(page: Page, reads: { name: string; args: 
     return route.fulfill({ contentType: 'application/x-ndjson', body: JSON.stringify({ type: 'done', result: { message, usage: { inputTokens: 1, outputTokens: 1 } } }) + '\n' });
   });
   const ai = await openAi(page);
-  await ai.getByRole('combobox', { name: '资料范围', exact: true }).selectOption(scope);
+  await setAiReferenceScope(ai, scope);
   await ai.getByLabel('任务要求', { exact: true }).fill('按原生内容修改并保留稳定引用');
   await ai.getByRole('button', { name: '发送消息', exact: true }).click();
   await expect(ai.getByText('原生修改已准备，等待审阅。', { exact: true })).toBeVisible();
@@ -1345,9 +1345,9 @@ test('reuses conversation only for the same service, model and authorized notes'
     await ai.getByRole('button', { name: '发送消息', exact: true }).click();
     await expect(ai.getByText(expected, { exact: true })).toBeVisible();
   };
-  await ai.getByRole('combobox', { name: '资料范围', exact: true }).selectOption('library');
+  await setAiReferenceScope(ai, 'library');
   await run('整库任务', 'OUT_OF_SCOPE_LIBRARY_HISTORY');
-  await ai.getByRole('combobox', { name: '资料范围', exact: true }).selectOption('current');
+  await setAiReferenceScope(ai, 'current');
   await run('当前任务', '范围内结果2');
   expect(requests[1]).not.toContain('OUT_OF_SCOPE_LIBRARY_HISTORY');
   await run('当前范围的追问', '范围内结果3');

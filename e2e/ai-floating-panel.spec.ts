@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createNotebookFixture } from '../src/domain/testUtils/notebook.ts';
 import { createAiSession } from '../src/ai/session.ts';
-import { expectAiPanelInViewport, openAiWorkspace as openAi } from './helpers/ai.ts';
+import { expectAiPanelInViewport, openAiWorkspace as openAi, setAiReferenceScope } from './helpers/ai.ts';
 import { openSettingsSection } from './helpers/settings.ts';
 
 async function setup(page: Page, english = false) {
@@ -29,18 +29,21 @@ async function selectSource(page: Page) {
   return rect;
 }
 
-for (const english of [false, true]) test(`groups context controls above the composer and uses a centered footer handle in ${english ? 'English' : 'Chinese'}`, async ({ page }, info) => {
+for (const english of [false, true]) test(`groups unified references in the composer and uses a centered footer handle in ${english ? 'English' : 'Chinese'}`, async ({ page }, info) => {
   await setup(page, english); const ai = await openAi(page, english);
-  const scope = ai.getByRole('combobox', { name: english ? 'Source scope' : '资料范围', exact: true });
-  const add = ai.getByRole('button', { name: english ? 'Add supporting files' : '添加辅助文件', exact: true });
+  const scope = ai.locator('.mewiki-ai-reference-tag[data-scope="library"]');
+  await expect(ai.getByRole('combobox', { name: english ? 'Source scope' : '资料范围', exact: true })).toHaveCount(0);
+  const add = ai.getByRole('button', { name: english ? 'Add external files' : '添加外部文件', exact: true });
   const input = ai.getByLabel(english ? 'Task instructions' : '任务要求', { exact: true });
-  await input.fill('范围与底栏调整保留草稿'); await scope.selectOption('library');
+  await input.fill('范围与底栏调整保留草稿'); await setAiReferenceScope(ai, 'library', english);
   for (const docked of [false, true]) {
     if (docked) await ai.getByRole('button', { name: english ? 'Dock to right sidebar' : '嵌入右侧栏', exact: true }).click();
     const scopeBox = (await scope.boundingBox())!, addBox = (await add.boundingBox())!, composer = (await ai.locator('.mewiki-ai-composer').boundingBox())!;
-    expect(scopeBox.x + scopeBox.width).toBeLessThanOrEqual(addBox.x);
-    expect(Math.abs(scopeBox.y + scopeBox.height / 2 - addBox.y - addBox.height / 2)).toBeLessThan(2);
-    expect(Math.max(scopeBox.y + scopeBox.height, addBox.y + addBox.height)).toBeLessThanOrEqual(composer.y);
+    expect(addBox.y + addBox.height).toBeLessThanOrEqual(composer.y);
+    expect(scopeBox.y).toBeGreaterThanOrEqual(composer.y);
+    expect(scopeBox.x).toBeGreaterThanOrEqual(composer.x);
+    expect(scopeBox.x + scopeBox.width).toBeLessThanOrEqual(composer.x + composer.width);
+    expect(scopeBox.y + scopeBox.height).toBeLessThanOrEqual((await input.boundingBox())!.y);
     const handle = ai.getByRole('button', { name: english ? 'Collapse footer navigation' : '收起底部导航栏', exact: true });
     await expect(handle).toHaveClass('mewiki-ai-footer-handle');
     const handleBox = (await handle.boundingBox())!, footer = (await ai.locator('.mewiki-ai-session-bar').boundingBox())!;
@@ -54,7 +57,7 @@ for (const english of [false, true]) test(`groups context controls above the com
     expect(await expand.evaluate(element => !!element.closest('.mewiki-ai-composer'))).toBe(false);
     const collapsed = (await expand.boundingBox())!, form = (await ai.locator('.mewiki-ai-task-form').boundingBox())!;
     expect(form.y + form.height - collapsed.y - collapsed.height).toBeLessThanOrEqual(8);
-    await expect(input).toHaveValue('范围与底栏调整保留草稿'); await expect(scope).toHaveValue('library');
+    await expect(input).toHaveValue('范围与底栏调整保留草稿'); await expect(scope).toBeVisible();
     await expand.press('Enter'); await expect(handle).toBeFocused();
     await page.screenshot({ path: info.outputPath(`ai-context-controls-${english ? 'en' : 'zh'}-${docked ? 'docked' : 'floating'}.png`) });
   }
@@ -70,7 +73,7 @@ test('collapses only the footer and toggles the full chat from the edge capsule'
   await expect(ai.getByRole('button', { name: '关闭AI 工作区', exact: true })).toHaveCount(0);
   await ai.getByRole('button', { name: '对话历史', exact: true }).click();
   await expect(ai.getByRole('dialog', { name: '对话历史', exact: true })).toBeVisible();
-  await ai.getByRole('button', { name: '收起底部导航栏', exact: true }).click();
+  await ai.getByRole('button', { name: '收起底部导航栏', exact: true }).press('Enter');
   await expect(ai.getByRole('dialog', { name: '对话历史', exact: true })).toHaveCount(0);
   await expect(input).toBeVisible(); await expect(input).toHaveValue('底栏隐藏后仍保留');
   await expect(ai.getByRole('button', { name: '对话历史', exact: true })).toBeHidden();
@@ -279,7 +282,7 @@ test('keeps a task running while footer navigation is collapsed and restores it 
   const stop = ai.getByRole('button', { name: '停止任务', exact: true }); await expect(stop).toBeInViewport();
   await ai.getByRole('button', { name: '收起底部导航栏', exact: true }).click();
   const stopBox = (await stop.boundingBox())!;
-  const model = ai.getByRole('button', { name: '模型设置', exact: true }), scope = ai.getByLabel('资料范围', { exact: true });
+  const model = ai.getByRole('button', { name: '模型设置', exact: true }), scope = ai.locator('.mewiki-ai-reference-tag[data-implicit]');
   const modelBox = (await model.boundingBox())!, scopeBox = (await scope.boundingBox())!;
   expect(modelBox.width).toBeGreaterThanOrEqual(41); expect(scopeBox.y + scopeBox.height).toBeLessThanOrEqual(modelBox.y);
   const chevron = (await model.locator('svg').last().boundingBox())!;

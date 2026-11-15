@@ -1,0 +1,39 @@
+.mewiki-ai-skills-control { display: flex; align-items: center; }
+.mewiki-ai-skills-panel { position: absolute; z-index: 5; right: 10px; bottom: calc(100% + 8px); left: 10px; min-width: 0; overflow: hidden; border: 1px solid #dce1e8; border-radius: 4px; background: #fff; color: #38485f; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+.mewiki-ai-skills-panel > header { display: flex; min-height: 34px; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #e5e8ed; padding: 3px 8px; }
+.mewiki-ai-skills-panel > header > strong { font: inherit; }
+.mewiki-ai-skills-content { display: grid; gap: 14px; max-height: min(470px, var(--ai-skills-height, 470px)); overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 10px; }
+.mewiki-ai-skills-content > section { display: grid; min-width: 0; gap: 7px; }
+.mewiki-ai-skills-content p { margin: 0; color: #718094; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); line-height: 1.6; }
+.mewiki-ai-skills-section-title { display: flex; min-width: 0; min-height: 26px; align-items: center; justify-content: space-between; gap: 7px; }
+.mewiki-ai-skills-section-title [role=toolbar], .mewiki-ai-skill-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 1px; }
+:root .mewiki-ai-skills-panel [data-ui="icon-action"][aria-label] { --action-size: 26px; --action-ink: #718094; --action-hover: #f2f4f7; }
+.mewiki-ai-task-form .mewiki-ai-skills-panel textarea { box-sizing: border-box; width: 100%; min-height: 68px; max-height: 200px; border: 1px solid #dce1e8; border-radius: 4px; padding: 6px; resize: vertical; background: #f8f9fb; color: inherit; font: inherit; line-height: 1.6; }
+.mewiki-ai-task-form .mewiki-ai-skills-panel input[type=text], .mewiki-ai-task-form .mewiki-ai-skills-panel input:not([type]) { min-height: 30px; border-color: #dce1e8; padding: 5px 6px; font: inherit; }
+.mewiki-ai-task-form .mewiki-ai-skills-panel input[type=checkbox] { width: auto; min-height: 0; flex: 0 0 auto; margin: 0; padding: 0; accent-color: #536b87; }
+.mewiki-ai-skills-list { display: grid; min-width: 0; gap: 3px; }
+.mewiki-ai-skill-row { display: flex; min-width: 0; align-items: center; gap: 5px; border-radius: 4px; padding: 2px 0; }
+.mewiki-ai-skill-row > label { display: flex; flex: 1 1 auto; min-width: 0; align-items: center; gap: 7px; }
+.mewiki-ai-skill-row > label > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-ai-skill-row > span { flex: 1 1 auto; }
+.mewiki-ai-skill-row > small { flex: 0 0 auto; color: #718094; font-size: calc(var(--mewiki-interface-unit, 1px) * 10); }
+.mewiki-ai-skill-row[data-disabled=true] > label, .mewiki-ai-skill-row[data-disabled=true] > span { color: #8993a1; }
+.mewiki-ai-skills-templates { display: grid; gap: 2px; border: 1px solid #e5e8ed; border-radius: 4px; padding: 3px; }
+.mewiki-ai-skills-templates > button { display: flex; min-height: 29px; align-items: center; gap: 7px; border: 0; border-radius: 4px; padding: 5px 7px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.mewiki-ai-skills-templates > button:hover { background: #f2f4f7; }
+.mewiki-ai-skills-suggestions { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 5px; }
+.mewiki-ai-skills-suggestions > span { color: #718094; font-size: calc(var(--mewiki-interface-unit, 1px) * 11); }
+.mewiki-ai-skills-suggestions > button { display: inline-flex; min-width: 0; max-width: 100%; align-items: center; gap: 4px; border: 1px solid #e1e6ed; border-radius: 4px; padding: 4px 6px; background: #f7f8fa; color: #536176; font: inherit; cursor: pointer; }
+.mewiki-ai-skills-suggestions > button > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mewiki-ai-skill-editor { border-top: 1px solid #e5e8ed; padding-top: 12px; }
+.mewiki-ai-skill-editor > label { display: grid; min-width: 0; gap: 5px; }
+.mewiki-ai-task-form .mewiki-ai-skill-editor > fieldset { display: block; }
+.mewiki-ai-skill-editor legend { margin-bottom: 6px; padding: 0; }
+.mewiki-ai-skill-modules { display: flex; flex-wrap: wrap; gap: 7px 12px; }
+.mewiki-ai-skill-modules > label, .mewiki-ai-skill-options > label { display: flex; align-items: center; gap: 5px; }
+.mewiki-ai-skill-options { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 3px 0; }
+.mewiki-ai-skill-editor-actions { display: flex; gap: 7px; }
+.mewiki-ai-skill-editor-actions > button { min-height: 30px; border: 1px solid #dce1e8; border-radius: 4px; padding: 5px 10px; background: #fff; color: #38485f; font: inherit; cursor: pointer; }
+.mewiki-ai-skill-editor-actions > button:first-child { background: #f0f3f7; }
+.mewiki-ai-skills-panel button:disabled { cursor: default; opacity: .5; }
+@media (pointer: coarse) { :root .mewiki-ai-skills-panel [data-ui="icon-action"][aria-label] { --action-size: 34px; } .mewiki-ai-skill-editor-actions > button, .mewiki-ai-skills-templates > button { min-height: 36px; } }

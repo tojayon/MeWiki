@@ -1,5 +1,17 @@
 # MeWiki AI 接手指南
 
+公共发布与在线入口（2026-11-16）：中英文 README 现区分本仓库的开源本地版和 [wiki.mecore.cc](https://wiki.mecore.cc) 官方在线服务，完整范围与迁移见[在线指南](HOSTED.md)。公共代码只发布已完成的 AI 引用／技能及界面改动；独立服务版的身份、在线存储与部署配置不整分支合回这里。后续维护公开文案时同步两种语言、手册第 1／15 章与当前服务能力，不宣称自动同步、公众注册、在线 AI 或端到端加密已实现。实际复验见 [VERIFICATION](VERIFICATION.md)。
+
+编辑选区点击无响应修复（2026-11-14）：`AiSelectionToolbar` 的原文投影将 KaTeX 双重渲染归为一份 TeX，并从编辑器引用原子的 `data-mewiki-reference-label` 恢复原标签，排除已改名引用的显示差异。点击先完成普通 blur 保存，再创建原选区，保留草稿及严格边界；定位失败交给现有笔记错误提示，成功重选清除。第 22 章与 AI 架构同步，`e2e/ai-chat-actions.spec.ts` 覆盖真实拖选、未提交文字、公式／符号／笔记引用、精确范围和失败恢复；实际验收见 [VERIFICATION](VERIFICATION.md)。
+
+AI 按钮弹层视觉与定位（2026-11-14）：`useAiAnchoredPopover` 统一管理八类子面板，在原 DOM 内按真实按钮、聊天与可见视口定位，优先上方 6px，空间不足翻转／内部滚动；输入框不作为避让区。移除各组件按表单上沿计算高度和短窗固定顶部的旧规则，观察浮窗移动、缩放、嵌入及 `@` 查询重建。`AiChatPopovers.css` 用深色操作表面、浅色编辑内容／深色标题，记忆与技能增加聊天内部淡遮罩；关闭仅收起子面板并返回焦点，保留草稿，缩放命中区在遮罩上方。第 22 章、UI 规范、开发与架构同步；入口为[计划](plans/2026-11-14-ai-anchored-popovers.md)、`e2e/ai-popovers.spec.ts` 与相邻聊天测试。只改呈现，不新增 AI 工具、权限或保存路径；实际验收见 [VERIFICATION](VERIFICATION.md)。
+
+AI 统一引用入口（2026-11-14）：旧“当前笔记／当前资料库／当前选区”下拉框与局部 `scope` 状态已移除，`composerContext.ts` 同时生成可见对象与实际笔记授权。默认当前对象可移除；显式 `@` 其他对象后不再暗带当前笔记，移除最后一处引用不补回当前页，刷新和导航保持。当前对象固定与整库检索统一在 `@` 菜单，标签持续用于追问；句内引用仅随本条消息发送。整库状态显示可移除标签，附加选区自动退出整库，选区／本行卡片继续严格限制修改。`AiTaskSupport.scope` 冻结 references／library 模式，旧 v1 可选字段兼容；重试沿用原笔记 ID，编辑旧消息沿用原对象和整库标记，下一问草稿独立。手册第 2／22 章与 UI 规范同步；见[计划](plans/2026-11-14-ai-unified-context.md)、[架构](ai/ARCHITECTURE.md)，隔离 Edge 配置 `playwright.ai-unified-context.config.ts`，实际验收记于 [VERIFICATION](VERIFICATION.md)。
+
+AI 自然语言句内引用（2026-11-14，同下批次）：选择器把 `@名称` 插入原生 textarea 的光标位置，`inlineReferences.ts` 保存 UTF-16 范围与稳定 `{kind,id}`，最多 24 处／12 个不同对象；发送后原句可点击，复制不重复引用。主输入和旧消息编辑逐次捕获 native beforeinput／input（含同值替换），外部改字平移、内部编辑解绑，缺范围的同名歧义保守释放。消息／重试记录保存一致快照并检查 support 包含身份；`pinnedReferences` 单独保留固定来源。损坏草稿保留文字、标失效并阻止发送，用户“清除失效引用”后再选择；该状态与编辑草稿均可刷新恢复。维护与回归入口为 inlineReferences／inlineReferenceFlows、会话测试及 `e2e/ai-product-context-skills.spec.ts`，手册第 2／5／22 章同步；不改工具权限或 controller 保存。
+
+AI 产品称呼、引用与资料库技能（2026-11-14）：当前工具 v7，`productCatalog.ts` 为标准名称／别称／帮助／已接入操作的单一目录，`dictionarySearch.ts` 支持符号／术语分类、相关性及分页，`get_product_help` 不读取笔记或扩大权限。`references.ts` 与 `AiReferencePicker` 用稳定 `{kind,id}` 表达模块／笔记／符号／术语／地图；`@` 与当前对象入口共用，明确笔记引用只授权该篇，模块引用不授权整库，词典／地图不沿用旧笔记目标。`skills.ts`／`AiSkillsPanel` 独立按库保存默认规范、启用／默认技能，关键词／模块只推荐；导入只预填停用草稿，保存后才成为配置，不执行脚本或电脑路径。`taskSupport.ts` 冻结引用和规范／技能正文到原任务，重试／继续复用快照，消息分支使用当前规范且保留原明确引用，contextKey 同步绑定。保存失败保留草稿与原配置，旧会话 v1 可选字段兼容；本对话固定要求仍独立管理。维护见[计划](plans/2026-11-14-ai-product-context-skills.md)、[架构](ai/ARCHITECTURE.md#产品情境对象引用与资料库技能)与第 2／5／22 章，专项入口为 productCatalog／dictionarySearch／references／skills／taskSupport 及相邻聊天测试，实际验收以 [VERIFICATION](VERIFICATION.md) 为准。
+
 GitHub 首页与源码发布（2026-11-14）：用户明确授权更新中英文 README，并一并发布当前新增功能。首页补充“觅维 智能助理”、辅助文件、选区与内容行任务、对话记忆与恢复、原位审阅与撤回，以及正文排版编辑、词典查看、侧栏快捷入口、流程图画布和图文导出。`e2e/showcase.spec.ts` 提供 11 张虚构截图，AI 演示采用预设会话、无密钥的虚构服务并拦截 AI API；`npm run docs:screenshots` 可重现。变更记录、截图维护说明与新增 ProseMirror 依赖的第三方声明同步。当前仍为源码发布，包版本保持 `0.1.0`，未创建版本化 Release 或构建包。实际检查与上传范围见 [VERIFICATION](VERIFICATION.md)；后续不要将 `.mewiki/` 检查配置、日志和临时预览加入 Git。
 
 正文源码按钮归位（2026-11-14）：`ResearchReferenceEditor` 将笔记正文的源码／排版切换图标 portal 到最近的 `.research-note-block`，与删除按钮同列，依次为源码、删除、提示块设置。操作槽位依据直接正文／提示容器定位，不能跟随 live editor 卸载而移动，否则 pointerdown 失焦会使删除 click 落空；不增加正文高度或留白。源码按钮纳入编辑会话，键盘移入保持草稿、移出沿原失焦保存。表格单元格保留自身工具，AI 建议表单的独立编辑器保留原入口；第 4／7／17 章同步，实测见 [VERIFICATION](VERIFICATION.md)。

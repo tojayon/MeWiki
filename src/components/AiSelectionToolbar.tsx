@@ -13,6 +13,16 @@ interface Candidate { noteId: string; blockIds: string[]; text: string; hints: A
 function selectedDocumentText(range: Range): string {
   const fragment = range.cloneContents();
   fragment.querySelectorAll('.research-heading-number, .research-text-view-toggle').forEach(element => element.remove());
+  // Editor atoms display resolved labels and duplicate KaTeX accessibility/rendering trees.
+  // Locate against their original source labels and a single TeX representation instead.
+  fragment.querySelectorAll<HTMLElement>('[data-mewiki-reference]').forEach(element => {
+    const label = element.dataset.mewikiReferenceLabel;
+    if (label !== undefined) element.replaceWith(fragment.ownerDocument.createTextNode(label));
+  });
+  fragment.querySelectorAll('.katex').forEach(element => {
+    const tex = element.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
+    if (tex !== undefined && tex !== null) element.replaceWith(fragment.ownerDocument.createTextNode(tex));
+  });
   return fragment.textContent ?? '';
 }
 function candidateFromDom(root: HTMLElement, state: ResearchNotebookState): Candidate | null {
@@ -31,7 +41,7 @@ function candidateFromDom(root: HTMLElement, state: ResearchNotebookState): Cand
   const selected = [...pane.querySelectorAll<HTMLElement>('[data-block-id]')].filter(block => range.intersectsNode(block) &&
     !block.classList.contains('is-examples') && !block.closest('.research-note-embed'));
   const blockIds = selected.map(block => block.dataset.blockId!);
-  const text = (range.cloneContents().querySelector('.research-heading-number') ? selectedDocumentText(range) : selection.toString()).trim();
+  const text = (range.cloneContents().querySelector('.research-heading-number, .katex, [data-mewiki-reference]') ? selectedDocumentText(range) : selection.toString()).trim();
   const hints: AiSelectionHint[] = selected.map(block => {
     const content = block.querySelector('.research-read-text, .research-editable-text');
     if (!content || !range.intersectsNode(content)) return { id: block.dataset.blockId!, text: '', prefix: '' };
@@ -53,16 +63,17 @@ function candidateFromDom(root: HTMLElement, state: ResearchNotebookState): Cand
   return { noteId, blockIds, text, hints, anchor: { left: rect.left, top: rect.top, width: rect.width, height: rect.height }, host: pane.closest('dialog') ?? root.ownerDocument.body };
 }
 
-export default function AiSelectionToolbar({ rootRef, state, libraryId, disabled, getState, onSelect }: {
+export default function AiSelectionToolbar({ rootRef, state, libraryId, disabled, getState, onSelect, onError }: {
   rootRef: RefObject<HTMLElement | null>; state: ResearchNotebookState; libraryId: string; disabled: boolean;
   getState: () => ResearchNotebookState; onSelect: (selection: AiTextSelection, anchor: AiPanelBounds) => void;
+  onError: (message: string) => void;
 }) {
   const locale = useLocale();
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const toolbar = useRef<HTMLDivElement | null>(null);
   const pendingAttach = useRef(0);
-  const latest = useRef({ state, libraryId, disabled, getState, onSelect });
-  useLayoutEffect(() => { latest.current = { state, libraryId, disabled, getState, onSelect }; }, [state, libraryId, disabled, getState, onSelect]);
+  const latest = useRef({ state, libraryId, disabled, getState, onSelect, onError });
+  useLayoutEffect(() => { latest.current = { state, libraryId, disabled, getState, onSelect, onError }; }, [state, libraryId, disabled, getState, onSelect, onError]);
   useLayoutEffect(() => {
     const element = toolbar.current;
     if (!candidate || !element) return;
@@ -86,7 +97,10 @@ export default function AiSelectionToolbar({ rootRef, state, libraryId, disabled
       try {
         const selection = createAiTextSelection(latest.current.getState(), origin, current.noteId, current.blockIds, current.text, current.hints);
         latest.current.onSelect(selection, current.anchor);
-      } catch { /* A stale or ambiguous DOM range must never widen the task. */ }
+      } catch (cause) {
+        // Keep the selection boundary strict, but make a failed handoff visible.
+        latest.current.onError(cause instanceof Error ? cause.message : '选区无法准确定位，请重新选择文字，或使用本行内容菜单。');
+      }
     });
   }, [rootRef]);
   useEffect(() => {

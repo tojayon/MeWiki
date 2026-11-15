@@ -37,11 +37,12 @@ test('opens usage from one footer icon and dismisses it with Escape and outside 
   await expect(ai.getByLabel('本次模型', { exact: true })).toBeVisible();
   await button.click();
   await expect(ai.getByLabel('本次模型', { exact: true })).toBeHidden();
-  await ai.getByLabel('任务要求', { exact: true }).click();
+  await ai.getByRole('heading', { name: '开始一段笔记对话', exact: true }).click();
   await expect(panel).toHaveCount(0);
+  await expect(ai).toBeVisible();
 });
 
-test('retains older replies while showing five usage rows and restores and clears them with the session', async ({ page }, info) => {
+test('retains older replies within at most five usage rows and restores and clears them with the session', async ({ page }, info) => {
   await setup(page);
   let calls = 0;
   await page.route('**/api/mewiki/ai/chat', route => {
@@ -72,7 +73,12 @@ test('retains older replies while showing five usage rows and restores and clear
   await expect(rows.last().locator('.mewiki-ai-usage-input')).toHaveText('110');
   await expect(rows.last().locator('.mewiki-ai-usage-output')).toHaveText('15');
   const row = (await rows.first().boundingBox())!;
-  expect(Math.abs(await list.evaluate(element => element.clientHeight) - row.height * 5)).toBeLessThan(2);
+  const listHeight = await list.evaluate(element => element.clientHeight);
+  expect(listHeight).toBeLessThanOrEqual(row.height * 5 + 1);
+  expect(listHeight).toBeGreaterThanOrEqual(row.height * 4);
+  const panelBox = (await panel.boundingBox())!, workspaceBox = (await ai.boundingBox())!;
+  expect(panelBox.y).toBeGreaterThanOrEqual(workspaceBox.y);
+  expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(workspaceBox.y + workspaceBox.height);
   expect(await list.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
   await page.screenshot({ path: info.outputPath('ai-usage-desktop.png') });
   await list.hover();
@@ -116,6 +122,7 @@ test('keeps the reported partial usage once after a task is stopped', async ({ p
   const row = ai.getByRole('dialog', { name: 'Token 使用记录', exact: true }).getByRole('listitem');
   await expect(row).toHaveCount(1);
   await expect(row.locator('.mewiki-ai-usage-input')).toHaveText('12');
+  await ai.getByRole('button', { name: 'Token 使用记录', exact: true }).press('Escape');
   await ai.getByRole('button', { name: '停止任务', exact: true }).click();
   release();
   await page.getByTestId('mewiki-ai-launcher').click();

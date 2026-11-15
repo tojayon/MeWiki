@@ -20,9 +20,9 @@ export function AiMaterialPreview({ material, onClose }: { material: AiMaterial 
   </DeviceInspectorModal></div>, document.body);
 }
 
-export default function AiMaterials({ libraryId, materials, activeIds, disabled, onAdd, onRemove, onPreview, onBusyChange, scopeControl, children }: {
+export default function AiMaterials({ libraryId, materials, activeIds, disabled, onAdd, onRemove, onPreview, onBusyChange, children }: {
   libraryId: string; materials: AiMaterial[]; activeIds: string[]; disabled: boolean;
-  scopeControl?: ReactNode; children?: ReactNode;
+  children?: ReactNode;
   onAdd: (material: AiMaterial) => void; onRemove: (id: string) => void; onPreview: (material: AiMaterial) => void; onBusyChange: (busy: boolean) => void;
 }) {
   useLocale();
@@ -66,8 +66,7 @@ export default function AiMaterials({ libraryId, materials, activeIds, disabled,
     onDragLeave={event => { if (!fileDrag(event)) return; event.stopPropagation(); depth.current = Math.max(0, depth.current - 1); if (!depth.current) setDragging(false); }}
     onDrop={event => { if (!fileDrag(event)) return; event.preventDefault(); event.stopPropagation(); depth.current = 0; setDragging(false); void add([...event.dataTransfer.files]); }}>
     <div className="mewiki-ai-material-list">
-      {scopeControl}
-      <button ref={addButton} type="button" className="mewiki-ai-material-add" aria-label={t('添加辅助文件')} title={t('支持 TXT、Markdown、JSON、TeX 等文本、代码和配置文件，以及 PDF、DOCX、CSV、TSV 和 XLSX。')} disabled={disabled || !!pending || activeIds.length >= 6} onClick={() => input.current?.click()}><Paperclip size={14} /><span>{t('添加文件')}</span></button>
+      <button ref={addButton} type="button" className="mewiki-ai-material-add" aria-label={t('添加外部文件')} title={t('支持 TXT、Markdown、JSON、TeX 等文本、代码和配置文件，以及 PDF、DOCX、CSV、TSV 和 XLSX。')} disabled={disabled || !!pending || activeIds.length >= 6} onClick={() => input.current?.click()}><Paperclip size={14} /><span>{t('添加外部文件')}</span></button>
       <input ref={input} hidden type="file" multiple accept={AI_MATERIAL_ACCEPT} aria-label={t('选择辅助文件')} disabled={disabled || !!pending} onChange={event => { const files = [...(event.currentTarget.files ?? [])]; event.currentTarget.value = ''; void add(files); }} />
       {activeIds.map(id => {
         const material = materials.find(item => item.id === id);

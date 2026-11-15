@@ -1,5 +1,17 @@
 # MeWiki 开发说明
 
+公共仓库与官方在线服务：本目录维护开源本地应用和公共笔记核心，正式用户入口为 [wiki.mecore.cc](https://wiki.mecore.cc)。账户、在线存储和运营部署由独立服务版维护，不把私有服务分支或本机配置整体合回公共仓库。功能介绍以本地版为准，在线入口、差异与备份迁移说明集中在[在线指南](HOSTED.md)，中英文 README 与手册第 1／15 章同步。
+
+编辑选区交接：`AiSelectionToolbar` 的文字与前文提示都须将 KaTeX 转为单份 TeX，将编辑器引用按 `data-mewiki-reference-label` 还原原文标签，不能用重复的公式 DOM 文本或引用当前显示名称定位源码。保持先失焦保存、再从 controller 创建选区；定位失败通过 `onError` 显示现有错误，成功附加清除提示，不扩大权限。相关操作见第 22 章，回归入口为 `e2e/ai-chat-actions.spec.ts` 的编辑选区、公式／引用和错误恢复场景。
+
+AI 子面板按按钮定位：`useAiAnchoredPopover.ts` 与 `AiChatPopovers.css` 共用实际入口、聊天可见范围和视口几何，原 DOM／控件／草稿保持。默认上方 6px，空间不足翻转或滚动，可覆盖长输入；不能重新引入按整个 composer 上沿避让或短窗固定顶部。浮窗 `transform` 与嵌入模式共同作为固定定位容器，拖动、缩放、滚动、visualViewport 及引用查询重建后重算。深色小弹层与浅色编辑内容／深色标题分层；记忆和技能遮罩只覆盖聊天，点击在 click 阶段关闭以防穿透，Esc 返回入口，缩放把手层级高于遮罩。专项 `e2e/ai-popovers.spec.ts` 覆盖中英文、长输入、短窗、移动、缩放、嵌入、草稿和键盘引用，连同聊天面板／用量／记忆／技能／浮窗回归；手册第 22 章和[计划](plans/2026-11-14-ai-anchored-popovers.md)同步，结果见 [VERIFICATION](VERIFICATION.md)。
+
+AI 资料范围与引用共用 `composerContext.ts`，不再增设独立范围下拉框。当前页面是可移除的默认标签，显式引用或移除后保持 `referenceMode: explicit`；`libraryScope` 只由 `@` 菜单的整库检索入口明确开启。固定对象与整库标签跨发送用于追问，句内绑定随本次正文清空；选区附加退出整库且仍拒绝其他笔记。统一调用的 `AiTaskSupport.scope` 从可见引用计算授权，不合并隐藏的当前笔记；重试／继续复用快照，分支沿用所编辑消息的对象和整库标记，不混入下一问。改动须回归 composerContext、taskSupport、session、chatActions、conversations 与相关 Edge；旧 v1 记录继续兼容。见[统一入口计划](plans/2026-11-14-ai-unified-context.md)和[第 22 章](wiki/22-ai-workspace.md#找到功能与引用对象)。
+
+AI 句内引用：`AiReferencePicker` 将 `@名称` 插入主输入的光标位置，`inlineReferences.ts` 保存 UTF-16 范围与稳定对象。主输入与旧消息编辑都按 native beforeinput／input 逐次跟踪（含同值替换）；不能仅对原消息和最终全文做一次差分，也不能靠最长公共前缀猜同名对象。范围验证／同名歧义、损坏草稿禁发与明确清除、消息和请求快照一致性、固定来源 `pinnedReferences`、复制自然语言及已发引用导航共用相邻测试。改动须回归 inlineReferences／inlineReferenceFlows、session／chatActions／conversations 及隔离 Edge 专项；实际验收见 [VERIFICATION](VERIFICATION.md)。
+
+AI 产品情境与技能：工具契约 v7 通过 `productCatalog.ts` 共用标准模块名、别称、帮助链接与真实操作，`get_product_help` 仅返回产品信息；词典搜索保留 terms／symbols 并增加分类与分页。`references.ts` 固定模块／笔记／符号／术语／地图身份，`AiReferencePicker` 维护 `@`、键盘与 IME；显式笔记只增加该 ID，模块不增加资料授权，词典／地图页面不能隐式借用旧笔记。`skills.ts` 独立按库保存 4000 字默认规范与有界技能，`AiSkillsPanel` 提供编辑、启停、默认、本次选择、推荐、模板和 Markdown 导入导出；推荐不自动启用，导入是停用的待保存草稿，不执行脚本或跟随路径。`taskSupport.ts` 在发送时复制引用及规范／技能正文到请求记录，重试／继续复用原快照，分支使用当前规则且保留原引用；contextKey、恢复白名单、消息名称与整段复制同步维护。本对话固定要求仍按原会话保存，优先级为本次要求、对话要求、技能、库规范，不改变原工具权限或批准保存。维护和限额详见[计划](plans/2026-11-14-ai-product-context-skills.md)、[架构](ai/ARCHITECTURE.md#产品情境对象引用与资料库技能)与第 2／5／22 章；修改时连同 productCatalog／dictionarySearch／references／skills／taskSupport 及聊天重试／分支／恢复测试检查，使用虚构资料，不读取真实资料或服务配置。实际检查结果另记于 [VERIFICATION](VERIFICATION.md)。
+
 正文源码入口与删除按钮共用内容块右侧操作列：`ResearchReferenceEditor` 仅将普通笔记正文的切换按钮 portal 到最近的 `.research-note-block`，源码／删除／提示设置分别占据顶部 6／32／58px。`ResearchNotebook.css` 用直接正文或提示容器保持槽位，不能只依赖 live editor，否则失焦卸载会在 pointerdown 和 click 之间移动删除按钮。portal 按钮须纳入 `sessionContains`，自身 blur 在离开会话时沿原保存链处理；不调整正文高度、padding 或滚动。表格工具与 AI 独立建议编辑器继续保留各自入口。
 
 AI 符号书写：工具 v6 为词典返回解析后的默认写法与稳定引用；`read_note`／`read_block` 附有界约定并计入原读取预算。`symbolNotation.ts` 仅在 AI 建议登记前检查唯一默认实例的新增字体简化，错误交回模型纠正，不静默替换正文、不强制自定义角标、不拦用户审阅调整。比较保留分组和非字体命令，稳定链接按实际 bindings、公式按渲染 tex 核对。修改范围、读取授权和 controller 保存沿原链。见[计划](plans/2026-11-14-ai-symbol-notation.md)、第 5／22 章和 AI 架构；专项单测及 Edge 使用虚构资料、独立 `5595`／`.mewiki/ai-notation-checks/`，评测 `symbol-notation-repair` 验证纠正后的建议可批准。

@@ -973,6 +973,7 @@ export default function ResearchNotebook({
   };
   const attachAiSelection = (selection: AiTextSelection, anchor: AiPanelActivation['anchor']) => {
     closeEdgePanel();
+    setImportError('');
     const id = crypto.randomUUID();
     setAiSelectionRequest({ id, selection });
     setAiActivation({ id, anchor });
@@ -2116,6 +2117,25 @@ export default function ResearchNotebook({
     selectionRequest={aiSelectionRequest}
     onSelectionConsumed={id => setAiSelectionRequest(current => current?.id === id ? undefined : current)}
     onOpenNote={(id, blockId, source) => { if (state.view === 'notes' || state.view === 'foundations') openLinkedNote('primary', id, blockId, source); else openContent({ noteId: id, ...(blockId ? { blockId } : {}) }); }}
+    onOpenReference={reference => {
+      if (reference.kind === 'note') { openContent({ noteId: reference.id }); return; }
+      if (reference.kind === 'module') {
+        if (reference.id === 'library') { openSettings('storage'); return; }
+        if (reference.id === 'manual') { openManual(); return; }
+        if (['symbols', 'terms', 'foundations', 'notes', 'maps'].includes(reference.id)) {
+          setSidebarCollapsed(false); browseSidebar(reference.id as MainSidebarView);
+        }
+        return;
+      }
+      if (reference.kind === 'symbol' || reference.kind === 'term') {
+        const isTerm = reference.kind === 'term';
+        browseSidebar(isTerm ? 'terms' : 'symbols');
+        onChange({ ...state, view: 'dictionary', activeSymbolId: isTerm ? '' : reference.id, activeTermId: isTerm ? reference.id : undefined });
+      } else if (reference.kind === 'map' && state.theoryMaps?.documents.some(map => map.id === reference.id)) {
+        browseSidebar('maps');
+        onChange({ ...state, view: 'maps', theoryMaps: { ...state.theoryMaps, activeMapId: reference.id } });
+      }
+    }}
     onClose={closeAiPanel} onSettings={() => openSettings('ai')} /></AiFloatingPanel> : null;
 
   return (
@@ -2852,7 +2872,7 @@ export default function ResearchNotebook({
         <AiSelectionToolbar key={workspace.profile.id} rootRef={readingRail} state={state} libraryId={workspace.profile.id}
           disabled={workspace.switching || library.busy || library.status === 'loading' || !!settingsSection || !showingNotes}
           getState={() => library.controller.getSnapshot().notebook}
-          onSelect={attachAiSelection} />
+          onSelect={attachAiSelection} onError={setImportError} />
         {(settingsSection || settingsVisited) && (
           <SettingsPage
             onBusyChange={setSettingsBusy}

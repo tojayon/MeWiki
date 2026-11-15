@@ -11,6 +11,13 @@ const storage = () => {
 const conversation = (id: string, title: string, libraryId = 'a') => identifyAiConversation({ ...createAiSession(libraryId), history: [{ role: 'user', content: title }], draft: `${title} 草稿` }, id);
 
 describe('AI conversation history', () => {
+  it('archives reference-only and skill-only drafts before opening a new conversation', () => {
+    for (const fields of [{ references: [{ kind: 'note' as const, id: 'fixture-definition' }] }, { skillIds: ['careful-writing'] }]) {
+      const store = storage(), current = { ...identifyAiConversation(createAiSession('a'), 'draft-only'), ...fields };
+      switchAiConversation(current, identifyAiConversation(createAiSession('a'), 'next'), store);
+      expect(readAiConversations('a', store).find(item => item.conversationId === 'draft-only')).toMatchObject(fields);
+    }
+  });
   it('archives fixed requirements before the first message and restores them only in their conversation', () => {
     const store = storage();
     const current = { ...identifyAiConversation(createAiSession('a'), 'instructions-only'), memoryInstructions: '保留公式，使用简体中文' };

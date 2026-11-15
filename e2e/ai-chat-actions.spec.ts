@@ -1,13 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createNotebookFixture } from '../src/domain/testUtils/notebook.ts';
+import { dictionaryReferenceMarkdown } from '../src/domain/researchTerms.ts';
+import { setAiReferenceScope } from './helpers/ai.ts';
 
 const sessionKey = 'mewiki:library:default:ai-session:v1';
 const provider = { id: 'actions', name: '操作测试', baseUrl: 'http://127.0.0.1:9999/v1', protocol: 'openai-chat', model: 'actions-model', hasApiKey: false };
 const done = (content: string) => JSON.stringify({ type: 'done', result: { message: { role: 'assistant', content }, usage: { inputTokens: 9, outputTokens: 3 } } }) + '\n';
-async function setup(page: Page, english = false) {
+async function setup(page: Page, english = false, source = '这个句子需要稍微润色。其他内容保持原样。') {
   const state = createNotebookFixture(); state.activeNoteId = 'fixture-definition'; state.view = 'notes'; state.open = true;
   state.notes.find(note => note.id === state.activeNoteId)!.blocks = [
-    { id: 'selection-text', type: 'paragraph', text: '这个句子需要稍微润色。其他内容保持原样。' },
+    { id: 'selection-text', type: 'paragraph', text: source },
     { id: 'other-text', type: 'paragraph', text: '另一段保留的文字。' },
     { id: 'selection-tabs', type: 'examples', tabs: [
       { id: 'select-tab-a', title: '第一页', blocks: [{ id: 'tab-text-a', type: 'paragraph', text: '第一页的原文。' }] },
@@ -50,7 +52,7 @@ test('copies individual messages and the full conversation with visible failure 
   await expect.poll(() => page.evaluate(() => (window as typeof window & { copied: string }).copied)).toBe('**已整理**\n\n保留格式。');
   await expect(response.getByRole('button', { name: '已复制', exact: true })).toBeVisible();
   await ai.getByRole('button', { name: '复制对话', exact: true }).click();
-  expect(await page.evaluate(() => (window as typeof window & { copied: string }).copied)).toContain('你\n\n请整理这篇笔记');
+  expect(await page.evaluate(() => (window as typeof window & { copied: string }).copied)).toContain('你\n\n@关系定义\n\n请整理这篇笔记');
   expect(await page.evaluate(() => (window as typeof window & { copied: string }).copied)).toContain('觅维\n\n**已整理**');
   await page.evaluate(() => { navigator.clipboard.writeText = async () => { throw new Error('denied'); }; });
   await ai.locator('.mewiki-ai-message[data-role=user]').getByRole('button', { name: '复制消息', exact: true }).click();
@@ -94,7 +96,8 @@ test('edits a question during generation, archives the old branch and ignores it
   await expect(ai.getByText('新问题的回复', { exact: true })).toBeVisible(); release();
   await expect(ai.getByText('旧请求迟到回复', { exact: true })).toHaveCount(0);
   await expect(ai.locator('.mewiki-ai-message[data-role=user]')).toHaveCount(1);
-  expect(requests[1].messages.filter(message => message.role === 'user').map(message => message.content)).toEqual(['重新编辑的问题']);
+  expect(requests[1].messages.at(-1)?.content).toBe('重新编辑的问题');
+  expect(requests[1].messages.some(message => message.content === '原始问题')).toBe(false);
   await expect(input).toHaveValue('下一条草稿不能丢');
   const bubble = user.locator('.mewiki-ai-user-bubble'), actions = user.locator('.mewiki-ai-message-actions');
   const bubbleBox = (await bubble.boundingBox())!, actionsBox = (await actions.boundingBox())!;
@@ -148,7 +151,8 @@ test('resends an earlier question without future messages and blocks a stale ori
   await ai.locator('.mewiki-ai-message[data-role=user]').first().getByRole('button', { name: '编辑消息', exact: true }).click();
   await ai.getByLabel('编辑消息内容', { exact: true }).fill('第一问的新版本'); await ai.getByRole('button', { name: '重新发送', exact: true }).click();
   await expect(ai.getByText('回复3', { exact: true })).toBeVisible();
-  expect(requests[2].messages.filter(message => message.role !== 'system').map(message => message.content)).toEqual(['第一问的新版本']);
+  expect(requests[2].messages.at(-1)?.content).toBe('第一问的新版本');
+  expect(requests[2].messages.some(message => ['第一问', '后续不应发送', '回复1', '回复2'].includes(message.content))).toBe(false);
   await selectText(page); await page.getByRole('button', { name: '用 AI 处理选中文字', exact: true }).click();
   await input.fill('润色所选'); await ai.getByRole('button', { name: '发送消息', exact: true }).click(); await expect(ai.getByText('回复4', { exact: true })).toBeVisible();
   const lastUser = ai.locator('.mewiki-ai-message[data-role=user]').last(); await lastUser.getByRole('button', { name: '编辑消息', exact: true }).click();
@@ -174,7 +178,8 @@ test('retries a partial network failure after reload without duplicating the que
   await expect(input).toHaveValue('还没发送的下一条');
   await expect(ai.locator('.mewiki-ai-message[data-role=user]')).toHaveCount(1);
   await expect(ai.getByText('部分回复仍要保留', { exact: true })).toBeVisible();
-  expect(requests[1].messages.filter(message => message.role === 'user').map(message => message.content)).toEqual(['帮我检查措辞']);
+  expect(requests[1].messages.at(-1)?.content).toBe('帮我检查措辞');
+  expect(requests[1].messages).toEqual(requests[0].messages);
   expect(requests[1].messages.some(message => message.content.includes('部分回复仍要保留'))).toBe(false);
   const stored = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), sessionKey);
   expect(stored.usageHistory).toHaveLength(1);
@@ -208,7 +213,11 @@ test('supports keyboard selection, removable context and quick prompts on a narr
   const quote = ai.getByRole('group', { name: 'Selected text', exact: true });
   await expect(quote).toBeVisible(); await expect(ai.locator('#mewiki-ai-task-prompt')).toBeFocused();
   await page.getByTestId('mewiki-ai-launcher').press('ArrowLeft');
-  await expect(ai.getByLabel('Source scope', { exact: true }).locator('option:checked')).toHaveText('Current selection');
+  await expect(ai.getByLabel('Source scope', { exact: true })).toHaveCount(0);
+  await ai.getByRole('button', { name: 'Add an object reference', exact: true }).click();
+  const picker = ai.getByRole('dialog', { name: 'Add an object reference', exact: true });
+  await expect(picker.getByRole('button', { name: 'Search library', exact: true })).toBeDisabled();
+  await picker.getByLabel('Search notes, symbols, terms, or maps', { exact: true }).press('Escape');
   await ai.getByRole('button', { name: 'Quick prompts', exact: true }).click();
   await expect(ai.getByRole('button', { name: 'Polish selected text', exact: true })).toBeInViewport();
   await page.screenshot({ path: info.outputPath('ai-selection-narrow-en.png') });
@@ -260,7 +269,7 @@ test('offers the selection action again after attaching, dismissing and a cancel
   await expect(ai.getByRole('group', { name: '选中文字', exact: true })).toContainText('另一段保留的文字。');
 });
 
-test('keeps selected context to two compact gray lines and gives every scope the same native style', async ({ page }, info) => {
+test('keeps selected context to two compact gray lines and unifies object and library references', async ({ page }, info) => {
   const ai = await setup(page);
   const title = '一份需要在狭窄面板中省略显示但仍能打开来源的很长笔记名称'.repeat(3);
   const text = '第一行是选中的原文。\n第二行继续保留。\n这段选区只做摘要显示，实际发送保留完整文字。'.repeat(8);
@@ -271,14 +280,19 @@ test('keeps selected context to two compact gray lines and gives every scope the
     localStorage.setItem('mewiki:research-notebook', JSON.stringify(state));
   }, { title, text });
   await page.reload();
-  const scope = ai.getByLabel('资料范围', { exact: true });
-  const style = () => scope.evaluate(element => { const css = getComputedStyle(element); return { background: css.backgroundColor, color: css.color, border: css.border, radius: css.borderRadius, padding: css.padding, height: css.height }; });
-  const normalStyle = await style();
-  await scope.selectOption('library'); expect(await style()).toEqual(normalStyle);
+  const tag = ai.locator('.mewiki-ai-reference-tag');
+  const normalStyle = await tag.evaluate(element => { const css = getComputedStyle(element); return { background: css.backgroundColor, radius: css.borderRadius }; });
+  await setAiReferenceScope(ai, 'library');
+  expect(await tag.evaluate(element => { const css = getComputedStyle(element); return { background: css.backgroundColor, radius: css.borderRadius }; })).toEqual(normalStyle);
   await selectText(page); await page.keyboard.press('Alt+Enter');
   const quote = ai.getByRole('group', { name: '选中文字', exact: true });
-  await expect(quote).toBeVisible(); await expect(scope).toHaveValue('selection');
-  await expect(scope.locator('option:checked')).toHaveText('当前选区'); expect(await style()).toEqual(normalStyle);
+  await expect(quote).toBeVisible();
+  await expect(ai.getByLabel('资料范围', { exact: true })).toHaveCount(0);
+  await expect(ai.locator('.mewiki-ai-reference-tag[data-scope="library"]')).toHaveCount(0);
+  await ai.getByRole('button', { name: '添加对象引用', exact: true }).click();
+  const picker = ai.getByRole('dialog', { name: '添加对象引用', exact: true });
+  await expect(picker.getByRole('button', { name: '整库检索', exact: true })).toBeDisabled();
+  await picker.getByLabel('搜索笔记、符号、术语或地图', { exact: true }).press('Escape');
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 720 });
     const name = quote.locator('.mewiki-ai-selection-source > span'), excerpt = quote.locator('blockquote');
@@ -322,6 +336,117 @@ test('saves the active text editor before attaching a selection and rejects a la
   await expect(ai.getByRole('button', { name: '发送消息', exact: true })).toBeDisabled();
   await ai.getByRole('button', { name: '移除选中文字', exact: true }).click();
   await expect(ai.getByRole('button', { name: '发送消息', exact: true })).toBeEnabled();
+});
+
+for (const gesture of ['keyboard', 'mouse'] as const) test(`attaches uncommitted editor text selected with ${gesture} by clicking its floating action with the chat closed`, async ({ page }, info) => {
+  const ai = await setup(page), prompt = ai.getByLabel('任务要求', { exact: true });
+  await prompt.fill('保留已有的修改要求');
+  await page.getByTestId('mewiki-ai-launcher').click();
+  await expect(ai).toHaveCount(0);
+  await page.getByRole('button', { name: '切换为编辑模式', exact: true }).click();
+  const block = page.locator('[data-block-id="selection-text"]').first();
+  await block.locator('.research-editable-text').click();
+  const editor = block.locator('[contenteditable=true]');
+  await editor.fill('编辑中的原文需要交给智能助理。');
+  if (gesture === 'keyboard') await editor.press('Control+A');
+  else {
+    const points = await editor.evaluate(element => {
+      const text = element.querySelector('p')!.firstChild!;
+      const range = document.createRange(); range.setStart(text, 4); range.collapse(true);
+      const start = range.getBoundingClientRect(); range.setStart(text, 14); range.collapse(true);
+      const end = range.getBoundingClientRect();
+      return { start: { x: start.x, y: start.y + start.height / 2 }, end: { x: end.x, y: end.y + end.height / 2 } };
+    });
+    await page.mouse.move(points.start.x, points.start.y); await page.mouse.down();
+    await page.mouse.move(points.end.x, points.end.y, { steps: 12 }); await page.mouse.up();
+  }
+  const trigger = page.getByRole('button', { name: '用 AI 处理选中文字', exact: true });
+  await expect(trigger).toBeVisible();
+  await trigger.click();
+  await expect(ai).toBeVisible();
+  await expect(ai.getByRole('group', { name: '选中文字', exact: true })).toContainText(gesture === 'keyboard' ? '编辑中的原文需要交给智能助理。' : '原文需要交给智能助理');
+  await expect(prompt).toHaveValue('保留已有的修改要求');
+  await expect(prompt).toBeFocused();
+  await expect(ai.getByRole('alert')).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath('editor-selection-click.png') });
+});
+
+for (const [kind, source] of [
+  ['an inline formula', '月面目标 $v_{\\mathrm T}$ 的说明需要进一步修改。'],
+  ['a renamed note reference', '参见[旧的来源名称](#research-note/fixture-summary) 的说明需要进一步修改。'],
+  ['a symbol reference', `目标${dictionaryReferenceMarkdown('symbol', { id: 'example-vector' }, '$x$')} 的说明需要进一步修改。`],
+] as const) for (const portion of ['tail', 'whole'] as const) test(`attaches editable ${portion} around ${kind} instead of silently dropping the selection`, async ({ page }, info) => {
+  const ai = await setup(page, false, source);
+  const editedSource = portion === 'tail' ? source + '补充。' : source;
+  await page.getByTestId('mewiki-ai-launcher').click();
+  await page.getByRole('button', { name: '切换为编辑模式', exact: true }).click();
+  const block = page.locator('[data-block-id="selection-text"]').first();
+  await block.locator('.research-editable-text').click({ position: { x: 10, y: 10 } });
+  const editor = block.locator('[contenteditable=true]');
+  if (portion === 'tail') { await editor.press('Control+End'); await page.keyboard.insertText('补充。'); }
+  await editor.evaluate((element, portion) => {
+    const text = portion === 'whole' ? element : [...element.querySelector('p')!.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).at(-1)!;
+    const range = document.createRange(); range.selectNodeContents(text);
+    const selection = document.getSelection()!; selection.removeAllRanges(); selection.addRange(range);
+    document.dispatchEvent(new Event('selectionchange'));
+  }, portion);
+  const trigger = page.getByRole('button', { name: '用 AI 处理选中文字', exact: true });
+  await expect(trigger).toBeVisible(); await trigger.click();
+  await expect(ai).toBeVisible();
+  await expect(ai.getByRole('group', { name: '选中文字', exact: true })).toContainText('的说明需要进一步修改。');
+  await expect.poll(() => page.evaluate(key => JSON.parse(localStorage.getItem(key) ?? 'null')?.selection?.blocks[0]?.ranges, sessionKey)).toEqual([
+    { field: 'text', start: portion === 'whole' ? 0 : source.indexOf('的说明'), end: editedSource.length },
+  ]);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('mewiki:research-notebook')!).notes.find((note: { id: string }) => note.id === 'fixture-definition').blocks[0].text)).toBe(editedSource);
+  await page.screenshot({ path: info.outputPath('editor-selection-after-formula.png') });
+});
+
+test('attaches words after a reference-style link using its original label', async ({ page }) => {
+  const source = '参见[旧的来源名称][source] 的说明需要进一步修改。\n\n[source]: #research-note/fixture-summary';
+  const ai = await setup(page, false, source);
+  await page.getByTestId('mewiki-ai-launcher').click();
+  await page.getByRole('button', { name: '切换为编辑模式', exact: true }).click();
+  const block = page.locator('[data-block-id="selection-text"]').first();
+  await block.locator('.research-editable-text').click({ position: { x: 10, y: 10 } });
+  await block.locator('[contenteditable=true]').evaluate(element => {
+    const text = [...element.querySelector('p')!.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).at(-1)!;
+    const range = document.createRange(); range.selectNodeContents(text);
+    const selection = document.getSelection()!; selection.removeAllRanges(); selection.addRange(range);
+    document.dispatchEvent(new Event('selectionchange'));
+  });
+  const trigger = page.getByRole('button', { name: '用 AI 处理选中文字', exact: true });
+  await expect(trigger).toBeVisible(); await trigger.click();
+  await expect(ai.getByRole('group', { name: '选中文字', exact: true })).toContainText('的说明需要进一步修改。');
+  await expect.poll(() => page.evaluate(key => JSON.parse(localStorage.getItem(key) ?? 'null')?.selection?.blocks[0]?.ranges, sessionKey)).toEqual([
+    { field: 'text', start: source.indexOf('的说明'), end: source.indexOf('\n\n') },
+  ]);
+});
+
+test('explains an unlocatable partial formula without opening an unbounded chat task', async ({ page }) => {
+  const ai = await setup(page, false, '月面目标 $v_{\\mathrm T}$ 的说明需要进一步修改。');
+  await page.getByTestId('mewiki-ai-launcher').click();
+  await page.getByRole('button', { name: '切换为编辑模式', exact: true }).click();
+  const block = page.locator('[data-block-id="selection-text"]').first();
+  await block.locator('.research-editable-text').click({ position: { x: 10, y: 10 } });
+  await block.locator('[contenteditable=true] .katex-html').getByText('T', { exact: true }).last().evaluate(element => {
+    const range = document.createRange(); range.selectNodeContents(element);
+    const selection = document.getSelection()!; selection.removeAllRanges(); selection.addRange(range);
+    document.dispatchEvent(new Event('selectionchange'));
+  });
+  const trigger = page.getByRole('button', { name: '用 AI 处理选中文字', exact: true });
+  await expect(trigger).toBeVisible(); await trigger.click();
+  await expect(page.getByRole('alert')).toContainText('选区无法准确定位');
+  await expect(ai).toHaveCount(0);
+  await block.locator('.research-editable-text').click({ position: { x: 10, y: 10 } });
+  await block.locator('[contenteditable=true]').evaluate(element => {
+    const text = [...element.querySelector('p')!.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).at(-1)!;
+    const range = document.createRange(); range.selectNodeContents(text);
+    const selection = document.getSelection()!; selection.removeAllRanges(); selection.addRange(range);
+    document.dispatchEvent(new Event('selectionchange'));
+  });
+  await expect(trigger).toBeVisible(); await trigger.click();
+  await expect(ai.getByRole('group', { name: '选中文字', exact: true })).toContainText('的说明需要进一步修改。');
+  await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
 test('retries settings loading without discarding the question', async ({ page }) => {
@@ -393,10 +518,11 @@ test('selects a nested tab and a split note by their real stable sources while e
 
 test('limits a note quick prompt to the current note even after a library-wide selection', async ({ page }) => {
   const ai = await setup(page);
-  await ai.getByLabel('资料范围', { exact: true }).selectOption('library');
+  await setAiReferenceScope(ai, 'library');
   await ai.getByRole('button', { name: '快捷提问', exact: true }).click();
   await ai.getByRole('button', { name: '总结当前笔记', exact: true }).click();
-  await expect(ai.getByLabel('资料范围', { exact: true })).toHaveValue('current');
+  await expect(ai.locator('.mewiki-ai-reference-tag[data-scope="library"]')).toHaveCount(0);
+  await expect(ai.getByLabel('本次引用', { exact: true })).toContainText('@关系定义');
   let request: { messages: { role: string; content: string }[] } | undefined;
   await page.route('**/api/mewiki/ai/chat', route => { request = route.request().postDataJSON(); return route.fulfill({ contentType: 'application/x-ndjson', body: done('总结完成') }); });
   await ai.getByRole('button', { name: '发送消息', exact: true }).click(); await expect(ai.getByText('总结完成', { exact: true })).toBeVisible();

@@ -17,6 +17,7 @@ import "./ResearchMarkdown.css";
 import "./ResearchNoteLinks.css";
 import { ResearchNoteLinkContext } from "./ResearchNoteLinkContext.ts";
 import { researchNoteLinkId } from "../domain/researchNoteLinks.ts";
+import { aiProductModuleId } from '../ai/productCatalog.ts';
 import { dictionaryReferenceKind, resolveDictionaryReference, formatTermReference, termReferenceSelection, type ResearchTermEntry, type TermReferenceSelection } from "../domain/researchTerms.ts";
 import { resolveSymbolEntry, type ResearchSymbolEntry } from "../domain/researchDictionary.ts";
 import { ResearchMediaInlineImage, ResearchMediaInlineLink } from "./ResearchMediaInline.tsx";
@@ -91,6 +92,8 @@ function ResearchSymbolReference({ href, entry, bindings }: { href?: string; ent
 function NoteAnchor({ href, children, ...props }: ComponentProps<"a">) {
   useLocale();
   const context = useContext(ResearchNoteLinkContext);
+  const moduleId = href && aiProductModuleId(href);
+  if (moduleId) return <a {...props} href={href} onClick={event => { event.preventDefault(); event.stopPropagation(); context?.openProductModule?.(moduleId); }} aria-disabled={!context?.openProductModule || undefined}>{children}</a>;
   const dictionary = resolveDictionaryReference(href, context?.symbols ?? [], context?.terms ?? []);
   if (dictionary.kind === "term") {
     const entry = dictionary.entry as ResearchTermEntry | undefined;
@@ -179,5 +182,5 @@ export default memo(function ResearchMarkdown({ text, inline = false, headings, 
     };
     return { ...components(), h1: heading, h2: heading, h3: heading, h4: heading, h5: heading, h6: heading };
   }, [headings]);
-  return <Markdown remarkPlugins={activeRemarkPlugins} rehypePlugins={rehypePlugins} remarkRehypeOptions={remarkRehypeOptions()} components={inline ? inlineComponents : numberedComponents} urlTransform={url => /^webbench-asset:[a-f0-9]{64}(#page=[1-9]\d*)?$/.test(url) || dictionaryReferenceKind(url) ? url : defaultUrlTransform(url)} skipHtml>{text}</Markdown>;
+  return <Markdown remarkPlugins={activeRemarkPlugins} rehypePlugins={rehypePlugins} remarkRehypeOptions={remarkRehypeOptions()} components={inline ? inlineComponents : numberedComponents} urlTransform={url => aiProductModuleId(url) || /^webbench-asset:[a-f0-9]{64}(#page=[1-9]\d*)?$/.test(url) || dictionaryReferenceKind(url) ? url : defaultUrlTransform(url)} skipHtml>{text}</Markdown>;
 });

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowDown, ArrowUp, ArrowUpRight, Check, ChevronDown, Copy, Cpu, Eraser, Eye, FileText, GitCompareArrows, Info, LibraryBig, MessageSquareText, Pencil, Play, RotateCcw, Settings2, Sparkles, Square, TextSelect, Undo2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpRight, Check, ChevronDown, Copy, Cpu, Eraser, Eye, FileText, GitCompareArrows, Info, LibraryBig, MessageSquareText, Pencil, Play, RotateCcw, Settings2, Sparkles, Square, Undo2, X } from 'lucide-react';
 import AiMascot from './AiMascot.tsx';
 import { getAiSettings } from '../ai/client.ts';
 import { undoAiChange, type AiChange, type AiProposal } from '../ai/proposals.ts';
@@ -8,7 +8,7 @@ import { aiProposalTargetKey, applyAiProposalGroup } from '../ai/proposalGroup.t
 import { rebaseAiReviewProposals, reviseAiProposal, type AiProposalAdjustment } from '../ai/reviewDecisions.ts';
 import { runAiTask, type AiRunProgress } from '../ai/runner.ts';
 import { createAiSession, isAiProposalApplied, readAiSession, writeAiSession, type AiSession } from '../ai/session.ts';
-import { beginAiChatTask, continueAiChatTask, copyAiConversationText, retryAiChatTask, forkAiChatBeforeMessage, type AiChatTask } from '../ai/chatActions.ts';
+import { aiMessageContextForEdit, beginAiChatTask, continueAiChatTask, copyAiConversationText, retryAiChatTask, forkAiChatBeforeMessage, type AiChatTask } from '../ai/chatActions.ts';
 import { aiTextSelectionError, type AiTextSelection } from '../ai/textSelection.ts';
 import { aiConversationHasContent, aiConversationTitle, identifyAiConversation, listAiConversations, readAiConversations, switchAiConversation, touchAiConversation } from '../ai/conversations.ts';
 import { finishAiUsage } from '../ai/usage.ts';
@@ -16,7 +16,11 @@ import { createAiToolContext } from '../ai/tools.ts';
 import { aiFailure, type AiFailure } from '../ai/failures.ts';
 import type { AiExecutionStep } from '../ai/execution.ts';
 import type { AiSettings } from '../ai/types.ts';
-import { isMeWikiManualNote } from '../domain/meWikiManual.ts';
+import { aiCurrentReference, aiReferenceError, combineAiReferences, quickAiPrompts, resolveAiReference, type AiObjectReference } from '../ai/references.ts';
+import { insertAiInlineReference, reconcileAiInlineReferences, type AiInlineReferenceEditRange } from '../ai/inlineReferences.ts';
+import { resolveAiComposerContext } from '../ai/composerContext.ts';
+import { createAiLibraryGuidance, readAiLibraryGuidance, resolveAiGuidance, writeAiLibraryGuidance, type AiLibraryGuidance } from '../ai/skills.ts';
+import type { AiProductModuleId } from '../ai/productCatalog.ts';
 import { openLibraryNote } from '../domain/researchNoteLibraries.ts';
 import { localizeError, t } from '../i18n/locale.ts';
 import { useLocale } from '../i18n/react.ts';
@@ -26,6 +30,10 @@ import { useResearchLibrary } from '../state/useResearchNotebook.ts';
 import AiProposalReview from './AiProposalReview.tsx';
 import AiUsagePanel from './AiUsagePanel.tsx';
 import AiMemoryPanel from './AiMemoryPanel.tsx';
+import AiReferencePicker from './AiReferencePicker.tsx';
+import AiSkillsPanel from './AiSkillsPanel.tsx';
+import AiProductHelp from './AiProductHelp.tsx';
+import { useAiAnchoredPopover } from './useAiAnchoredPopover.ts';
 import AiConversationPanel from './AiConversationPanel.tsx';
 import AiMaterials, { AiMaterialPreview } from './AiMaterials.tsx';
 import { addAiMaterial, selectAiMaterials, type AiMaterial } from '../ai/materials.ts';
@@ -68,7 +76,7 @@ function toolLabel(tool: string): string {
   const separator = tool.indexOf(':');
   const name = separator < 0 ? tool : tool.slice(0, separator);
   const labels: Record<string, string> = {
-    get_capabilities: t('读取能力'), list_notes: t('浏览笔记'), search_notes: t('检索笔记'),
+    get_capabilities: t('读取能力'), get_product_help: t('查阅功能帮助'), list_notes: t('浏览笔记'), search_notes: t('检索笔记'),
     read_note: t('阅读原文'), search_dictionary: t('查询词典'),
     propose_note: t('准备笔记建议'), propose_term: t('准备术语建议'),
     read_block: t('读取内容块'), read_dictionary_entry: t('读取完整词条'), read_theory_maps: t('读取理论地图'),
@@ -85,9 +93,10 @@ function latestChange(changes: AiChange[], change: AiChange): boolean {
   return changes.findLast(item => item.target === change.target && item.targetId === change.targetId)?.proposalId === change.proposalId;
 }
 
-export default function AiWorkspace({ readOnly, reviewHost, reviewControls, reviewActions, onClose, onSettings, onOpenNote, selectionRequest, onSelectionConsumed }: {
+export default function AiWorkspace({ readOnly, reviewHost, reviewControls, reviewActions, onClose, onSettings, onOpenNote, onOpenReference, selectionRequest, onSelectionConsumed }: {
   readOnly: boolean; reviewHost: HTMLElement | null; reviewControls?: ReactNode; reviewActions?: ReactNode; onClose: () => void; onSettings: () => void;
   onOpenNote: (noteId: string, blockId?: string, source?: HTMLElement) => void;
+  onOpenReference?: (reference: AiObjectReference) => void;
   selectionRequest?: { id: string; selection: AiTextSelection };
   onSelectionConsumed?: (id: string) => void;
 }) {
@@ -106,7 +115,19 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
   const [session, setSession] = useState(() => restoreSession(libraryId));
   const sessionRef = useRef(session);
   const [savedConversations, setSavedConversations] = useState<AiSession[]>([]);
-  const [activePanel, setActivePanel] = useState<'history' | 'usage' | 'model' | 'quick' | 'memory' | null>(null);
+  const [activePanel, setActivePanel] = useState<'history' | 'usage' | 'model' | 'quick' | 'memory' | 'references' | 'skills' | 'help' | null>(null);
+  const popoverRoot = useRef<HTMLElement>(null);
+  const closePopover = () => {
+    const trigger = popoverRoot.current?.querySelector<HTMLElement>('[data-ai-popover-anchor]');
+    setActivePanel(null); trigger?.focus({ preventScroll: true });
+  };
+  const [guidanceState, setGuidanceState] = useState(() => {
+    try { return { value: readAiLibraryGuidance(libraryId, localStorage), error: '' }; }
+    catch (cause) { return { value: createAiLibraryGuidance(libraryId), error: errorMessage(cause) }; }
+  });
+  const mentionRange = useRef<{ start: number; end: number } | null>(null);
+  const [mentionQuery, setMentionQuery] = useState('');
+  useAiAnchoredPopover(popoverRoot, activePanel, mentionQuery);
   const [visibleHistory, setVisibleHistory] = useState({ id: session.conversationId, count: 40 });
   const olderScroll = useRef<{ top: number; height: number } | null>(null);
   const [retryClock, setRetryClock] = useState(() => Date.now());
@@ -124,7 +145,6 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
   const [settingsAttempt, setSettingsAttempt] = useState(0);
   const [providerId, setProviderId] = useState('');
   const [model, setModel] = useState('');
-  const [scope, setScope] = useState<'current' | 'library'>('current');
   const prompt = session.draft ?? '';
   const [storageError, setStorageError] = useState('');
   const [actionError, setActionError] = useState('');
@@ -153,9 +173,12 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
   const historyRef = useRef<HTMLDivElement | null>(null);
   const historyContentRef = useRef<HTMLDivElement | null>(null);
   const promptRef = useRef<HTMLTextAreaElement | null>(null);
+  const pendingReferenceCaret = useRef<number | null>(null);
   const composerContentRef = useRef<HTMLDivElement | null>(null);
   const toggleFooter = () => { setActivePanel(null); setFooterCollapsed(value => !value); };
   const editRef = useRef<HTMLTextAreaElement | null>(null);
+  const promptInputEdit = useRef<{ before: string; range: AiInlineReferenceEditRange } | null>(null);
+  const messageInputEdit = useRef<{ before: string; range: AiInlineReferenceEditRange } | null>(null);
   const editTriggerRef = useRef<HTMLButtonElement | null>(null);
   const modelMenuRef = useRef<HTMLDetailsElement | null>(null);
   const quickMenuRef = useRef<HTMLDivElement | null>(null);
@@ -195,7 +218,7 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
       writeTimer.current = setTimeout(() => { writeTimer.current = null; persist(sessionRef.current); }, 250);
     }
   }, [persist]);
-  function setPrompt(draft: string) { publish(current => ({ ...current, draft })); }
+  function setPrompt(draft: string, edit?: AiInlineReferenceEditRange) { publish(current => ({ ...current, draft, referenceMode: current.inlineReferences?.length ? 'explicit' : current.referenceMode, inlineReferences: reconcileAiInlineReferences(current.draft ?? '', draft, current.inlineReferences ?? [], edit) })); }
   const openHistory = useCallback((open: boolean) => {
     if (!open) { setActivePanel(panel => panel === 'history' ? null : panel); return; }
     try { setSavedConversations(readAiConversations(libraryId, localStorage)); setActionError(''); }
@@ -230,7 +253,7 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
   useEffect(() => {
     if (!selectionRequest || consumedSelection.current === selectionRequest.id || selectionRequest.selection.libraryId !== libraryId) return;
     consumedSelection.current = selectionRequest.id;
-    publish(current => ({ ...current, selection: selectionRequest.selection }));
+    publish(current => ({ ...current, selection: selectionRequest.selection, libraryScope: undefined, referenceMode: 'explicit' }));
     onSelectionConsumed?.(selectionRequest.id);
     setActivePanel(null); setActionError(''); setClearing(false);
     requestAnimationFrame(() => { if (mounted.current) (sessionRef.current.messageEdit ? editRef.current : promptRef.current)?.focus({ preventScroll: true }); });
@@ -258,21 +281,71 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
   const provider = settings?.providers.find(item => item.id === providerId);
   const running = session.status === 'running';
   const blockedReason = unavailableReason(library, readOnly, workspace.switching);
-  const currentNote = library.notebook.notes.find(note => note.id === library.notebook.activeNoteId);
-  const noteCount = session.selection ? 1 : scope === 'library' ? library.notebook.notes.filter(note => !isMeWikiManualNote(note)).length : currentNote ? 1 : 0;
-  const modelScopeInfo = `${t('选定资料会发送给所选服务，请按需要选择范围。')}${scope === 'library' ? ` ${t('整库范围不包含使用手册。')}` : ''}`;
+  const currentReference = aiCurrentReference(library.notebook);
+  const currentObject = currentReference && resolveAiReference(library.notebook, currentReference);
+  const referenceTypeLabels = { note: t('当前笔记'), symbol: t('当前符号'), term: t('当前术语'), map: t('当前地图'), module: t('功能模块') };
+  const currentScopeLabel = currentReference ? referenceTypeLabels[currentReference.kind] : t('当前页面');
+  const composerContext = (() => {
+    try { return { value: resolveAiComposerContext(library.notebook, session), error: '' }; }
+    catch (cause) { return { value: undefined, error: errorMessage(cause) }; }
+  })();
+  const draftReferences = composerContext.value?.references ?? [...new Map([...(session.references ?? []), ...(session.inlineReferences ?? []).map(item => item.reference)].map(item => [`${item.kind}:${item.id}`, item])).values()];
+  const visibleReferences = composerContext.value?.implicit ? draftReferences : session.references ?? [];
+  const noteCount = composerContext.value?.noteIds.length ?? 0;
+  const modelScopeInfo = `${t('选定资料会发送给所选服务，请按需要选择范围。')}${session.libraryScope ? ` ${t('整库范围不包含使用手册。')}` : ''}`;
   const selectionError = session.selection ? aiTextSelectionError(library.notebook, libraryId, session.selection) : '';
   const availableToRun = !running && !materialImporting && !mutating && !clearing && !adjustingIds.length && !workspace.switching && !library.busy && !['loading', 'error', 'conflict'].includes(library.status);
   const readyToRun = availableToRun && !session.messageEdit && session.proposals.length < 40;
   const materialError = (() => { try { selectAiMaterials(session.materials ?? [], session.activeMaterialIds ?? []); return ''; } catch (cause) { return errorMessage(cause); } })();
+  const referenceError = session.inlineReferencesInvalid ? '句内引用已失效，请检查引用文字后重新选择。' : composerContext.error || aiReferenceError(library.notebook, draftReferences);
+  const guidance = (() => { try { return { value: resolveAiGuidance(guidanceState.value, session.skillIds ?? []), error: guidanceState.error }; } catch (cause) { return { value: undefined, error: errorMessage(cause) }; } })();
   const waitingForProvider = retrySeconds > 0 && provider?.id === session.lastRequest?.providerId;
-  const canRun = !!provider && !!model.trim() && !!prompt.trim() && readyToRun && !selectionError && !materialError && !waitingForProvider;
+  const canRun = !!provider && !!model.trim() && !!prompt.trim() && readyToRun && !selectionError && !materialError && !referenceError && !guidance.error && !waitingForProvider;
   const retryAvailable = !session.messageEdit && !!session.lastRequest && ['error', 'interrupted', 'cancelled'].includes(session.status);
   const continueAvailable = !session.messageEdit && session.status === 'partial' && !!session.lastRequest && !!session.checkpoint;
   const editedSelection = session.messageEdit && session.history[session.messageEdit.index]?.selection;
   const editSelectionError = editedSelection ? aiTextSelectionError(library.notebook, libraryId, editedSelection) : '';
-  const canResend = availableToRun && !!provider && !!model.trim() && !!session.messageEdit?.content.trim() && !editSelectionError && !waitingForProvider;
+  const editedContext = (() => {
+    try { return { value: session.messageEdit ? aiMessageContextForEdit(session, session.messageEdit.index) : undefined, error: '' }; }
+    catch (cause) { return { value: undefined, error: errorMessage(cause) }; }
+  })();
+  const recoveredEditReferences = editedContext.value?.references.filter(reference => !session.history[session.messageEdit!.index].references?.some(item => item.kind === reference.kind && item.id === reference.id)) ?? [];
+  const canResend = availableToRun && !!provider && !!model.trim() && !!session.messageEdit?.content.trim() && !session.messageEdit.inlineReferencesInvalid && !editSelectionError && !editedContext.error && !guidance.error && !waitingForProvider;
   const editIndex = session.messageEdit?.index;
+  useLayoutEffect(() => {
+    const caret = pendingReferenceCaret.current, input = promptRef.current;
+    if (caret === null || !input) return;
+    pendingReferenceCaret.current = null;
+    input.focus({ preventScroll: true }); input.setSelectionRange(caret, caret);
+  }, [prompt, session.inlineReferences, session.conversationId]);
+  useLayoutEffect(() => {
+    promptInputEdit.current = null; messageInputEdit.current = null;
+    const track = (input: HTMLTextAreaElement | null, pending: typeof promptInputEdit, editing = false) => {
+      if (!input) return () => {};
+      const remember = (event: Event) => { pending.current = { before: input.value, range: { start: input.selectionStart, end: input.selectionEnd, inputType: (event as InputEvent).inputType } }; };
+      // React does not emit onChange when native replacement leaves the displayed text identical.
+      const unchangedReplacement = () => {
+        const edit = pending.current;
+        if (!edit || edit.before !== input.value || edit.range.start === edit.range.end) return;
+        pending.current = null;
+        publish(current => {
+          if (editing) {
+            const draft = current.messageEdit;
+            if (!draft || draft.content !== edit.before) return current;
+            const original = current.history[draft.index];
+            const refs = draft.inlineReferences ?? reconcileAiInlineReferences(original.content, draft.content, original.inlineReferences ?? []);
+            return { ...current, messageEdit: { ...draft, inlineReferences: reconcileAiInlineReferences(edit.before, input.value, refs, edit.range) } };
+          }
+          return current.draft === edit.before ? { ...current, referenceMode: current.inlineReferences?.length ? 'explicit' : current.referenceMode, inlineReferences: reconcileAiInlineReferences(edit.before, input.value, current.inlineReferences ?? [], edit.range) } : current;
+        });
+      };
+      input.addEventListener('beforeinput', remember);
+      input.addEventListener('input', unchangedReplacement);
+      return () => { input.removeEventListener('beforeinput', remember); input.removeEventListener('input', unchangedReplacement); };
+    };
+    const untrackPrompt = track(promptRef.current, promptInputEdit), untrackMessage = track(editRef.current, messageInputEdit, true);
+    return () => { untrackPrompt(); untrackMessage(); };
+  }, [editIndex, session.conversationId, publish]);
   useLayoutEffect(() => {
     if (editIndex === undefined || !editRef.current) return;
     const input = editRef.current;
@@ -343,15 +416,6 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
     document.addEventListener('pointerdown', dismiss);
     return () => document.removeEventListener('pointerdown', dismiss);
   }, []);
-  useLayoutEffect(() => {
-    const menu = modelMenuRef.current, root = menu?.closest('.mewiki-ai-workspace'), composer = menu?.closest('.mewiki-ai-composer'), form = menu?.closest('form');
-    if (activePanel !== 'model' || !menu || !root || !composer || !form) return;
-    const place = () => menu.style.setProperty('--ai-model-max-height', `${Math.max(0, composer.getBoundingClientRect().top - root.getBoundingClientRect().top - 8)}px`);
-    place();
-    const observer = new ResizeObserver(place);
-    observer.observe(root); observer.observe(composer); observer.observe(form);
-    return () => observer.disconnect();
-  }, [activePanel]);
 
   function scrollToLatest() {
     followLatest.current = true; setFollowing(true);
@@ -375,7 +439,7 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
     const message = sessionRef.current.history[index];
     if (message?.role !== 'user' || message.content.length > 12000) return;
     stop(); closeReview(); editTriggerRef.current = trigger; setActionError(''); setActivePanel(null);
-    publish(current => ({ ...current, messageEdit: { index, content: message.content } }), 'now');
+    publish(current => ({ ...current, messageEdit: { index, content: message.content, inlineReferences: message.inlineReferences ?? [], inlineReferencesInvalid: message.inlineReferencesInvalid } }), 'now');
   }
   function cancelMessageEdit() {
     publish(current => ({ ...current, messageEdit: undefined })); setActionError('');
@@ -417,26 +481,31 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
     if (access.current.switching || snapshot.busy || ['loading', 'error', 'conflict'].includes(snapshot.status)) return;
     const original = sessionRef.current;
     let previous = original;
-    const noteIds = scope === 'library'
-      ? snapshot.notebook.notes.filter(note => !isMeWikiManualNote(note)).map(note => note.id)
-      : snapshot.notebook.notes.filter(note => note.id === snapshot.notebook.activeNoteId).map(note => note.id);
     let task: AiChatTask;
     try {
       if (editingMessage) {
         if (!original.messageEdit) return;
         previous = identifyAiConversation(forkAiChatBeforeMessage(original, original.messageEdit.index));
+        const message = original.history[original.messageEdit.index];
+        previous.inlineReferences = original.messageEdit.inlineReferences ?? reconcileAiInlineReferences(message.content, original.messageEdit.content, message.inlineReferences ?? []);
+        previous.inlineReferencesInvalid = original.messageEdit.inlineReferencesInvalid;
         if (previous.selection) {
           const reason = aiTextSelectionError(snapshot.notebook, libraryId, previous.selection);
           if (reason) throw new Error(reason);
         }
       }
-      task = continuing ? continueAiChatTask(previous, settings!.providers, snapshot.notebook) : retry ? retryAiChatTask(previous, settings!.providers, snapshot.notebook) : beginAiChatTask(previous, provider!, model.trim(), (editingMessage ? original.messageEdit!.content : prompt).trim(), noteIds, snapshot.notebook);
+      if (continuing) task = continueAiChatTask(previous, settings!.providers, snapshot.notebook);
+      else if (retry) task = retryAiChatTask(previous, settings!.providers, snapshot.notebook);
+      else {
+        const context = resolveAiComposerContext(snapshot.notebook, previous);
+        task = beginAiChatTask(previous, provider!, model.trim(), editingMessage ? original.messageEdit!.content : prompt, context.noteIds, snapshot.notebook, { references: context.references, scope: context.scope, guidance: resolveAiGuidance(guidanceState.value, previous.skillIds ?? []) });
+      }
     }
     catch (cause) { setActionError(errorMessage(cause)); return; }
     let context;
-    try { context = createAiToolContext(snapshot.notebook, libraryId, task.noteIds, task.selection, task.materials); }
+    try { context = createAiToolContext(snapshot.notebook, libraryId, task.noteIds, task.selection, task.materials, task.support); }
     catch (cause) { setActionError(errorMessage(cause)); return; }
-    const next = editingMessage ? { ...task.session, draft: original.draft, selection: original.selection, activeMaterialIds: original.activeMaterialIds } : task.session;
+    const next = editingMessage ? { ...task.session, draft: original.draft, selection: original.selection, references: original.references, referenceMode: original.referenceMode, libraryScope: original.libraryScope, inlineReferences: original.inlineReferences, inlineReferencesInvalid: original.inlineReferencesInvalid, activeMaterialIds: original.activeMaterialIds } : task.session;
     if (editingMessage) {
       try { setSavedConversations(switchAiConversation({ ...original, messageEdit: undefined }, touchAiConversation(next), localStorage)); }
       catch (cause) { setActionError(errorMessage(cause)); return; }
@@ -468,7 +537,7 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
         setSettings(freshSettings);
         task = continuing ? continueAiChatTask(previous, freshSettings.providers, controller.getSnapshot().notebook) : retryAiChatTask(previous, freshSettings.providers, controller.getSnapshot().notebook);
       }
-      const result = await runAiTask({ context, providerId: task.provider.id, model: task.model, prompt: task.prompt, signal: abort.signal, history: task.history, memoryInstructions: task.memoryInstructions, existingProposals: resuming ? previous.proposals : [], checkpoint: task.checkpoint, requestId: task.session.lastRequest!.messageId, proposalLimit: 40 - previous.proposals.length, onProgress: progress,
+      const result = await runAiTask({ context, providerId: task.provider.id, model: task.model, prompt: task.prompt, signal: abort.signal, history: task.history, memoryInstructions: task.memoryInstructions, inlineReferences: task.inlineReferences, existingProposals: resuming ? previous.proposals : [], checkpoint: task.checkpoint, requestId: task.session.lastRequest!.messageId, proposalLimit: 40 - previous.proposals.length, onProgress: progress,
         onDraft: value => {
           if (!accept()) return;
           draftRef.current = value; setLiveDraft(value);
@@ -638,16 +707,108 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
       }
     }
   }
-  function quickPrompt(task: string) {
+  function quickPrompt(task: string, target?: AiObjectReference) {
     const draft = sessionRef.current.draft ?? '';
     const next = draft.trim() ? `${draft}\n\n${task}` : task;
     if (next.length > 12000) { setActionError('任务要求过长，请精简后再添加快捷提问。'); return; }
+    if (target && !sessionRef.current.selection) {
+      const references = sessionRef.current.references ?? [];
+      if (!references.some(item => item.kind === target.kind && item.id === target.id)) {
+        try { combineAiReferences(references, (sessionRef.current.inlineReferences ?? []).map(item => item.reference), [target]); }
+        catch (cause) { setActionError(errorMessage(cause)); return; }
+        publish(current => ({ ...current, references: [...references, target], referenceMode: 'explicit' }));
+      }
+    }
     setPrompt(next); setActivePanel(null); setActionError('');
-    if (!sessionRef.current.selection) setScope('current');
+    if (!sessionRef.current.selection) publish(current => ({ ...current, libraryScope: undefined, referenceMode: 'explicit' }));
     promptRef.current?.focus({ preventScroll: true });
   }
+  function saveGuidance(value: AiLibraryGuidance) {
+    if (guidanceState.error) throw new Error(guidanceState.error);
+    writeAiLibraryGuidance(value, localStorage);
+    setGuidanceState({ value: structuredClone(value), error: '' });
+    const available = new Set(value.skills.filter(item => item.enabled).map(item => item.id));
+    publish(current => ({ ...current, skillIds: current.skillIds?.filter(id => available.has(id)) }), 'now');
+  }
+  function pinReference(reference: AiObjectReference) {
+    const current = sessionRef.current;
+    const exists = (current.references ?? []).some(item => item.kind === reference.kind && item.id === reference.id);
+    try { combineAiReferences(current.references ?? [], (current.inlineReferences ?? []).map(item => item.reference), [reference]); }
+    catch (cause) { setActionError(errorMessage(cause)); return; }
+    if (current.selection && reference.kind === 'note' && reference.id !== current.selection.noteId) { setActionError('当前任务限定在选区，请先移除其他笔记引用，或取消选区后发送。'); return; }
+    const next = { ...current, references: exists ? current.references : [...(current.references ?? []), { kind: reference.kind, id: reference.id }], referenceMode: 'explicit' as const };
+    commitContextAction(next);
+  }
+  function commitContextAction(next: AiSession, consumeMention = true) {
+    const draft = next.draft ?? '', range = consumeMention ? mentionRange.current : null;
+    let caret: number | null = null;
+    if (range && /^@[^\s@]*$/.test(draft.slice(range.start, range.end))) {
+      const text = draft.slice(0, range.start) + draft.slice(range.end);
+      next = { ...next, draft: text, inlineReferences: reconcileAiInlineReferences(draft, text, next.inlineReferences ?? [], { ...range, inputType: 'deleteContent' }) };
+      caret = range.start;
+    }
+    if (!persist(next)) return;
+    pendingReferenceCaret.current = caret;
+    publish(next, 'none'); mentionRange.current = null; setActivePanel(null); setActionError('');
+  }
+  function changeLibraryScope(enabled: boolean, consumeMention = true) {
+    const current = sessionRef.current;
+    if (enabled && current.selection) { setActionError('当前任务限定在选区，请先移除其他笔记引用，或取消选区后发送。'); return; }
+    commitContextAction({ ...current, libraryScope: enabled || undefined, referenceMode: 'explicit' }, consumeMention);
+  }
+  function addReference(reference: AiObjectReference) {
+    const current = sessionRef.current, item = resolveAiReference(library.notebook, reference);
+    if (!item) return;
+    if (current.selection && reference.kind === 'note' && reference.id !== current.selection.noteId) { setActionError('当前任务限定在选区，请先移除其他笔记引用，或取消选区后发送。'); return; }
+    try {
+      const draft = current.draft ?? '', range = mentionRange.current ?? { start: draft.length, end: draft.length };
+      const result = insertAiInlineReference(draft, current.inlineReferences ?? [], item, range.start, range.end);
+      combineAiReferences(current.references ?? [], result.references.map(value => value.reference));
+      const next = { ...current, draft: result.text, inlineReferences: result.references, referenceMode: 'explicit' as const };
+      if (!persist(next)) return;
+      pendingReferenceCaret.current = result.caret;
+      publish(next, 'none'); mentionRange.current = null; setActivePanel(null); setActionError('');
+    } catch (cause) { setActionError(errorMessage(cause)); }
+  }
+  function changePrompt(input: HTMLTextAreaElement) {
+    const pending = promptInputEdit.current; promptInputEdit.current = null;
+    setPrompt(input.value, pending?.before === (sessionRef.current.draft ?? '') ? pending.range : undefined);
+    if (composing.current || sessionRef.current.messageEdit) return;
+    const end = input.selectionStart, match = /(?:^|[^a-zA-Z0-9_])@([^\s@]*)$/.exec(input.value.slice(0, end));
+    if (match) {
+      const start = end - match[1].length - 1;
+      if (sessionRef.current.inlineReferences?.some(item => item.start === start && item.end <= end)) return;
+      mentionRange.current = { start, end };
+      setMentionQuery(match[1]); setActivePanel('references');
+    }
+  }
+  function changeMessage(content: string) {
+    const pending = messageInputEdit.current; messageInputEdit.current = null;
+    publish(current => {
+      const edit = current.messageEdit;
+      if (!edit) return current;
+      const original = current.history[edit.index];
+      const refs = edit.inlineReferences ?? reconcileAiInlineReferences(original.content, edit.content, original.inlineReferences ?? []);
+      return { ...current, messageEdit: { ...edit, content, inlineReferences: reconcileAiInlineReferences(edit.content, content, refs, pending?.before === edit.content ? pending.range : undefined) } };
+    });
+  }
+  function openObject(reference: AiObjectReference) {
+    if (!resolveAiReference(controller.getSnapshot().notebook, reference)) return;
+    if (reference.kind === 'note') openReplyNote(reference.id);
+    else { closeReview(); onOpenReference?.(reference); }
+  }
+  function renderUserText(message: AiSession['history'][number]) {
+    const parts: ReactNode[] = []; let at = 0;
+    for (const inline of message.inlineReferences ?? []) {
+      const item = resolveAiReference(library.notebook, inline.reference);
+      parts.push(message.content.slice(at, inline.start), <button key={inline.start} type="button" className="mewiki-ai-inline-reference" disabled={!item} title={item?.detail ?? t('引用对象不可用')} onClick={() => openObject(inline.reference)}>{inline.text}</button>);
+      at = inline.end;
+    }
+    parts.push(message.content.slice(at));
+    return <div className="mewiki-ai-text-output">{parts}</div>;
+  }
   const blockReference = session.selection?.kind === 'block';
-  const referenceLabel = blockReference ? t('本行内容') : t('当前选区');
+  const contextualPrompts = quickAiPrompts(library.notebook, currentReference);
   const quickPrompts = blockReference ? [
     { label: t('解释本行内容'), task: t('请解释引用的本行内容、依据和适用条件，不修改笔记。') },
     { label: t('检查本行内容'), task: t('请检查引用的本行内容中的表达、错误和歧义，只对本行提出局部修改建议。') },
@@ -656,11 +817,11 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
     { label: t('解释选中文字'), task: t('请解释选中文字的含义、依据和适用条件，不修改笔记。') },
     { label: t('润色选中文字'), task: t('请润色选中文字，保持原意与专业术语，只提出局部修改建议。') },
     { label: t('精简选中文字'), task: t('请精简选中文字，保留关键信息和原有格式，只提出局部修改建议。') },
-  ] : [
+  ] : contextualPrompts.length ? contextualPrompts : currentReference?.kind === 'note' ? [
     { label: t('总结当前笔记'), task: t('请总结当前笔记的核心观点、依据和待解决问题，不修改笔记。') },
     { label: t('检查表达'), task: t('请检查当前笔记中的表达、错别字和歧义，只对需要调整的原文提出修改建议。') },
     { label: t('梳理结构'), task: t('请分析当前笔记的结构，指出重复内容、逻辑缺口和可改进之处，先给出建议。') },
-  ];
+  ] : [{ label: t('了解觅维功能'), task: t('请介绍觅维的主要功能模块、常见别称和可通过 AI 完成的操作。') }];
 
   function renderProposals(proposals: AiProposal[], earlier = false) {
     const targets = new Set(proposals.map(proposal => `${proposal.kind === 'native' ? proposal.target : proposal.kind === 'term' ? 'term' : 'note'}:${proposal.targetId}`)).size;
@@ -693,7 +854,10 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
     onOpenNote(noteId, blockId, source);
   }
 
-  return <ResearchNoteLinkContext.Provider value={{ notes: library.notebook.notes, symbols: library.notebook.symbols, terms: library.notebook.terms ?? [], state: library.notebook, sourceNoteId: library.notebook.activeNoteId, openNote: openReplyNote }}><section aria-label={t('AI 对话')} className="mewiki-ai-workspace">
+  return <ResearchNoteLinkContext.Provider value={{ notes: library.notebook.notes, symbols: library.notebook.symbols, terms: library.notebook.terms ?? [], state: library.notebook, sourceNoteId: library.notebook.activeNoteId, openNote: openReplyNote, openProductModule: id => openObject({ kind: 'module', id }) }}><section ref={popoverRoot} aria-label={t('AI 对话')} className="mewiki-ai-workspace" onKeyDown={event => {
+    if (activePanel && event.key === 'Escape' && !event.nativeEvent.isComposing && !event.defaultPrevented) { event.preventDefault(); event.stopPropagation(); closePopover(); }
+  }}>
+    {(activePanel === 'memory' || activePanel === 'skills') && <div className="mewiki-ai-popover-backdrop" aria-hidden="true" onPointerDown={event => { event.preventDefault(); event.stopPropagation(); }} onClick={closePopover} />}
     {!!sourceNotes.length && <div className="mewiki-ai-sources" role="group" aria-label={t('参考来源')}><div>{sourceNotes.map(note =>
       <button key={note.id} type="button" title={note.title || t('未命名笔记')} disabled={mutating || library.busy || workspace.switching || library.status === 'loading'} onClick={() => openSource(note.id)}><FileText size={13} /><span>{note.title || t('未命名笔记')}</span><ArrowUpRight size={12} /></button>,
     )}</div></div>}
@@ -722,23 +886,35 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
               </header>}
               {!!tools.length && <details className="mewiki-ai-tool-progress"><summary>{t`工具进度（${tools.length}）`}</summary><ol>{steps?.length ? steps.map((step, stepIndex) => <li key={stepIndex} data-status={step.status}>{step.noteId && library.notebook.notes.some(note => note.id === step.noteId) ? <button type="button" onClick={event => openReplyNote(step.noteId!, step.blockId, event.currentTarget)}>{stepLabel(step)}<ArrowUpRight size={11} /></button> : stepLabel(step)}</li>) : tools.map((tool, toolIndex) => <li key={toolIndex}>{toolLabel(tool)}</li>)}</ol></details>}
               <div className={message.role === 'user' ? 'mewiki-ai-user-bubble' : undefined}>
+              {(message.libraryScope || !!message.references?.some(reference => !message.inlineReferences?.some(item => item.reference.kind === reference.kind && item.reference.id === reference.id))) && <div className="mewiki-ai-message-references" aria-label={t('消息引用对象')}>{message.libraryScope && <span title={t('整库范围不包含使用手册。')}><LibraryBig size={12} aria-hidden="true" />{t('整库检索')}</span>}{message.references?.map((reference, referenceIndex) => {
+                if (message.inlineReferences?.some(item => item.reference.kind === reference.kind && item.reference.id === reference.id)) return null;
+                const item = resolveAiReference(library.notebook, reference);
+                return <button type="button" key={`${reference.kind}:${reference.id}`} disabled={!item} title={item?.detail} onClick={() => openObject(reference)}>@{message.referenceNames?.[referenceIndex] ?? item?.label ?? t('引用对象不可用')}</button>;
+              })}</div>}
+              {(message.libraryGuidance || !!message.skillNames?.length) && <details className="mewiki-ai-message-skills"><summary>{t('本次生效规则')}</summary>{message.libraryGuidance && <span>{t('资料库默认规范')}</span>}{message.skillNames?.map((name, skillIndex) => <span key={skillIndex}>{name}</span>)}</details>}
               {!!message.materialIds?.length && <div className="mewiki-ai-message-materials" aria-label={t('消息辅助材料')}>{message.materialIds.map(id => {
                 const material = session.materials?.find(item => item.id === id);
                 return <button key={id} type="button" title={material?.name} aria-label={material ? t`查看材料：${material.name}` : t('辅助材料不可用')} disabled={!material} onClick={() => setMaterialPreview(material!)}><FileText size={12} /><span>{material?.name ?? t('辅助材料不可用')}</span></button>;
               })}</div>}
               {message.selection && <blockquote className="mewiki-ai-message-quote"><strong>{message.selection.noteTitle}</strong><span>{message.selection.text}</span></blockquote>}
               {session.messageEdit?.index === index && message.role === 'user' ? <form className="mewiki-ai-message-editor" onSubmit={event => void run(event, false, true)}>
+                {!!recoveredEditReferences.length && <div className="mewiki-ai-message-references" aria-label={t('原消息引用')}>{recoveredEditReferences.map(reference => {
+                  const item = resolveAiReference(library.notebook, reference);
+                  return <button key={`${reference.kind}:${reference.id}`} type="button" disabled={!item} onClick={() => openObject(reference)}>@{item?.label ?? t('引用对象不可用')}</button>;
+                })}</div>}
                 <label className="visually-hidden" htmlFor="mewiki-ai-message-edit">{t('编辑消息内容')}</label>
                 <textarea ref={editRef} id="mewiki-ai-message-edit" value={session.messageEdit.content} maxLength={12000} rows={3}
-                  onChange={event => publish(current => ({ ...current, messageEdit: current.messageEdit ? { ...current.messageEdit, content: event.target.value } : undefined }))}
+                  onChange={event => changeMessage(event.currentTarget.value)}
                   onKeyDown={event => {
                     if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
                     if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); cancelMessageEdit(); }
                     if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); if (canResend) event.currentTarget.form?.requestSubmit(); }
                   }} />
                 {editSelectionError && <p role="alert">{localizeError(editSelectionError)}</p>}
+                {editedContext.error && <p role="alert">{localizeError(editedContext.error)}</p>}
+                {session.messageEdit.inlineReferencesInvalid && <p role="alert">{t('句内引用已失效，请检查引用文字后重新选择。')} <button type="button" className="mewiki-ai-text-button" onClick={() => publish(current => ({ ...current, messageEdit: current.messageEdit ? { ...current.messageEdit, inlineReferences: [], inlineReferencesInvalid: undefined } : undefined }))}>{t('清除失效引用')}</button></p>}
                 <div><button type="button" onClick={cancelMessageEdit}>{t('取消编辑')}</button><button type="submit" disabled={!canResend}>{t('重新发送')}</button></div>
-              </form> : !!message.content && <TextOutput text={message.content} markdown={message.role === 'assistant'} />}
+              </form> : !!message.content && (message.role === 'assistant' ? <TextOutput text={message.content} markdown /> : renderUserText(message))}
               </div>
               {message.role === 'assistant' && renderProposals(session.proposals.filter(proposal => message.activity?.proposalIds.includes(proposal.id)))}
               <div className="mewiki-ai-message-actions">
@@ -771,6 +947,11 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
         {actionError && <p className="mewiki-ai-error" role="alert">{localizeError(actionError)}</p>}
         {selectionError && <p className="mewiki-ai-error" role="alert">{localizeError(selectionError)}</p>}
         {materialError && <p className="mewiki-ai-error" role="alert">{localizeError(materialError)}</p>}
+        {referenceError && <p className="mewiki-ai-error" role="alert">{localizeError(referenceError)}{session.inlineReferencesInvalid && <> <button type="button" className="mewiki-ai-text-button" onClick={() => publish(current => ({ ...current, inlineReferences: [], inlineReferencesInvalid: undefined, referenceMode: 'explicit' }), 'now')}>{t('清除失效引用')}</button></>}</p>}
+        {guidance.error && <p className="mewiki-ai-error" role="alert">{localizeError(guidance.error)}{guidanceState.error && <> <button type="button" className="mewiki-ai-text-button" onClick={() => {
+          try { setGuidanceState({ value: readAiLibraryGuidance(libraryId, localStorage), error: '' }); }
+          catch (cause) { setGuidanceState(current => ({ ...current, error: errorMessage(cause) })); }
+        }}>{t('重新读取规范')}</button></>}</p>}
         {notice && <p role="status">{localizeError(notice)}</p>}
         {copied && <p role="status">{t('已复制')}</p>}
       </div>
@@ -785,12 +966,6 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
       </div>}
       <AiMaterials key={`${libraryId}:${session.conversationId}`} libraryId={libraryId} materials={session.materials ?? []} activeIds={session.activeMaterialIds ?? []}
         disabled={running || mutating || clearing || workspace.switching || !!session.messageEdit || !!adjustingIds.length} onBusyChange={setMaterialImporting} onPreview={setMaterialPreview}
-        scopeControl={<div className="mewiki-ai-scope-control">
-          {session.selection ? <TextSelect size={13} aria-hidden="true" /> : scope === 'library' ? <LibraryBig size={13} aria-hidden="true" /> : <FileText size={13} aria-hidden="true" />}
-          <select className="mewiki-ai-scope" aria-label={t('资料范围')} title={session.selection ? referenceLabel : scope === 'library' ? t('当前资料库与词典') : t('当前笔记与词典')} value={session.selection ? 'selection' : scope} disabled={running || mutating || clearing || !!session.selection} onChange={event => setScope(event.target.value as typeof scope)}>
-          {session.selection && <option value="selection">{referenceLabel}</option>}<option value="current">{t('当前笔记')}</option><option value="library">{t('当前资料库')}</option>
-          </select>
-        </div>}
         onAdd={material => {
           const current = sessionRef.current;
           if (!mounted.current || current.conversationId !== session.conversationId || current.libraryId !== material.libraryId) return;
@@ -808,24 +983,39 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
         }}>
       <div className="mewiki-ai-composer">
         <div ref={composerContentRef} className="mewiki-ai-composer-content">
+        {(session.libraryScope || !!visibleReferences.length) && <div className="mewiki-ai-object-context" aria-label={t('本次引用')}>
+          {session.libraryScope && <span className="mewiki-ai-reference-tag" data-scope="library" title={t('整库范围不包含使用手册。')}><span><LibraryBig size={12} aria-hidden="true" />{t('整库检索')}</span><button type="button" data-ui="icon-action" aria-label={t('移除整库检索')} title={t('移除整库检索')} disabled={mutating || clearing || !!session.messageEdit} onClick={() => changeLibraryScope(false, false)}><X size={12} /></button></span>}
+          {visibleReferences.map(reference => {
+            const item = resolveAiReference(library.notebook, reference);
+            return <span key={`${reference.kind}:${reference.id}`} className="mewiki-ai-reference-tag" data-implicit={composerContext.value?.implicit || undefined} data-missing={!item || undefined} title={item?.detail}>
+              <button type="button" disabled={!item} onClick={() => openObject(reference)}>{composerContext.value?.implicit ? `${currentScopeLabel} · ` : '@'}{item?.label ?? t('引用对象不可用')}</button>
+              <button type="button" data-ui="icon-action" aria-label={t`移除引用：${item?.label ?? reference.id}`} title={t('移除引用')} disabled={mutating || clearing || !!session.messageEdit} onClick={() => publish(current => ({ ...current, referenceMode: 'explicit', references: current.references?.filter(value => value.kind !== reference.kind || value.id !== reference.id) }), 'now')}><X size={12} /></button>
+            </span>;
+          })}
+        </div>}
         {session.selection && <div className="mewiki-ai-selection" role="group" aria-label={blockReference ? t('本行内容') : t('选中文字')}>
           <button type="button" className="mewiki-ai-selection-source" title={session.selection.noteTitle} onClick={() => openReplyNote(session.selection!.noteId, session.selection!.blocks[0]?.id)}><FileText size={13} /><span title={session.selection.noteTitle}>{session.selection.noteTitle || t('未命名笔记')}</span></button>
-          <button type="button" data-ui="icon-action" aria-label={blockReference ? t('移除本行内容') : t('移除选中文字')} title={blockReference ? t('移除本行内容') : t('移除选中文字')} onClick={() => publish(current => ({ ...current, selection: undefined }))}><X size={13} /></button>
+          <button type="button" data-ui="icon-action" aria-label={blockReference ? t('移除本行内容') : t('移除选中文字')} title={blockReference ? t('移除本行内容') : t('移除选中文字')} disabled={mutating || clearing || !!session.messageEdit} onClick={() => publish(current => ({ ...current, selection: undefined, referenceMode: 'explicit' }), 'now')}><X size={13} /></button>
           <blockquote title={session.selection.text}>{session.selection.text}</blockquote>
         </div>}
         <label className="visually-hidden" htmlFor="mewiki-ai-task-prompt">{t('任务要求')}</label>
-        <textarea ref={promptRef} id="mewiki-ai-task-prompt" value={prompt} onFocus={revealPrompt} onChange={event => setPrompt(event.target.value)} disabled={mutating || clearing} maxLength={12000} rows={2} placeholder={t('向 AI 提问，或描述要完成的笔记任务…')} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }} onKeyDown={event => {
+        <textarea ref={promptRef} id="mewiki-ai-task-prompt" value={prompt} onFocus={revealPrompt} onChange={event => changePrompt(event.currentTarget)} disabled={mutating || clearing} maxLength={12000} rows={2} placeholder={t('向 AI 提问，或描述要完成的笔记任务…')} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={event => { composing.current = false; changePrompt(event.currentTarget); }} onKeyDown={event => {
           if (event.key !== 'Enter' || event.shiftKey || event.altKey || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229 || composing.current) return;
           event.preventDefault();
           if (canRun) event.currentTarget.form?.requestSubmit();
         }} />
         </div>
         <div className="mewiki-ai-composer-controls">
+          <AiReferencePicker state={library.notebook} open={activePanel === 'references'} initialQuery={mentionQuery} current={currentObject} libraryScope={!!session.libraryScope} selectionLocked={!!session.selection} onPinCurrent={() => { if (currentObject) pinReference(currentObject); }} onLibraryScopeChange={changeLibraryScope} disabled={mutating || clearing || !!session.messageEdit} onOpenChange={open => {
+            if (open && activePanel !== 'references') { const input = promptRef.current; mentionRange.current = input ? { start: input.selectionStart, end: input.selectionEnd } : null; setMentionQuery(''); }
+            setActivePanel(panel => open ? 'references' : panel === 'references' ? null : panel);
+          }} onSelect={addReference} />
+          <AiSkillsPanel guidance={guidanceState.value} selectedIds={session.skillIds ?? []} disabled={running || mutating || clearing || !!session.messageEdit || !!guidanceState.error} open={activePanel === 'skills'} onOpenChange={open => setActivePanel(panel => open ? 'skills' : panel === 'skills' ? null : panel)} onSave={saveGuidance} onSelectionChange={skillIds => publish(current => ({ ...current, skillIds }), 'now')} prompt={prompt} moduleId={currentReference?.kind === 'symbol' ? 'symbols' : currentReference?.kind === 'term' ? 'terms' : currentReference?.kind === 'map' ? 'maps' : library.notebook.view === 'foundations' ? 'foundations' : 'notes'} />
           <div ref={quickMenuRef} className="mewiki-ai-quick-menu" onKeyDown={event => {
             if (event.key === 'Escape' && activePanel === 'quick') { event.preventDefault(); event.stopPropagation(); setActivePanel(null); quickTriggerRef.current?.focus(); }
           }} onBlur={event => { if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) setActivePanel(panel => panel === 'quick' ? null : panel); }}>
             <button ref={quickTriggerRef} type="button" data-ui="icon-action" aria-label={t('快捷提问')} title={t('快捷提问')} aria-expanded={activePanel === 'quick'} aria-controls="mewiki-ai-quick-prompts" disabled={mutating || clearing} onClick={() => setActivePanel(panel => panel === 'quick' ? null : 'quick')}><Sparkles size={15} /></button>
-            {activePanel === 'quick' && <div className="mewiki-ai-quick-options" id="mewiki-ai-quick-prompts" role="group" aria-label={t('快捷提问')}>{quickPrompts.map(item => <button type="button" key={item.label} onClick={() => quickPrompt(item.task)}><MessageSquareText size={14} /><span>{item.label}</span></button>)}</div>}
+            {activePanel === 'quick' && <div className="mewiki-ai-quick-options" id="mewiki-ai-quick-prompts" role="group" aria-label={t('快捷提问')}>{quickPrompts.map(item => <button type="button" key={item.label} onClick={() => quickPrompt(item.task, currentReference)}><MessageSquareText size={14} /><span>{item.label}</span></button>)}</div>}
           </div>
           <details ref={modelMenuRef} open={activePanel === 'model'} className="mewiki-ai-model-menu" onToggle={event => {
             const open = event.currentTarget.open;
@@ -868,6 +1058,7 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
           <button type="button" data-ui="icon-action" aria-label={t('复制对话')} title={t('复制对话')} disabled={running || !messages.some(message => !!message.content)} onClick={() => void copyText(copyAiConversationText(messages, t('你'), t('觅维')), 'conversation')}>{copied === 'conversation' ? <Check size={14} /> : <Copy size={14} />}</button>
           <AiUsagePanel session={session} open={activePanel === 'usage'} onOpenChange={openUsage} />
           <AiMemoryPanel value={session.memoryInstructions ?? ''} count={session.history.length} open={activePanel === 'memory'} disabled={running || mutating || clearing || !!session.messageEdit} onOpenChange={open => setActivePanel(panel => open ? 'memory' : panel === 'memory' ? null : panel)} onChange={memoryInstructions => publish(current => ({ ...current, memoryInstructions }))} />
+          <AiProductHelp open={activePanel === 'help'} onOpenChange={open => setActivePanel(panel => open ? 'help' : panel === 'help' ? null : panel)} onOpenModule={(id: AiProductModuleId) => openObject({ kind: 'module', id })} />
           <button type="button" data-ui="icon-action" aria-label={t('清空会话')} title={t('清空会话')} disabled={running || mutating || clearing || !!adjustingIds.length} onClick={() => { setActivePanel(null); setClearing(true); }}><Eraser size={14} /></button>
           <button type="button" data-ui="icon-action" aria-label={t('AI 服务设置')} title={t('AI 服务设置')} onClick={() => { close(); onSettings(); }}><Settings2 size={14} /></button>
         </div>

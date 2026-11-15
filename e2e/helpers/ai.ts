@@ -21,6 +21,16 @@ export async function expectAiPanelInViewport(page: Page) {
   }).toBe(true);
 }
 
+/** Scope is selected through the same visible @ entry as object references. */
+export async function setAiReferenceScope(ai: Locator, scope: 'current' | 'library', english = false) {
+  const removeLibrary = ai.getByRole('button', { name: english ? 'Remove library search' : '移除整库检索', exact: true });
+  if (scope === 'library' && await removeLibrary.count()) return;
+  if (scope === 'current' && await removeLibrary.count()) await removeLibrary.click();
+  await ai.getByRole('button', { name: english ? 'Add an object reference' : '添加对象引用', exact: true }).click();
+  const picker = ai.getByRole('dialog', { name: english ? 'Add an object reference' : '添加对象引用', exact: true });
+  await picker.getByRole('button', { name: scope === 'library' ? english ? 'Search library' : '整库检索' : english ? /^Current (note|symbol|term|map|page)$/ : /^当前(笔记|符号|术语|地图|页面)$/, exact: true }).click();
+}
+
 /** Open the compact cards before exercising their actions. New UI tests verify the collapsed default separately. */
 export async function expandAiProposalCards(ai: Locator, wait = true) {
   if (wait) await ai.locator('.mewiki-ai-proposal-card').first().waitFor({ state: 'attached' });

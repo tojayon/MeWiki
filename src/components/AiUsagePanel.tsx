@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { ChartNoAxesColumn } from 'lucide-react';
 import type { AiSession } from '../ai/session.ts';
 import { currentAiUsage } from '../ai/usage.ts';
@@ -15,21 +15,6 @@ export default function AiUsagePanel({ session, open, onOpenChange }: { session:
   const records = [...(session.usageHistory ?? []), ...(running ? [currentAiUsage(session)] : [])].reverse();
   const numbers = new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 });
   const time = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
-
-  useLayoutEffect(() => {
-    const control = root.current;
-    const workspace = control?.closest('.mewiki-ai-workspace');
-    const composer = control?.closest('form');
-    if (!open || !control || !workspace || !composer) return;
-    const place = () => {
-      const headerHeight = control.querySelector('header')?.getBoundingClientRect().height ?? 34;
-      control.style.setProperty('--ai-usage-max-height', `${Math.max(0, composer.getBoundingClientRect().top - workspace.getBoundingClientRect().top - headerHeight - 10)}px`);
-    };
-    place();
-    const observer = new ResizeObserver(place);
-    observer.observe(workspace); observer.observe(composer);
-    return () => observer.disconnect();
-  }, [open]);
 
   useEffect(() => {
     if (!open) return;

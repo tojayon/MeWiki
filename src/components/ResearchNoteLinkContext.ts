@@ -10,4 +10,5 @@ export const ResearchNoteLinkContext = createContext<{
   sourceNoteId: string;
   state: ResearchNotebookState;
   openNote: (noteId: string, blockId?: string, source?: HTMLElement) => void;
+  openProductModule?: (id: string) => void;
 } | null>(null);

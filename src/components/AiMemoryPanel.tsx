@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef } from 'react';
+import { useId, useRef } from 'react';
 import { Brain, X } from 'lucide-react';
 import { t } from '../i18n/locale.ts';
 import './AiMemoryPanel.css';
@@ -7,13 +7,6 @@ export default function AiMemoryPanel({ value, count, open, disabled, onOpenChan
   value: string; count: number; open: boolean; disabled: boolean; onOpenChange: (open: boolean) => void; onChange: (value: string) => void;
 }) {
   const id = useId(), root = useRef<HTMLDivElement>(null), trigger = useRef<HTMLButtonElement>(null);
-  useLayoutEffect(() => {
-    const element = root.current, workspace = element?.closest('.mewiki-ai-workspace'), composer = element?.closest('form');
-    if (!open || !element || !workspace || !composer) return;
-    const place = () => element.style.setProperty('--ai-memory-height', `${Math.max(0, composer.getBoundingClientRect().top - workspace.getBoundingClientRect().top - 52)}px`);
-    place(); const observer = new ResizeObserver(place); observer.observe(workspace); observer.observe(composer);
-    return () => observer.disconnect();
-  }, [open]);
   return <div ref={root} className="mewiki-ai-memory-control" onKeyDown={event => {
     if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); onOpenChange(false); trigger.current?.focus(); }
   }}>

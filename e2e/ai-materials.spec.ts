@@ -86,7 +86,7 @@ test('parses actual PDF, DOCX, CSV, TSV, XLSX and text files locally and preview
     await preview.press('Escape'); await expect(trigger).toBeFocused();
   }
   expect(modelRequests).toBe(0);
-  await expect(ai.getByRole('button', { name: '添加辅助文件', exact: true })).toBeDisabled();
+  await expect(ai.getByRole('button', { name: '添加外部文件', exact: true })).toBeDisabled();
 });
 
 test('retains files across refresh and conversations, removes future access and isolates libraries', async ({ page }) => {
@@ -172,7 +172,7 @@ test('shows material limits in a dismissible warning bubble without resizing the
     expect(await notice.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath(`material-warning-${placement}-390.png`) });
     await notice.getByRole('button', { name: '关闭提示', exact: true }).click();
-    await expect(notice).toHaveCount(0); await expect(ai.getByRole('button', { name: '添加辅助文件', exact: true })).toBeFocused();
+    await expect(notice).toHaveCount(0); await expect(ai.getByRole('button', { name: '添加外部文件', exact: true })).toBeFocused();
     await expect(input).toHaveValue('文件超限也保留这条草稿');
     await page.setViewportSize({ width: 1440, height: 960 });
   }
@@ -292,7 +292,7 @@ test('cancels parsing, reports timeout and rejects damaged or textless PDFs with
 
 test('keeps long file names, previews and sending accessible in a narrow English window', async ({ page }, info) => {
   const ai = await setup(page, true);
-  await expect(ai.getByRole('button', { name: 'Add supporting files', exact: true })).toBeVisible();
+  await expect(ai.getByRole('button', { name: 'Add external files', exact: true })).toBeVisible();
   const name = `${'long file name '.repeat(12)}.md`;
   await ai.getByLabel('Choose supporting files', { exact: true }).setInputFiles(textFile(name));
   const trigger = ai.getByRole('button', { name: `View file: ${name}`, exact: true }); await expect(trigger).toBeVisible();

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createNotebookFixture } from '../src/domain/testUtils/notebook.ts';
 import { defaultCalloutAppearance } from '../src/domain/researchCallout.ts';
-import { expandAiProposalCards, openAiWorkspace } from './helpers/ai.ts';
+import { expandAiProposalCards, openAiWorkspace, setAiReferenceScope } from './helpers/ai.ts';
 
 const sessionKey = 'mewiki:library:default:ai-session:v1';
 const provider = { id: 'foundation', name: '理论测试', baseUrl: 'http://127.0.0.1:9999/v1', protocol: 'openai-chat', model: 'foundation-model', hasApiKey: false };
@@ -96,7 +96,7 @@ test('opens an AI foundation source without changing it to the research workspac
 test('opens a foundation reference from an AI review of a research note in library scope', async ({ page }) => {
   const ai = await setup(page); await openAiWorkspace(page);
   await page.getByRole('button', { name: '切换为编辑模式', exact: true }).click();
-  await ai.getByLabel('资料范围', { exact: true }).selectOption('library');
+  await setAiReferenceScope(ai, 'library');
   let turn = 0;
   await page.route('**/api/mewiki/ai/chat', route => route.fulfill({ contentType: 'application/x-ndjson', body: JSON.stringify({ type: 'done', result: { message: ++turn === 1
     ? { role: 'assistant', content: '', toolCalls: [

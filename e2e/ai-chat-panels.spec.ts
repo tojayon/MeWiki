@@ -198,7 +198,7 @@ test('interrupts an archived running task and ignores its late reply after switc
   await expect(ai).not.toContainText('迟到回复');
 });
 
-test('keeps history, usage and compact model popovers exclusive, accessible and above the input in English', async ({ page }, info) => {
+test('keeps history, usage and compact model popovers exclusive, accessible and beside their buttons in English', async ({ page }, info) => {
   const ai = await setup(page, true);
   const trigger = ai.getByRole('button', { name: 'Conversation history', exact: true });
   const panel = ai.getByRole('dialog', { name: 'Conversation history', exact: true });
@@ -207,13 +207,15 @@ test('keeps history, usage and compact model popovers exclusive, accessible and 
     await ai.getByLabel('Task instructions', { exact: true }).fill('Draft line\n'.repeat(12));
     await trigger.click(); await expect(panel).toBeVisible();
     expect((await panel.boundingBox())!.y).toBeGreaterThanOrEqual((await ai.boundingBox())!.y);
-    expect((await panel.boundingBox())!.y + (await panel.boundingBox())!.height).toBeLessThanOrEqual((await ai.locator('form').boundingBox())!.y);
+    const historyBox = (await panel.boundingBox())!, triggerBox = (await trigger.boundingBox())!;
+    expect(historyBox.y + historyBox.height).toBeLessThanOrEqual((await ai.boundingBox())!.y + (await ai.boundingBox())!.height);
+    expect(Math.min(Math.abs(triggerBox.y - historyBox.y - historyBox.height - 6), Math.abs(historyBox.y - triggerBox.y - triggerBox.height - 6))).toBeLessThan(2);
     await page.screenshot({ path: info.outputPath(`ai-history-${viewport.width}.png`) });
     await panel.getByRole('button', { name: 'New conversation', exact: true }).press('Escape');
     await expect(panel).toHaveCount(0); await expect(trigger).toBeFocused();
     await trigger.click(); await ai.getByRole('button', { name: 'Token usage history', exact: true }).click();
     await expect(panel).toHaveCount(0);
-    await ai.getByRole('button', { name: 'Model settings', exact: true }).click();
+    await ai.getByRole('button', { name: 'Model settings', exact: true }).press('Enter');
     await expect(ai.getByRole('dialog', { name: 'Token usage history', exact: true })).toHaveCount(0);
     await expect(ai.getByLabel('Model for this task', { exact: true })).toBeVisible();
     await ai.getByRole('combobox', { name: 'AI services', exact: true }).selectOption('second');
@@ -224,7 +226,7 @@ test('keeps history, usage and compact model popovers exclusive, accessible and 
     await page.screenshot({ path: info.outputPath(`ai-model-${viewport.width}.png`) });
     await ai.getByLabel('Model for this task', { exact: true }).press('Escape');
     await expect(ai.getByRole('button', { name: 'Model settings', exact: true })).toBeFocused();
-    await trigger.click(); await ai.getByLabel('Task instructions', { exact: true }).click();
+    await trigger.click(); await ai.getByRole('region', { name: 'Conversation', exact: true }).click({ position: { x: 10, y: 10 } });
     await expect(panel).toHaveCount(0);
     await expect(ai.getByLabel('Task instructions', { exact: true })).toBeInViewport();
   }

@@ -48,10 +48,14 @@ test('attaches a whole row without text selection, preserves the draft and resto
   await attachRow(page, 'row-text', false, info.outputPath('block-menu-action.png'));
   const quote = ai.getByRole('group', { name: '本行内容', exact: true });
   await expect(quote).toContainText('无需选择就能发送的整行内容。');
-  await expect(ai.getByLabel('资料范围', { exact: true })).toHaveValue('selection');
-  await expect(ai.getByLabel('资料范围', { exact: true }).locator('option:checked')).toHaveText('本行内容');
-  await expect(ai.getByLabel('任务要求', { exact: true })).toHaveValue('保留已有任务草稿');
   await expect(ai.getByLabel('任务要求', { exact: true })).toBeFocused();
+  await expect(ai.getByLabel('资料范围', { exact: true })).toHaveCount(0);
+  await ai.getByRole('button', { name: '添加对象引用', exact: true }).click();
+  const referencePicker = ai.getByRole('dialog', { name: '添加对象引用', exact: true });
+  await expect(referencePicker.getByRole('button', { name: '整库检索', exact: true })).toBeDisabled();
+  await referencePicker.getByLabel('搜索笔记、符号、术语或地图', { exact: true }).press('Escape');
+  await expect(ai.getByLabel('任务要求', { exact: true })).toHaveValue('保留已有任务草稿');
+  await expect(ai.getByRole('button', { name: '添加对象引用', exact: true })).toBeFocused();
   expect(requests()).toBe(0);
   await expect.poll(() => page.evaluate(key => JSON.parse(localStorage.getItem(key)!).selection?.kind, sessionKey)).toBe('block');
   await page.screenshot({ path: info.outputPath('block-menu-quote.png') });

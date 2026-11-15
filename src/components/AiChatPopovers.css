@@ -1,0 +1,39 @@
+.mewiki-ai-floating-panel [data-ai-popover] {
+  --mewiki-ui-surface: #263449;
+  --mewiki-ui-ink: #f8fafc;
+  --mewiki-ui-muted: #c0cddd;
+  --mewiki-ui-border: #516074;
+  --mewiki-ui-field-border: #63748a;
+  --mewiki-ui-hover: #36475f;
+  --mewiki-ui-selected: #36475f;
+  --mewiki-ui-accent: #fff;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid #516074;
+  border-radius: 4px;
+  background: #263449;
+  color: #f8fafc;
+  color-scheme: dark;
+  box-shadow: 0 6px 20px #14213633;
+}
+.mewiki-ai-floating-panel [data-ai-popover] > header { flex: 0 0 auto; min-width: 0; border-color: #516074; background: transparent; color: inherit; }
+.mewiki-ai-floating-panel [data-ai-popover] > :is(ol, ul, .mewiki-ai-memory-content, .mewiki-ai-skills-content, .mewiki-ai-product-help-content) { flex: 1 1 auto; min-height: 0; }
+.mewiki-ai-floating-panel [data-ai-popover] button { flex-shrink: 0; }
+:root .mewiki-ai-floating-panel [data-ai-popover] [data-ui="icon-action"][aria-label] { --action-ink: inherit; --action-accent: inherit; --action-hover: #ffffff1f; }
+.mewiki-ai-floating-panel [data-ai-popover="action"] button { background: transparent; color: inherit; }
+.mewiki-ai-floating-panel [data-ai-popover="action"] :is(button:hover, button:focus-visible, button[aria-current=true], [aria-selected=true] > button):not(:disabled) { background: #36475f; color: #fff; }
+.mewiki-ai-floating-panel [data-ai-popover="action"] :is(small, time, label > span, p, .mewiki-ai-model-scope, header > span, button > svg, header > label > svg) { color: #c0cddd; }
+.mewiki-ai-floating-panel [data-ai-popover="action"] :is(input, select) { background: #1c293b; color: #f8fafc; border-color: #63748a; }
+.mewiki-ai-floating-panel [data-ai-popover="action"] :is(input, select)::placeholder { color: #c0cddd; }
+.mewiki-ai-floating-panel [data-ai-popover="action"] :is(option, optgroup) { background: #1c293b; color: #f8fafc; }
+.mewiki-ai-floating-panel [data-ai-popover="action"] :is(.mewiki-ai-usage-list > li, .mewiki-ai-model-scope, .mewiki-ai-product-help-list > li, .mewiki-ai-reference-scope) { border-color: #516074; }
+.mewiki-ai-floating-panel [data-ai-popover="action"] :is(.mewiki-ai-product-help-aliases, .mewiki-ai-product-help-actions, .mewiki-ai-reference-scope > button) { color: #c0cddd; }
+.mewiki-ai-floating-panel [data-ai-popover="editor"] { --mewiki-ui-surface: #fff; --mewiki-ui-ink: #38485f; --mewiki-ui-muted: #718094; --mewiki-ui-border: #dce1e8; --mewiki-ui-field-border: #dce1e8; --mewiki-ui-hover: #f2f4f7; --mewiki-ui-selected: #edf1f7; --mewiki-ui-accent: #345a95; background: #fff; color: #38485f; color-scheme: light; }
+.mewiki-ai-floating-panel [data-ai-popover="editor"] > header { background: #263449; color: #f8fafc; }
+.mewiki-ai-floating-panel [data-ai-popover="editor"] > header [data-ui="icon-action"] { --action-hover: #ffffff1f; }
+.mewiki-ai-popover-backdrop { position: fixed; z-index: 8; top: 28px; right: 0; bottom: 0; left: 0; background: #192d451a; backdrop-filter: blur(1px); }
+.mewiki-ai-floating-panel[data-placement=right] .mewiki-ai-popover-backdrop { top: 44px; }

@@ -14,7 +14,7 @@ A local-first personal wiki that connects pages, terms, formulas, and their sour
   <a href="#chinese-and-english-interface"><img src="docs/assets/badges/languages.svg" alt="Interface: 简体中文 / English" /></a>
 </p>
 
-[Philosophy](#philosophy) · [AI assistant](#ai-assistant) · [Gallery](#gallery) · [Quick start](#quick-start) · [User manual](docs/wiki/README.md)
+[Use online](https://wiki.mecore.cc) · [Philosophy](#philosophy) · [AI assistant](#ai-assistant) · [Gallery](#gallery) · [Install locally](#quick-start) · [User manual](docs/wiki/README.md)
 
 [简体中文](README.md) · [English](README.en.md) · [Logos and app icons](docs/BRANDING.md)
 
@@ -27,6 +27,16 @@ Its Chinese name is **觅维** (Mìwéi): 觅 means exploring and seeking knowle
 New workspaces include a complete Chinese manual and general examples. Start with a single note. Optionally connect your own AI service to search notes, understand supporting material, and review proposed changes in context.
 
 ![MeWiki English workspace with tagged notes, page content, and a side panel](docs/assets/workspace-en.png)
+
+## Official hosted service
+
+**[Open MeWiki → wiki.mecore.cc](https://wiki.mecore.cc)** to use it in your browser without installation. Existing accounts sign in through **MeAccount** to access the [workspace](https://wiki.mecore.cc/workspace). Manage your shared avatar and profile in the [account center](https://accounts.mecore.cc/profile/). Account access is currently controlled; check the sign-in page for available registration options.
+
+- **Try it first.** Choose “立即体验” (Try now) on the homepage for an isolated temporary space without registering. A guest space lasts up to 2 hours, expires after 30 minutes of inactivity, and allows 20 notes / 5 MiB of content, without attachment uploads. Signing in does not merge guest content; export anything you want to keep before it expires.
+- **Choose your version.** The hosted service supports online notes, dictionaries, maps, attachments, history, and backup exchange. This repository provides the open-source local version, including offline use, your own AI services, and plugins. Hosted AI, plugin installation, web / DOI metadata fetching, and local directory / font services are not yet available. The full feature tour below describes the local version.
+- **Move existing notes.** Export a **ZIP backup with attachments** from local Settings → Backup and restore. Sign into a regular hosted account, select the destination library, preview the backup, and confirm the import. Library names can differ. Import replaces the destination's current content, so back it up first.
+
+There is **no automatic two-way sync** between local and hosted libraries. Local data stays on your machine; regular hosted data is stored on the server and isolated by account and workspace. Expired guest spaces are cleaned up. The hosted service is still evolving; keep independent backups of important data. See the [hosted service guide](docs/HOSTED.en.md) for scope, limits, and migration steps.
 
 ## Philosophy
 
@@ -68,12 +78,13 @@ Let AI find evidence across your notes and definitions, then review its changes 
   </tr>
 </table>
 
-- **From selected words to a library.** Select text and press `Alt+Enter`, or choose Send to AI from a content row menu. You can also allow access to the current note or library for paginated keyword search, source reading, and citations. Symbol notation follows the library dictionary.
+- **Make context explicit through one `@` entry.** Reference notes, symbols, terms, maps, or product modules within a sentence, pin the current object, or explicitly enable library search. Removable labels show the active context; choosing another object does not silently include the open note. Select text and press `Alt+Enter`, or choose Send to AI from a content row menu, to limit a task to its actual source range.
+- **Keep rules and skills with each library.** Save library guidance, manage and select skills, use templates, and import or export Markdown. Recommended skills require your explicit selection. Each task freezes its rules and references; retries and continuation reuse that snapshot.
 - **Bring supporting files.** Add PDF, DOCX, TXT, Markdown, TeX, code, CSV, or XLSX files, preview extracted text locally, then let AI search the material as needed. PDF references can identify pages; spreadsheets can identify worksheets. Scanned PDFs need text recognition first.
 - **Approve before saving.** Changes to notes, content blocks, tabs, dictionaries, and knowledge maps become proposals. Review red deletions and green additions in context, switch between stacked and side-by-side comparisons, edit the green suggestion, then approve individually or by page. Undo and reapply accepted changes. Selection boundaries and independent manual edits are protected; conflicts preserve the current content.
 - **Keep your progress.** Conversations, input drafts, pinned instructions, and token records are saved separately for each library. Edit earlier prompts, retry explicitly, or continue the remaining work of a partially completed task. Expand tool records to jump to sources. Reloading never sends a request automatically.
 
-Open **Settings → AI services** and add your API address, protocol, key, and model. MeWiki supports OpenAI Chat Completions, OpenAI Responses, and Anthropic Messages compatible endpoints, including local models that provide a compatible API. Choose a scope and send a request such as:
+In the **local version, open Settings → AI services** and add your API address, protocol, key, and model. MeWiki supports OpenAI Chat Completions, OpenAI Responses, and Anthropic Messages compatible endpoints, including local models that provide a compatible API. Confirm the context through `@` and send a request such as:
 
 > Read the current note, check its notation against the symbol dictionary, and suggest additions based on the files I attached. Cite your sources.
 
@@ -145,6 +156,8 @@ All screenshots use general examples and fictional data. AI demonstrations use p
 
 ## Quick start
 
+To use the hosted service, open **[wiki.mecore.cc](https://wiki.mecore.cc)**. The steps below install this repository's local version, which needs no MeAccount account.
+
 Install **Node.js 22.13 or a newer supported release**, npm, and Git.
 
 ```sh
@@ -171,6 +184,8 @@ Note content, page titles, dictionary names, tags, and attachments remain as aut
 
 ## Your files, your storage
 
+The following storage options apply to the local version. Hosted data and attachments are stored on the server; see [hosted storage and backups](docs/HOSTED.en.md#data-and-backups) for limits and migration.
+
 | Mode | Location | Per-original limit | Best for |
 | --- | --- | --- | --- |
 | Browser storage | Storage for the current site in your browser | 100 MB | Trying the app and smaller libraries |
@@ -186,7 +201,9 @@ Before migrating or updating, export a **ZIP backup with attachments** or back u
 
 **Does AI upload my whole library or change notes automatically?** Tools read needed material within the scope you choose, and you explicitly attach supporting files. Cloud models receive the conversation and reading results. Changes remain proposals until you review and apply them. Offline inference requires a separately running local model with a compatible API.
 
-**Do I need an account or a cloud service?** MeWiki is currently a local single-user application that binds to `127.0.0.1` by default and uses local data directly. Cloud sync, accounts, and real-time collaboration are not yet available.
+**Do I need an account or a cloud service?** This repository's local version needs no account, binds to `127.0.0.1` by default, and uses local data directly. The official hosted service uses MeAccount and offers isolated temporary guest access. Automatic local / hosted sync and real-time collaboration are not currently available.
+
+**Does this repository include the hosted backend?** It contains the open-source local version and shared note core. Accounts, online storage, and production deployment are maintained in a separate server edition. The hosted launch does not mean a complete multi-user self-hosting backend is included here.
 
 **Can I deploy it to GitHub Pages?** The complete app depends on a local Node service for library, attachment, and export APIs. Static hosting cannot provide those services.
 
@@ -194,11 +211,12 @@ Before migrating or updating, export a **ZIP backup with attachments** or back u
 
 ## Documentation
 
-The linked guides are currently in Chinese.
+The hosted service guide is available in English; the linked user manual and development guides are currently in Chinese.
 
 | Guide | What it covers |
 | --- | --- |
 | [Complete user manual](docs/wiki/README.md) | From your first note to content examples, backups, and plugins |
+| [Hosted service guide](docs/HOSTED.en.md) | Official URLs, MeAccount sign-in, guest access, version scope, and migration |
 | [Term and symbol dictionaries](docs/wiki/05-symbol-dictionary.md) / [Formula editing](docs/wiki/06-formulas.md) | Canonical names, abbreviations, notation, scripts, and sources |
 | [Links and references](docs/wiki/07-links-and-references.md) | Live block references, backlinks, and split reading |
 | [AI workspace](docs/wiki/22-ai-workspace.md) | Your own services, supporting files, selection tasks, review, memory, and recovery |
