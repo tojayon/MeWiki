@@ -1,4 +1,4 @@
-import Ajv from 'ajv';
+import { compileAiFieldValidator } from './fieldValidation.ts';
 import type { ResearchNotebookBlock } from '../domain/researchNotebook.ts';
 import { formulaOperators } from '../domain/researchDictionary.ts';
 import { researchMarkdownKinds } from '../domain/researchMarkdown.ts';
@@ -72,13 +72,13 @@ export const aiNativeEditSchema = aiObject({
   container: aiObject({ exampleBlockId: short, tabId: short }, ['exampleBlockId', 'tabId']),
   fields: { type: 'object', maxProperties: 30 },
 }, ['action']);
-const ajv = new Ajv({ allErrors: false, strict: false });
-const validators = new Map<string, ReturnType<typeof ajv.compile>>();
+const validators = new Map<string, ReturnType<typeof compileAiFieldValidator>>();
 export function validateAiFields(value: unknown, properties: Record<string, unknown>, required: string[] = []): asserts value is Record<string, unknown> {
   const schema = aiObject(properties, required), key = JSON.stringify(schema);
   let validate = validators.get(key);
-  if (!validate) { validate = ajv.compile(schema); validators.set(key, validate); }
-  if (!validate(value)) throw new Error(`AI 操作字段无效：${validate.errors?.[0]?.instancePath || validate.errors?.[0]?.params?.additionalProperty || '参数'}。`);
+  if (!validate) { validate = compileAiFieldValidator(schema); validators.set(key, validate); }
+  const error = validate(value, '');
+  if (error) throw new Error(`AI 操作字段无效：${error}。`);
 }
 
 /** Reuse the action boundary when preparing proposals and recovering saved sessions. */

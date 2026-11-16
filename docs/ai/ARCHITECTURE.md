@@ -2,6 +2,8 @@
 
 ## 请求与配置持久化适配
 
+AI 字段契约使用 `fieldValidation.ts` 将受信任的 schema 子集转换为普通闭包，覆盖工具参数、原生建议及会话快照恢复；不在浏览器执行 `eval` 或 `Function`。保留对象字段白名单、必填、枚举、嵌套结构、数值和 Unicode 长度上限，遇到新增且未支持的 schema 关键词拒绝编译，避免静默放宽权限。`nativeSchema.test.ts` 对照原 Ajv 行为，并在禁用动态求值时验证工具调用；宿主可以保持严格 CSP。
+
 `createAiClient` 接受独立请求适配器；适配器必须在请求生命周期内完成响应读取，包括流式工具和最终结果，不能拿到响应头就释放取消范围。`AiWorkspace` 和 `AiServiceSettings` 可注入同一客户端，默认继续使用本机 `/api/mewiki/ai`。任务 runner、投影、工具、审阅与 controller 保存流程共用，不复制聊天实现。
 
 `AiProviderStore` 支持可选持久化适配器的 `read`／原子 `update`；凭据保护由独立 protector 提供。适配器须在同一原子范围内读取、执行变换并保存，不能绕过 revision 冲突、变更地址后的密钥确认及凭据不回传规则。默认文件存储和系统凭据保护保持兼容。
