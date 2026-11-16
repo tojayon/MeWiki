@@ -1,5 +1,9 @@
 * text=auto eol=lf
 *.bat text eol=crlf
 
+# Manual originals are addressed by SHA-256; preserve their exact bytes.
+docs/wiki/assets/showcase-* -text
+docs/wiki/assets/showcase-data.csv whitespace=cr-at-eol
+
 # Preserve whitespace in archived third-party license originals.
 docs/licenses/THIRD_PARTY_LICENSES.txt -whitespace

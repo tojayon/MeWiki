@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { auditPublicSource, auditPush } from './check-public-source.mjs';
 import { installMaintenanceHook } from './install-maintenance-hooks.mjs';
 
@@ -24,6 +25,16 @@ async function fixture(t, edition = 'community') {
 }
 const publicUrl = 'https://github.com/tojayon/MeWiki.git';
 const privateUrl = 'git@github.com:tojayon/MeWiki-Server.git';
+
+test('preserves handbook original bytes in the Git index used by fresh checkouts', async () => {
+  const root=process.cwd();
+  const manifest=JSON.parse(execFileSync('git',['show',':docs/wiki/assets/manifest.json'],{cwd:root,encoding:'utf8',windowsHide:true}));
+  for(const [name,asset] of Object.entries(manifest)) {
+    const bytes=execFileSync('git',['show',':docs/wiki/assets/'+name],{cwd:root,windowsHide:true});
+    assert.equal(bytes.length,asset.size,name+' must keep its original size in Git');
+    assert.equal(createHash('sha256').update(bytes).digest('hex'),asset.id,name+' must keep its original SHA-256 in Git');
+  }
+});
 
 test('accepts a clean public working tree and declared environment examples', async t => {
   const f = await fixture(t); await f.write('.env.example', 'EXAMPLE_VALUE=replace-me');
