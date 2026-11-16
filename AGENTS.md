@@ -21,5 +21,7 @@
 
 ## 开发接续入口
 
+- 双版本维护先读 [版本维护](docs/EDITION_MAINTENANCE.md)。公共功能在本仓库完成后，明确整合到独立服务版；禁止把服务版整分支、身份／存储／部署实现直接推回公共仓库。变更后运行 `npm run test:maintenance` 与 `npm run public:check`；本地首次使用 `npm run maintenance:install` 安装推送保护。
+- 主项目目录保持稳定。专题 Git 工作区放所属工程的 `.worktrees/`，迁移归档放 `.archive/`，验证产物放忽略的 `.mewiki/`；完成后及时收拢，不在开发根目录新增带专题后缀的项目副本。凭据和恢复材料留在受限配置目录，不进入公共或私有 Git。
 - 接手先读 [AI 接手指南](docs/AI_HANDOFF.md)与[开发说明](docs/DEVELOPMENT.md)，检查当前工作区和相邻测试，保留已有修改。
 - 插件工作从 [当前开发入口](docs/plugins/README.md)、[内容 API v1](docs/plugins/API_V1.md)与[图文导出 API v2](docs/plugins/API_V2.md)进入；本地声明式安装、内容和数据导出接口已实现。[生态设计](docs/plugins/ARCHITECTURE.md)和[阶段路线](docs/plans/2026-11-10-plugin-ecosystem.md)中的可执行运行环境、通用编辑器贡献点与社区目录仍待实现。随附插件与社区包共用清单和执行器，禁止重新增加品牌分支。

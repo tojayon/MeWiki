@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .mewiki/
+.worktrees/
+.archive/
 test-results/
 playwright-report/
 *.log

@@ -1,5 +1,7 @@
 # MeWiki AI 接手指南
 
+双版本维护（2026-11-16）：公共版新增 `config/edition.json`、公开路径／凭据检查、完整待推送历史检查及社区 CI。接手先读[版本维护](EDITION_MAINTENANCE.md)，运行 `public:check`、`test:maintenance`，本机首次安装 `maintenance:install`。服务版只接收明确的公共提交，不反向整分支合并；专题放所属工程 `.worktrees/`，旧迁移副本放 `.archive/`，避免顶层复制项目。
+
 公共发布与在线入口（2026-11-16）：中英文 README 现区分本仓库的开源本地版和 [wiki.mecore.cc](https://wiki.mecore.cc) 官方在线服务，完整范围与迁移见[在线指南](HOSTED.md)。公共代码只发布已完成的 AI 引用／技能及界面改动；独立服务版的身份、在线存储与部署配置不整分支合回这里。后续维护公开文案时同步两种语言、手册第 1／15 章与当前服务能力，不宣称自动同步、公众注册、在线 AI 或端到端加密已实现。实际复验见 [VERIFICATION](VERIFICATION.md)。
 
 编辑选区点击无响应修复（2026-11-14）：`AiSelectionToolbar` 的原文投影将 KaTeX 双重渲染归为一份 TeX，并从编辑器引用原子的 `data-mewiki-reference-label` 恢复原标签，排除已改名引用的显示差异。点击先完成普通 blur 保存，再创建原选区，保留草稿及严格边界；定位失败交给现有笔记错误提示，成功重选清除。第 22 章与 AI 架构同步，`e2e/ai-chat-actions.spec.ts` 覆盖真实拖选、未提交文字、公式／符号／笔记引用、精确范围和失败恢复；实际验收见 [VERIFICATION](VERIFICATION.md)。

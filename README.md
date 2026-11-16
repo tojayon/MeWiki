@@ -221,6 +221,7 @@ MeWiki 支持 **简体中文 / English**。可从左侧底栏的语言按钮即�
 | [保存与备份](docs/wiki/15-storage-and-backup.md) | 存储位置、历史、冲突与含附件恢复 |
 | [插件与外部程序](docs/wiki/19-plugins-and-integrations.md) / [图文导出](docs/wiki/20-social-export.md) | 本地安装、来源定位、图片导出与个人模板 |
 | [开发说明](docs/DEVELOPMENT.md) | 项目结构、公共组件与开发约定 |
+| [双版本维护](docs/EDITION_MAINTENANCE.md) | 公共功能整合、服务差异、推送保护与工作目录规则 |
 | [AI 接手指南](docs/AI_HANDOFF.md) | 接续开发顺序、数据边界、隔离验证与下一阶段入口 |
 | [AI 架构](docs/ai/ARCHITECTURE.md) / [离线评测](docs/ai/EVALUATION.md) | 可读投影、工具权限、建议保存与虚构任务评测 |
 | [插件开发](docs/plugins/README.md) / [生态设计提案](docs/plugins/ARCHITECTURE.md) | 声明式 API v1、本地安装与示例，以及后续社区路线 |

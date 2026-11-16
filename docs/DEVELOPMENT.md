@@ -1,5 +1,7 @@
 # MeWiki 开发说明
 
+双版本维护与目录规则见[版本维护](EDITION_MAINTENANCE.md)。公共能力在本目录完成后按提交整合到服务版；服务专属差异需登记，不能把私有分支推回公共仓库。公开前执行 `npm run public:check` 和 `npm run test:maintenance`；新克隆运行 `npm run maintenance:install` 安装推送保护。专题与归档统一进入所属工程的忽略目录。
+
 公共仓库与官方在线服务：本目录维护开源本地应用和公共笔记核心，正式用户入口为 [wiki.mecore.cc](https://wiki.mecore.cc)。账户、在线存储和运营部署由独立服务版维护，不把私有服务分支或本机配置整体合回公共仓库。功能介绍以本地版为准，在线入口、差异与备份迁移说明集中在[在线指南](HOSTED.md)，中英文 README 与手册第 1／15 章同步。
 
 编辑选区交接：`AiSelectionToolbar` 的文字与前文提示都须将 KaTeX 转为单份 TeX，将编辑器引用按 `data-mewiki-reference-label` 还原原文标签，不能用重复的公式 DOM 文本或引用当前显示名称定位源码。保持先失焦保存、再从 controller 创建选区；定位失败通过 `onError` 显示现有错误，成功附加清除提示，不扩大权限。相关操作见第 22 章，回归入口为 `e2e/ai-chat-actions.spec.ts` 的编辑选区、公式／引用和错误恢复场景。

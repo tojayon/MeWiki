@@ -223,6 +223,7 @@ The hosted service guide is available in English; the linked user manual and dev
 | [Storage and backups](docs/wiki/15-storage-and-backup.md) | Storage locations, history, conflicts, and attachment recovery |
 | [Plugins and external applications](docs/wiki/19-plugins-and-integrations.md) / [Image export](docs/wiki/20-social-export.md) | Local installation, source navigation, images, and personal presets |
 | [Development guide](docs/DEVELOPMENT.md) | Project structure, shared components, and conventions |
+| [Edition maintenance](docs/EDITION_MAINTENANCE.md) | Community-to-server integration, adapter differences, publication guards, and workspace conventions (Chinese) |
 | [AI handoff guide](docs/AI_HANDOFF.md) | Continuation workflow, data boundaries, isolated checks, and next steps |
 | [AI architecture](docs/ai/ARCHITECTURE.md) / [Offline evaluation](docs/ai/EVALUATION.md) | Readable projections, tool permissions, proposal persistence, and fictional evaluation tasks |
 | [Plugin development](docs/plugins/README.md) / [Ecosystem proposal](docs/plugins/ARCHITECTURE.md) | Declarative API v1, local installation, examples, and future community plans |
