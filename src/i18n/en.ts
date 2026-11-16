@@ -1,5 +1,6 @@
 /** Bundled interface messages. Chinese source keys are stable; notebook content is never translated. */
 export const english: Readonly<Record<string, string>> = {
+  '密钥仅发送到当前觅维服务保存；不需要密钥的服务可以留空。': 'Keys are sent only to the current MeWiki service for storage. Leave blank if your provider requires no key.',
   "整库检索": "Search library",
   "移除整库检索": "Remove library search",
   "移除引用": "Remove reference",

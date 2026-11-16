@@ -6,6 +6,15 @@ const base = '/api/mewiki/ai';
 const headers = { 'Content-Type': 'application/json', 'X-MeWiki-Request': 'ai' };
 const hasControls = (value: string) => [...value].some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 export interface AiChatRequest { providerId: string; model?: string; messages: AiMessage[]; tools?: AiToolDefinition[] }
+export interface AiCompleteOptions { signal?: AbortSignal; onText?: (text: string) => void; onTool?: (update: AiToolStreamUpdate) => void }
+export type AiRequest = <T>(path: string, init: RequestInit, read: (response: Response, signal?: AbortSignal) => Promise<T>) => Promise<T>;
+export interface AiClient {
+  getAiSettings: (signal?: AbortSignal) => Promise<AiSettings>;
+  saveAiSettings: (settings: AiSettingsInput, signal?: AbortSignal) => Promise<AiSettings>;
+  getAiModels: (providerId: string, signal?: AbortSignal) => Promise<string[]>;
+  testAiProvider: (providerId: string, signal?: AbortSignal) => Promise<AiConnectionTest>;
+  completeAi: (request: AiChatRequest, options?: AiCompleteOptions) => Promise<AiCompletion>;
+}
 async function checkedFetch(path: string, init: RequestInit) {
   const response = await fetch(`${base}${path}`, { ...init, headers, redirect: 'error', credentials: 'same-origin' });
   if (!response.ok) {
@@ -16,20 +25,20 @@ async function checkedFetch(path: string, init: RequestInit) {
   }
   return response;
 }
-export async function getAiSettings(signal?: AbortSignal): Promise<AiSettings> {
-  return (await checkedFetch('/settings', { method: 'GET', signal })).json();
+export function createAiClient(request: AiRequest = async (path, init, read) => read(await checkedFetch(path, init))): AiClient {
+  return {
+    getAiSettings: signal => request('/settings', { method: 'GET', signal }, response => response.json()),
+    saveAiSettings: (settings, signal) => request('/settings', { method: 'PUT', body: JSON.stringify(settings), signal }, response => response.json()),
+    getAiModels: (providerId, signal) => request('/models', { method: 'POST', body: JSON.stringify({ providerId }), signal }, async response => {
+      const result = await response.json();
+      if (!Array.isArray(result.models) || result.models.some((model: unknown) => typeof model !== 'string')) throw new Error('模型列表无效，请手动填写模型名称。');
+      return result.models;
+    }),
+    testAiProvider: (providerId, signal) => request('/test', { method: 'POST', body: JSON.stringify({ providerId }), signal }, response => response.json()),
+    completeAi: (input, options = {}) => request('/chat', { method: 'POST', body: JSON.stringify(input), signal: options.signal }, (response, signal) => readAiCompletion(response, { ...options, signal: signal ? AbortSignal.any([signal, ...(options.signal ? [options.signal] : [])]) : options.signal })),
+  };
 }
-export async function saveAiSettings(settings: AiSettingsInput, signal?: AbortSignal): Promise<AiSettings> {
-  return (await checkedFetch('/settings', { method: 'PUT', body: JSON.stringify(settings), signal })).json();
-}
-export async function getAiModels(providerId: string, signal?: AbortSignal): Promise<string[]> {
-  const result = await (await checkedFetch('/models', { method: 'POST', body: JSON.stringify({ providerId }), signal })).json();
-  if (!Array.isArray(result.models) || result.models.some((model: unknown) => typeof model !== 'string')) throw new Error('模型列表无效，请手动填写模型名称。');
-  return result.models;
-}
-export async function testAiProvider(providerId: string, signal?: AbortSignal): Promise<AiConnectionTest> {
-  return (await checkedFetch('/test', { method: 'POST', body: JSON.stringify({ providerId }), signal })).json();
-}
+export const { getAiSettings, saveAiSettings, getAiModels, testAiProvider, completeAi } = createAiClient();
 function validCompletion(value: unknown): value is AiCompletion {
   if (!value || typeof value !== 'object') return false;
   const result = value as AiCompletion;
@@ -41,8 +50,7 @@ function validCompletion(value: unknown): value is AiCompletion {
     Number.isFinite(result.usage?.inputTokens) && result.usage.inputTokens >= 0 && Number.isFinite(result.usage?.outputTokens) && result.usage.outputTokens >= 0 &&
     (result.message.toolCalls === undefined || (Array.isArray(result.message.toolCalls) && result.message.toolCalls.length <= 16 && result.message.toolCalls.every(call => typeof call.id === 'string' && !!call.id && typeof call.name === 'string' && typeof call.arguments === 'string')));
 }
-export async function completeAi(request: AiChatRequest, options: { signal?: AbortSignal; onText?: (text: string) => void; onTool?: (update: AiToolStreamUpdate) => void } = {}): Promise<AiCompletion> {
-  const response = await checkedFetch('/chat', { method: 'POST', body: JSON.stringify(request), signal: options.signal });
+async function readAiCompletion(response: Response, options: AiCompleteOptions): Promise<AiCompletion> {
   if (!response.body) throw new Error('AI 响应在完成前中断。');
   const reader = response.body.getReader(), decoder = new TextDecoder();
   let pending = '', size = 0, result: AiCompletion | undefined;

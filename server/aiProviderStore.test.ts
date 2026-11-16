@@ -22,6 +22,18 @@ afterEach(async () => {
   }
 });
 describe('AI service configuration', () => {
+  it('uses an injected atomic persistence adapter with the same secret and revision rules', async () => {
+    let source = '';
+    const persistence = { read: async () => source, update: async (change: (current: string) => Promise<string>) => { source = await change(source); return source; } };
+    const store = new AiProviderStore(persistence, protector);
+    const empty = await store.read();
+    const saved = await store.write({ revision: empty.revision, defaultProviderId: provider.id, providers: [provider] });
+    expect(source).not.toContain(provider.apiKey);
+    expect((await new AiProviderStore(persistence, protector).resolve(provider.id)).apiKey).toBe(provider.apiKey);
+    expect(saved.providers[0].hasApiKey).toBe(true);
+    await expect(new AiProviderStore(persistence, protector).write({ revision: empty.revision, defaultProviderId: null, providers: [] })).rejects.toThrow(/其他窗口/);
+    expect((await store.read()).providers).toHaveLength(1);
+  });
   it('persists a protected credential without exposing it in settings, preserves it on edit and clears it explicitly', async () => {
     const { store, filename } = await fixture();
     const empty = await store.read();

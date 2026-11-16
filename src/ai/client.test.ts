@@ -1,8 +1,32 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { completeAi } from './client.ts';
+import { completeAi, createAiClient } from './client.ts';
 
 afterEach(() => vi.unstubAllGlobals());
 describe('AI streaming client', () => {
+  it('rejects buffered tool events after the injected request scope is cancelled', async () => {
+    const scope = new AbortController(), tools: unknown[] = [];
+    const client = createAiClient(async (_route, _init, read) => read(new Response('{"type":"text","text":"开始"}\n{"type":"tool","update":{"key":"one","name":"propose_note","arguments":"{}"}}\n'), scope.signal));
+    await expect(client.completeAi({ providerId: 'example', messages: [] }, { onText: () => scope.abort(), onTool: value => tools.push(value) })).rejects.toThrow();
+    expect(tools).toEqual([]);
+  });
+  it('keeps injected request clients independent and consumes streams inside their request lifetime', async () => {
+    const calls: string[] = [];
+    const client = createAiClient(async (route, init, read) => {
+      calls.push(`${init.method} ${route}`);
+      const result = await read(route === '/chat'
+        ? new Response('{"type":"text","text":"适配结果"}\n{"type":"done","result":{"message":{"role":"assistant","content":"适配结果"},"usage":{"inputTokens":1,"outputTokens":2}}}\n')
+        : Response.json({ revision: 'one', providers: [], defaultProviderId: null }));
+      calls.push('consumed');
+      return result;
+    });
+    const other = createAiClient(async (_route, _init, read) => read(Response.json({ revision: 'two', providers: [], defaultProviderId: null })));
+    expect((await client.getAiSettings()).revision).toBe('one');
+    expect((await other.getAiSettings()).revision).toBe('two');
+    const text: string[] = [];
+    expect((await client.completeAi({ providerId: 'example', messages: [] }, { onText: value => text.push(value) })).message.content).toBe('适配结果');
+    expect(text).toEqual(['适配结果']);
+    expect(calls).toEqual(['GET /settings', 'consumed', 'POST /chat', 'consumed']);
+  });
   it('keeps typed recoveries for HTTP and stream errors without accepting malformed retry timestamps', async () => {
     const failure = { kind: 'rate-limit', recovery: 'retry', status: 429, retryAt: Date.now() + 4000 };
     vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ error: '受限', failure }), { status: 429 }));

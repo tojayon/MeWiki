@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Check, Eraser, Plus, RefreshCw, Save, Square, Trash2, Undo2, X } from 'lucide-react';
-import { getAiModels, getAiSettings, saveAiSettings, testAiProvider } from '../ai/client.ts';
+import * as localAiClient from '../ai/client.ts';
+import type { AiClient } from '../ai/client.ts';
 import type { AiConnectionTest, AiProtocol, AiProvider, AiProviderInput, AiSettings } from '../ai/types.ts';
 import { localizeError, t } from '../i18n/locale.ts';
 import { useLocale } from '../i18n/react.ts';
@@ -12,7 +13,8 @@ function editable(provider: AiProvider): AiProviderInput {
 }
 function errorText(cause: unknown): string { return cause instanceof Error ? cause.message : 'AI 服务操作失败，请稍后重试。'; }
 
-export default function AiServiceSettings() {
+export default function AiServiceSettings({ client = localAiClient, description, dataNotice, onBusyChange }: { client?: AiClient; description?: ReactNode; dataNotice?: ReactNode; onBusyChange?: (busy: boolean) => void } = {}) {
+  const { getAiModels, getAiSettings, saveAiSettings, testAiProvider } = client;
   useLocale();
   const [settings, setSettings] = useState<AiSettings | null>(null);
   const [providers, setProviders] = useState<AiProviderInput[]>([]);
@@ -33,6 +35,8 @@ export default function AiServiceSettings() {
   const dirty = settings !== null && (JSON.stringify(providers) !== JSON.stringify(settings.providers.map(editable)) || defaultId !== settings.defaultProviderId);
   const locked = busy !== null || reloadRequired;
   const canProbe = !!saved && !dirty && !locked;
+  useEffect(() => { onBusyChange?.(busy !== null); }, [busy, onBusyChange]);
+  useEffect(() => () => onBusyChange?.(false), [onBusyChange]);
 
   function restore(snapshot: AiSettings, selection?: string) {
     setSettings(snapshot); setProviders(snapshot.providers.map(editable)); setDefaultId(snapshot.defaultProviderId);
@@ -49,7 +53,7 @@ export default function AiServiceSettings() {
       if (token === generation.current && !controller.signal.aborted) setError(errorText(cause));
     }).finally(() => { if (token === generation.current) { request.current = null; setBusy(null); } });
     return abortCurrent;
-  }, [abortCurrent]);
+  }, [abortCurrent, getAiSettings]);
 
   async function perform(operation: Operation, work: (signal: AbortSignal) => Promise<void>) {
     if (busy) return;
@@ -117,7 +121,7 @@ export default function AiServiceSettings() {
   }
 
   return <div className="mewiki-ai-service-settings" data-testid="mewiki-ai-service-settings">
-    <p className="mewiki-ai-service-intro">{t('请求由觅维本机服务转发，费用由所选服务商结算。')}{' '}{t('使用云端地址时，AI 任务中选定的资料会发送给该服务；使用本地模型地址时可在本机推理。')}</p>
+    <p className="mewiki-ai-service-intro">{description ?? <>{t('请求由觅维本机服务转发，费用由所选服务商结算。')}{' '}{t('使用云端地址时，AI 任务中选定的资料会发送给该服务；使用本地模型地址时可在本机推理。')}</>}</p>
     <div className="mewiki-ai-provider-controls" role="toolbar" aria-label={t('AI 服务操作')}>
       <label className="mewiki-ai-provider-select" htmlFor="mewiki-ai-provider"><span>{t('服务配置')}</span><select id="mewiki-ai-provider" value={selectedId} disabled={locked || !providers.length} onChange={event => { setSelectedId(event.target.value); setModels([]); setTestResult(null); setNotice(''); setError(''); }}>
         {!providers.length && <option value="">{t('尚未添加 AI 服务')}</option>}
@@ -141,7 +145,7 @@ export default function AiServiceSettings() {
             {saved?.hasApiKey && <button type="button" data-ui="icon-action" data-tone={provider.apiKey === '' ? undefined : 'danger'} aria-label={provider.apiKey === '' ? t('保留已保存密钥') : t('清除已保存密钥')} title={provider.apiKey === '' ? t('保留已保存密钥') : t('清除已保存密钥')} onClick={() => {
               if (provider.apiKey === '') changeKey(''); else update({ apiKey: '' });
             }}>{provider.apiKey === '' ? <Undo2 size={16} /> : <Eraser size={16} />}</button>}
-            <small id="mewiki-ai-key-description">{provider.apiKey === '' ? t('保存时将清除密钥。') : saved?.hasApiKey ? t('已保存 API Key；留空保留，输入新值可替换。') : t('密钥只发送到本机服务保存；免密的本地服务可以留空。')}</small>
+            <small id="mewiki-ai-key-description">{provider.apiKey === '' ? t('保存时将清除密钥。') : saved?.hasApiKey ? t('已保存 API Key；留空保留，输入新值可替换。') : t('密钥仅发送到当前觅维服务保存；不需要密钥的服务可以留空。')}</small>
           </div>
           <label className="mewiki-ai-field-wide" htmlFor="mewiki-ai-model"><span>{t('模型名称')}</span><input id="mewiki-ai-model" value={provider.model} required maxLength={256} autoComplete="off" spellCheck={false} list={models.length ? 'mewiki-ai-model-options' : undefined} onChange={event => update({ model: event.target.value })} /><datalist id="mewiki-ai-model-options">{models.map(model => <option key={model} value={model} />)}</datalist></label>
         </div>
@@ -174,7 +178,7 @@ export default function AiServiceSettings() {
       </div>}
     </div>
     <details className="mewiki-ai-service-notes"><summary>{t('服务与数据说明')}</summary>
-      <p>{t('密钥与笔记备份分开保存。Windows 使用当前用户的系统加密保护，其他平台使用仅当前用户可读写的文件存储。')}</p>
+      <p>{dataNotice ?? t('密钥与笔记备份分开保存。Windows 使用当前用户的系统加密保护，其他平台使用仅当前用户可读写的文件存储。')}</p>
     </details>
   </div>;
 }

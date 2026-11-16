@@ -14,6 +14,11 @@ export interface AiSecretProtector {
   protect: (value: string) => Promise<string>;
   unprotect: (value: string) => Promise<string>;
 }
+export interface AiProviderPersistence {
+  read: () => Promise<string>;
+  /** Atomically read, transform and save; return the committed source. */
+  update: (change: (source: string) => Promise<string>) => Promise<string>;
+}
 export type AiProviderSecret = Omit<AiProvider, 'hasApiKey'> & { apiKey: string };
 interface StoredProvider extends Omit<AiProvider, 'hasApiKey'> { secret: string }
 interface StoredSettings { version: 1; defaultProviderId: string | null; providers: StoredProvider[] }
@@ -88,12 +93,20 @@ function publicSettings(stored: StoredSettings, revision: string): AiSettings {
 export class AiProviderStore {
   readonly filename: string;
   private protector: AiSecretProtector;
+  private persistence?: AiProviderPersistence;
   private queue: Promise<unknown> = Promise.resolve();
-  constructor(filename: string, protector = systemAiSecretProtector()) { this.filename = path.resolve(filename); this.protector = protector; }
-  private async load(): Promise<{ stored: StoredSettings; revision: string }> {
-    let source = '';
-    try { source = await readFile(this.filename, 'utf8'); }
-    catch (cause) { if ((cause as NodeJS.ErrnoException).code !== 'ENOENT') throw new AiServiceError('无法读取 AI 服务配置。'); }
+  constructor(target: string | AiProviderPersistence, protector = systemAiSecretProtector()) {
+    this.filename = typeof target === 'string' ? path.resolve(target) : '';
+    this.persistence = typeof target === 'string' ? undefined : target;
+    this.protector = protector;
+  }
+  private async source(): Promise<string> {
+    if (this.persistence) return this.persistence.read();
+    try { return await readFile(this.filename, 'utf8'); }
+    catch (cause) { if ((cause as NodeJS.ErrnoException).code !== 'ENOENT') throw new AiServiceError('无法读取 AI 服务配置。'); return ''; }
+  }
+  private async load(input?: string): Promise<{ stored: StoredSettings; revision: string }> {
+    const source = input ?? await this.source();
     if (!source) return { stored: { version: 1, defaultProviderId: null, providers: [] }, revision: digest('') };
     try {
       if (Buffer.byteLength(source) > 512 * 1024) throw new Error();
@@ -120,9 +133,8 @@ export class AiProviderStore {
     const providers = value.providers.map(checkedProvider); const ids = new Set(providers.map(provider => provider.id));
     if (ids.size !== providers.length || value.defaultProviderId !== null && !ids.has(value.defaultProviderId)) throw new AiServiceError('默认服务无效或服务标识重复。');
     const action = this.queue.catch(() => {}).then(async () => {
-      await mkdir(path.dirname(this.filename), { recursive: true });
-      return withExportProfileLock(this.filename + '.locks', async () => {
-        const current = await this.load();
+      const prepare = async (original: string) => {
+        const current = await this.load(original);
         if (current.revision !== value.revision) throw new AiServiceError('AI 服务已在其他窗口更新，请重新加载后再保存。', 409);
         const storedProviders: StoredProvider[] = [];
         for (const input of providers) {
@@ -135,6 +147,7 @@ export class AiProviderStore {
         const stored: StoredSettings = { version: 1, defaultProviderId: value.defaultProviderId, providers: storedProviders };
         const source = JSON.stringify(stored); const temporary = this.filename + '.' + randomUUID() + '.tmp';
         if (Buffer.byteLength(source) > 512 * 1024) throw new AiServiceError('AI 服务配置过大，请减少服务配置或密钥长度。');
+        if (this.persistence) return source;
         try {
           await writeFile(temporary, source, { flag: 'wx', mode: 0o600 });
           for (let attempt = 0; ; attempt++) {
@@ -144,8 +157,15 @@ export class AiProviderStore {
           if (process.platform !== 'win32') await chmod(this.filename, 0o600);
         } catch (cause) { if (cause instanceof AiServiceError) throw cause; throw new AiServiceError('AI 服务配置保存失败，请检查本机文件权限。'); }
         finally { await rm(temporary, { force: true }); }
-        return publicSettings(stored, digest(source));
-      });
+        return source;
+      };
+      let source: string;
+      if (this.persistence) source = await this.persistence.update(prepare);
+      else {
+        await mkdir(path.dirname(this.filename), { recursive: true });
+        source = await withExportProfileLock(this.filename + '.locks', async () => prepare(await this.source()));
+      }
+      return publicSettings((await this.load(source)).stored, digest(source));
     });
     this.queue = action; return action;
   }

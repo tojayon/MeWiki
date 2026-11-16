@@ -1,5 +1,11 @@
 # MeWiki Agent 维护约定
 
+## 请求与配置持久化适配
+
+`createAiClient` 接受独立请求适配器；适配器必须在请求生命周期内完成响应读取，包括流式工具和最终结果，不能拿到响应头就释放取消范围。`AiWorkspace` 和 `AiServiceSettings` 可注入同一客户端，默认继续使用本机 `/api/mewiki/ai`。任务 runner、投影、工具、审阅与 controller 保存流程共用，不复制聊天实现。
+
+`AiProviderStore` 支持可选持久化适配器的 `read`／原子 `update`；凭据保护由独立 protector 提供。适配器须在同一原子范围内读取、执行变换并保存，不能绕过 revision 冲突、变更地址后的密钥确认及凭据不回传规则。默认文件存储和系统凭据保护保持兼容。
+
 ## 产品情境、对象引用与资料库技能
 
 统一引用入口见[计划](../plans/2026-11-14-ai-unified-context.md)。`composerContext.ts` 是主输入可见引用与笔记授权的共同解析入口，移除旧 `scope` React 状态和 `AiMaterials.scopeControl`。草稿可选 `referenceMode: auto|explicit` 与 `libraryScope` 按库、按对话保存；默认当前对象可移除，显式引用或移除后不再自动补回当前页面。`@` 菜单同时提供当前对象固定、句内对象搜索与独立“整库检索”，普通 module 仍不授权笔记。固定标签和整库状态保留用于追问，句内引用仅随本条正文发送；选区附加时退出整库，冲突笔记引用必须移除，选区／本行卡片保留严格边界。

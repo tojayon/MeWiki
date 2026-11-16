@@ -2,7 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEve
 import { createPortal } from 'react-dom';
 import { ArrowDown, ArrowUp, ArrowUpRight, Check, ChevronDown, Copy, Cpu, Eraser, Eye, FileText, GitCompareArrows, Info, LibraryBig, MessageSquareText, Pencil, Play, RotateCcw, Settings2, Sparkles, Square, Undo2, X } from 'lucide-react';
 import AiMascot from './AiMascot.tsx';
-import { getAiSettings } from '../ai/client.ts';
+import * as localAiClient from '../ai/client.ts';
+import type { AiClient } from '../ai/client.ts';
 import { undoAiChange, type AiChange, type AiProposal } from '../ai/proposals.ts';
 import { aiProposalTargetKey, applyAiProposalGroup } from '../ai/proposalGroup.ts';
 import { rebaseAiReviewProposals, reviseAiProposal, type AiProposalAdjustment } from '../ai/reviewDecisions.ts';
@@ -93,7 +94,8 @@ function latestChange(changes: AiChange[], change: AiChange): boolean {
   return changes.findLast(item => item.target === change.target && item.targetId === change.targetId)?.proposalId === change.proposalId;
 }
 
-export default function AiWorkspace({ readOnly, reviewHost, reviewControls, reviewActions, onClose, onSettings, onOpenNote, onOpenReference, selectionRequest, onSelectionConsumed }: {
+export default function AiWorkspace({ client = localAiClient, readOnly, reviewHost, reviewControls, reviewActions, onClose, onSettings, onOpenNote, onOpenReference, selectionRequest, onSelectionConsumed }: {
+  client?: AiClient;
   readOnly: boolean; reviewHost: HTMLElement | null; reviewControls?: ReactNode; reviewActions?: ReactNode; onClose: () => void; onSettings: () => void;
   onOpenNote: (noteId: string, blockId?: string, source?: HTMLElement) => void;
   onOpenReference?: (reference: AiObjectReference) => void;
@@ -266,7 +268,7 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
 
   useEffect(() => {
     const abort = new AbortController();
-    void getAiSettings(abort.signal).then(value => {
+    void client.getAiSettings(abort.signal).then(value => {
       if (!mounted.current || abort.signal.aborted) return;
       const selected = value.providers.find(item => item.id === value.defaultProviderId) ?? value.providers[0];
       setSettings(value); setProviderId(selected?.id ?? ''); setModel(selected?.model ?? '');
@@ -276,7 +278,7 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
     return () => {
       abort.abort();
     };
-  }, [settingsAttempt]);
+  }, [settingsAttempt, client]);
 
   const provider = settings?.providers.find(item => item.id === providerId);
   const running = session.status === 'running';
@@ -532,12 +534,12 @@ export default function AiWorkspace({ readOnly, reviewHost, reviewControls, revi
     };
     try {
       if (resuming) {
-        const freshSettings = await getAiSettings(abort.signal);
+        const freshSettings = await client.getAiSettings(abort.signal);
         if (!accept()) return;
         setSettings(freshSettings);
         task = continuing ? continueAiChatTask(previous, freshSettings.providers, controller.getSnapshot().notebook) : retryAiChatTask(previous, freshSettings.providers, controller.getSnapshot().notebook);
       }
-      const result = await runAiTask({ context, providerId: task.provider.id, model: task.model, prompt: task.prompt, signal: abort.signal, history: task.history, memoryInstructions: task.memoryInstructions, inlineReferences: task.inlineReferences, existingProposals: resuming ? previous.proposals : [], checkpoint: task.checkpoint, requestId: task.session.lastRequest!.messageId, proposalLimit: 40 - previous.proposals.length, onProgress: progress,
+      const result = await runAiTask({ context, providerId: task.provider.id, model: task.model, prompt: task.prompt, signal: abort.signal, complete: client.completeAi, history: task.history, memoryInstructions: task.memoryInstructions, inlineReferences: task.inlineReferences, existingProposals: resuming ? previous.proposals : [], checkpoint: task.checkpoint, requestId: task.session.lastRequest!.messageId, proposalLimit: 40 - previous.proposals.length, onProgress: progress,
         onDraft: value => {
           if (!accept()) return;
           draftRef.current = value; setLiveDraft(value);
