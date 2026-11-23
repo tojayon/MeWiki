@@ -3,20 +3,41 @@
 /* Interface sizes scale text only. Document sizes use an independent unit;
    keep fixed canvas / PDF geometry and toolbar dimensions in pixels. */
 :root {
-  --mewiki-ui-ink: #202936;
-  --mewiki-ui-muted: #626e7c;
-  --mewiki-ui-border: #dce1e6;
-  --mewiki-ui-field-border: #c7cfd8;
-  --mewiki-ui-divider: #edf0f3;
-  --mewiki-ui-surface: #fff;
-  --mewiki-ui-surface-muted: #f7f8fa;
-  --mewiki-ui-hover: #eff2f5;
-  --mewiki-ui-selected: #edf2fb;
-  --mewiki-ui-accent: #2459b8;
+  --mewiki-ui-ink: #24282e;
+  --mewiki-ui-secondary: #495569;
+  --mewiki-ui-muted: #616d7e;
+  --mewiki-ui-border: #d9e1eb;
+  --mewiki-ui-field-border: #b3c2d8;
+  --mewiki-ui-divider: #e9edf3;
+  --mewiki-ui-surface: #ffffff;
+  --mewiki-ui-sidebar: #fbfcfe;
+  --mewiki-ui-surface-muted: #f2f4f7;
+  --mewiki-ui-canvas: #f5f6f8;
+  --mewiki-ui-hover: #e9edf3;
+  --mewiki-ui-selected: #f0f3f7;
+  --mewiki-ui-accent: #01357c;
+  --mewiki-ui-accent-hover: #012557;
+  --mewiki-ui-on-accent: #ffffff;
+  --mewiki-ui-info: #005d86;
+  --mewiki-ui-info-soft: #d9f2fd;
+  --mewiki-ui-success: #36540c;
+  --mewiki-ui-success-soft: #edf8dd;
+  --mewiki-ui-warning: #865710;
+  --mewiki-ui-warning-soft: #fff4dd;
+  --mewiki-ui-danger: #b6354b;
+  --mewiki-ui-danger-soft: #fdecf0;
+  --mewiki-ui-shadow: #01357c14;
+  --mewiki-ui-inverse-surface: #24282e;
+  --mewiki-ui-inverse-field: #16181b;
+  --mewiki-ui-inverse-ink: #d7dce5;
+  --mewiki-ui-inverse-muted: #b7bfcd;
+  --mewiki-ui-inverse-border: #414953;
+  --mewiki-ui-inverse-hover: #2a3038;
+  --mewiki-ui-inverse-accent: #00a9f3;
   font-family: var(--mewiki-interface-font-family,
     "Noto Sans SC Variable", "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif);
-  color: #172033;
-  background: #f3f5f8;
+  color: var(--mewiki-ui-ink);
+  background: var(--mewiki-ui-canvas);
   font-synthesis: var(--mewiki-interface-font-synthesis, none);
   font-weight: 400;
   font-size: var(--mewiki-interface-font-size, 14px);
@@ -30,7 +51,7 @@ body {
   min-width: 360px;
 }
 #root[data-mewiki-font-loading] { opacity: 0; pointer-events: none; }
-.mewiki-font-loading { position: fixed; inset: 0; display: grid; place-content: center; color: #64748b; background: #f3f5f8; }
+.mewiki-font-loading { position: fixed; inset: 0; display: grid; place-content: center; color: var(--mewiki-ui-muted); background: var(--mewiki-ui-canvas); }
 button,
 a,
 input,
@@ -71,8 +92,8 @@ select {
   touch-action: manipulation;
 }
 ::selection {
-  background: #cddcff;
-  color: #132c66;
+  background: var(--mewiki-ui-info-soft);
+  color: var(--mewiki-ui-accent);
 }
 svg {
   flex-shrink: 0;

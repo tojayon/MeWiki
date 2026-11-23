@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/mewiki.svg?v=20261113-edge1" alt="MeWiki 圆形 Logo：黑底蓝白 M" width="104" height="104" />
+<img src="public/mewiki.svg?v=20261120-me-palette" alt="MeWiki 圆形 Logo：深蓝底、亮青与白色 M" width="104" height="104" />
 
 <h1>觅维 MeWiki</h1>
 <h3>寻觅知识，以多维链接万物</h3>

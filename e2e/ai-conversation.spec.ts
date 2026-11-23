@@ -205,7 +205,7 @@ test('keeps a single row of sources below the title while long conversations scr
     expect((await last.boundingBox())!.x + (await last.boundingBox())!.width).toBeLessThanOrEqual(position!.x + position!.width + 1);
     const latest = ai.getByRole('button', { name: '返回最新消息', exact: true });
     await expect(latest).toBeVisible();
-    await expect(latest).toHaveCSS('background-color', 'rgb(37, 59, 88)');
+    await expect(latest).toHaveCSS('background-color', 'rgb(1, 53, 124)');
     await expect(latest).toHaveCSS('color', 'rgb(255, 255, 255)');
     const button = (await latest.boundingBox())!, historyArea = (await ai.locator('.mewiki-ai-history-shell').boundingBox())!;
     expect(Math.abs(button.x + button.width / 2 - historyArea.x - historyArea.width / 2)).toBeLessThanOrEqual(1);

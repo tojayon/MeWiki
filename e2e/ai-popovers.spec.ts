@@ -50,7 +50,7 @@ for (const english of [false, true]) for (const viewport of [{ width: 1440, heig
   ]) {
     const trigger = ai.getByRole('button', { name: english ? en : zh, exact: true });
     await trigger.click(); const panel = ai.locator(selector);
-    await expect(panel).toHaveCSS('background-color', 'rgb(38, 52, 73)');
+    await expect(panel).toHaveCSS('background-color', 'rgb(36, 40, 46)');
     await expectAnchored(panel, trigger, ai);
     await expect(ai.locator('.mewiki-ai-popover-backdrop')).toHaveCount(0);
     await page.screenshot({ path: info.outputPath(`${english ? 'en' : 'zh'}-${selector.slice(11)}.png`) });
@@ -72,7 +72,7 @@ for (const viewport of [{ width: 1440, height: 960 }, { width: 390, height: 320 
     const panel = ai.locator(selector), backdrop = ai.locator('.mewiki-ai-popover-backdrop');
     await expectAnchored(panel, trigger, ai); await expect(backdrop).toBeVisible();
     await expect(panel).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-    await expect(panel.locator('header')).toHaveCSS('background-color', 'rgb(38, 52, 73)');
+    await expect(panel.locator('header')).toHaveCSS('background-color', 'rgb(36, 40, 46)');
     await panel.getByLabel(field, { exact: true }).fill('编辑草稿保留');
     const cover = (await backdrop.boundingBox())!, bounds = (await ai.boundingBox())!;
     expect(cover.x).toBeGreaterThanOrEqual(bounds.x); expect(cover.y).toBeGreaterThan(bounds.y);
@@ -121,7 +121,7 @@ test('reanchors the reference picker after mention queries change and preserves 
     await prompt.fill(`请看 @${query}`);
     await expect(panel.getByRole('combobox')).toHaveValue(query);
     await expectAnchored(panel, trigger, ai);
-    await expect(panel).toHaveCSS('background-color', 'rgb(38, 52, 73)');
+    await expect(panel).toHaveCSS('background-color', 'rgb(36, 40, 46)');
   }
   const search = panel.getByRole('combobox');
   await search.evaluate(input => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', isComposing: true, bubbles: true })));

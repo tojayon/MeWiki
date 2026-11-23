@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="17.5 17.5 157 157" role="img" aria-labelledby="title desc">
   <title id="title">MeWiki 图标</title>
-  <desc id="desc">黑白蓝三色 MeWiki 圆形矢量标志。</desc>
+  <desc id="desc">深蓝、白与亮青组成的 MeWiki 圆形矢量标志。</desc>
   <defs><mask id="emblem-mask" maskUnits="userSpaceOnUse" x="66.5" y="26" width="157" height="157"><circle cx="145" cy="104.5" r="78.5" fill="#fff"/></mask></defs>
   <g transform="translate(-49 -8.5)">
   <g id="emblem" mask="url(#emblem-mask)">
-    <rect x="66.5" y="26" width="157" height="157" fill="#060606"/>
+    <rect x="66.5" y="26" width="157" height="157" fill="#01357c"/>
     <g>
       <path id="white-ribbon" fill="#fff" d="M 66.7 121.8
         C 72.4 99.9 90.8 70.2 116.8 58.4
@@ -24,7 +24,7 @@
         C 128.8 84.8 125.3 77.2 109.4 82.7
         C 93.7 88.2 77.3 113.5 71.1 132.2
         L 64 132.2 L 64 121.8 Z"/>
-      <path id="blue-ribbon" fill="#2f94c7" d="M 71.1 132.2
+      <path id="blue-ribbon" fill="#00a9f3" d="M 71.1 132.2
         C 77.3 113.5 93.7 88.2 109.4 82.7
         C 125.3 77.2 128.8 84.8 128.1 97.1
         C 127.8 103.5 125.9 113.9 131.8 112.4

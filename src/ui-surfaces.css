@@ -5,9 +5,13 @@
   background: var(--mewiki-ui-surface);
   color: var(--mewiki-ui-ink);
 }
-:root :is(.research-notebook-mode-tabs, .research-notebook-sidebar, .research-dictionary-sidebar, .research-sidebar-footer, .research-note-outline, .mewiki-settings-footer, .research-variable-recipe) {
+:root :is(.research-notebook-mode-tabs, .research-sidebar-footer, .mewiki-settings-footer, .research-variable-recipe) {
   border-color: var(--mewiki-ui-border);
   background: var(--mewiki-ui-surface-muted);
+}
+:root :is(.research-notebook-sidebar, .research-dictionary-sidebar, .research-note-outline) {
+  border-color: var(--mewiki-ui-border);
+  background: var(--mewiki-ui-sidebar);
 }
 :root :is(.research-note-search, .research-dictionary-search, .research-note-more-menu, .research-metadata-popover, .research-block-insert-popover, .research-reference-popover, .research-selection-popup, .mewiki-ai-model-options, .mewiki-ai-conversation-panel, .mewiki-ai-usage-panel, .mewiki-ai-composer, .mewiki-ai-proposal-card, .mewiki-ai-tool-progress, .mewiki-publication-popover, .mewiki-publication-tooltip, .theory-document-dialog, .theory-map-legend, .theory-map-detail) {
   border-color: var(--mewiki-ui-border);
@@ -15,17 +19,17 @@
   color: var(--mewiki-ui-ink);
 }
 :root :is(.research-note-more-menu, .research-metadata-popover, .research-block-insert-popover, .research-reference-popover, .research-selection-popup, .mewiki-publication-popover, .mewiki-publication-tooltip, .theory-document-dialog) {
-  box-shadow: 0 6px 24px #17203314;
+  box-shadow: 0 6px 24px var(--mewiki-ui-shadow);
 }
 :root :is(.research-notebook-mode-tabs button, .research-outline-tabs > button) { color: var(--mewiki-ui-muted); font-weight: 500; }
 :root :is(.research-notebook-mode-tabs button, .research-outline-tabs > button)[aria-selected="true"] { border-bottom-color: var(--mewiki-ui-accent); background: var(--mewiki-ui-selected); color: var(--mewiki-ui-accent); font-weight: 600; }
 :root :is(.research-note-list-tools, .research-dictionary-toolbar, .research-note-tree, .research-note-tree > li + li, .research-note-tree-children > li + li, .mewiki-library-row, .mewiki-plugin-row) { border-color: var(--mewiki-ui-border); }
-:root .research-note-tree .research-note-folder { border-color: var(--mewiki-ui-border); background: #eef1f5; color: #4b596a; font-weight: 550; }
-:root .research-note-tree-children .research-note-folder { background: #f4f6f8; }
-:root .research-note-tree-children .research-note-tree-children .research-note-folder { background: #f8f9fb; }
+:root .research-note-tree .research-note-folder { border-color: var(--mewiki-ui-border); background: var(--mewiki-ui-surface-muted); color: var(--mewiki-ui-secondary); font-weight: 550; }
+:root .research-note-tree-children .research-note-folder { background: var(--mewiki-ui-canvas); }
+:root .research-note-tree-children .research-note-tree-children .research-note-folder { background: var(--mewiki-ui-sidebar); }
 :root .research-note-tree .research-note-folder:hover { background: var(--mewiki-ui-hover); color: var(--mewiki-ui-ink); }
 :root :is(.research-note-more-menu > button, .mewiki-publication-settings-section > summary):hover:not(:disabled) { background: var(--mewiki-ui-hover); color: var(--mewiki-ui-ink); }
-:root .research-note-more-menu > .research-note-more-delete:hover:not(:disabled) { background: #fff0f2; color: #a32236; }
+:root .research-note-more-menu > .research-note-more-delete:hover:not(:disabled) { background: var(--mewiki-ui-danger-soft); color: var(--mewiki-ui-danger); }
 :root .mewiki-publication-settings-section > summary { border-color: var(--mewiki-ui-border); background: var(--mewiki-ui-surface-muted); font-weight: 550; }
 :root :is(.mewiki-ai-message > .mewiki-ai-assistant-header, .mewiki-ai-task-status, .mewiki-ai-model-menu > summary, .mewiki-ai-session-title) { color: var(--mewiki-ui-muted); }
 :root .mewiki-ai-user-bubble { background: var(--mewiki-ui-surface-muted); }

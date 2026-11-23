@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/mewiki.svg?v=20261113-edge1" alt="MeWiki circular logo: a blue and white M on black" width="104" height="104" />
+<img src="public/mewiki.svg?v=20261120-me-palette" alt="MeWiki circular logo: a cyan and white M on deep blue" width="104" height="104" />
 
 <h1>MeWiki</h1>
 <h3>Seek knowledge. Connect everything across dimensions.</h3>

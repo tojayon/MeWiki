@@ -1,16 +1,16 @@
-.mewiki-ai-floating-panel { position: fixed; z-index: 30; left: 0; top: 0; display: flex; flex-direction: column; box-sizing: border-box; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid #8d9aab; border-radius: 4px; background: #f0f4f9; color: #192436; box-shadow: 0 3px 12px #172d4824; }
+.mewiki-ai-floating-panel { position: fixed; z-index: 30; left: 0; top: 0; display: flex; flex-direction: column; box-sizing: border-box; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--mewiki-ui-field-border); border-radius: 4px; background: var(--mewiki-ui-canvas); color: var(--mewiki-ui-ink); box-shadow: 0 3px 12px var(--mewiki-ui-shadow); }
 .mewiki-ai-floating-panel[hidden] { display: none; }
-.mewiki-ai-floating-toolbar { position: relative; display: flex; flex: 0 0 28px; box-sizing: border-box; min-width: 0; align-items: center; gap: 2px; padding: 0 6px; background: #253b58; color: #f8faff; }
+.mewiki-ai-floating-toolbar { position: relative; display: flex; flex: 0 0 28px; box-sizing: border-box; min-width: 0; align-items: center; gap: 2px; padding: 0 6px; background: var(--mewiki-ui-inverse-surface); color: var(--mewiki-ui-inverse-ink); }
 .mewiki-ai-floating-move { display: grid; grid-template-columns: 28px minmax(0, 1fr) 28px; flex: 1 1 auto; min-width: 0; height: 100%; align-items: center; gap: 6px; border: 0; border-radius: 0; padding: 0 4px; background: transparent; color: inherit; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); text-align: center; touch-action: none; user-select: none; cursor: grab; }
 .mewiki-ai-floating-move::after { content: ''; }
 .mewiki-ai-floating-move > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mewiki-ai-floating-panel[data-interacting=true] .mewiki-ai-floating-move { cursor: grabbing; }
 .mewiki-ai-floating-panel[data-interacting=true] { will-change: transform; }
-.mewiki-ai-floating-content > .mewiki-ai-workspace { background: #f0f4f9; }
+.mewiki-ai-floating-content > .mewiki-ai-workspace { background: var(--mewiki-ui-canvas); }
 .mewiki-ai-floating-content .mewiki-ai-task-form { padding-top: 6px; background: transparent; }
 .mewiki-ai-floating-content .mewiki-ai-task-form textarea { min-height: 54px; }
-:root .mewiki-ai-floating-content .mewiki-ai-user-bubble { background: #e0e8f2; }
-.mewiki-ai-floating-content .mewiki-ai-tool-progress { border: 0; border-left: 1px solid #b5c2d3; border-radius: 0; padding: 2px 8px; }
+:root .mewiki-ai-floating-content .mewiki-ai-user-bubble { background: var(--mewiki-ui-selected); }
+.mewiki-ai-floating-content .mewiki-ai-tool-progress { border: 0; border-left: 1px solid var(--mewiki-ui-border); border-radius: 0; padding: 2px 8px; }
 .mewiki-ai-floating-content { box-sizing: border-box; padding-inline: 5px; display: flex; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; }
 .mewiki-ai-floating-content[hidden] { display: none; }
 .mewiki-ai-floating-panel[data-compact=true] .mewiki-ai-history-shell { flex-basis: 0; }
@@ -35,10 +35,10 @@
 .mewiki-ai-floating-resize:is([data-ai-resize-edge=nw], [data-ai-resize-edge=se]) { cursor: nwse-resize; }
 @media (pointer: coarse) { .mewiki-ai-floating-content { padding-inline: 8px; } .mewiki-ai-floating-resize:is([data-ai-resize-edge=n], [data-ai-resize-edge=s]) { height: 8px; } .mewiki-ai-floating-resize:is([data-ai-resize-edge=e], [data-ai-resize-edge=w]) { width: 8px; } }
 :root .mewiki-ai-dock-toggle[data-ui="icon-action"][aria-label] { --action-size: 24px; --action-ink: inherit; --action-accent: inherit; --action-hover: #ffffff24; position: absolute; right: 6px; top: 2px; }
-.mewiki-ai-floating-panel[data-placement=right] { position: relative; z-index: 6; grid-column: 3; grid-row: 1 / -1; left: auto; top: auto; transform: translateZ(0); border: 0; border-left: 1px solid #d3ddea; border-radius: 0; box-shadow: none; }
-.mewiki-ai-floating-panel[data-placement=right] > .mewiki-ai-floating-toolbar { flex-basis: 44px; height: 44px; gap: 8px; border-bottom: 1px solid #d3ddea; padding: 0 8px 0 0; background: var(--mewiki-ui-surface, #fff); color: #26354b; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); }
+.mewiki-ai-floating-panel[data-placement=right] { position: relative; z-index: 6; grid-column: 3; grid-row: 1 / -1; left: auto; top: auto; transform: translateZ(0); border: 0; border-left: 1px solid var(--mewiki-ui-border); border-radius: 0; box-shadow: none; }
+.mewiki-ai-floating-panel[data-placement=right] > .mewiki-ai-floating-toolbar { flex-basis: 44px; height: 44px; gap: 8px; border-bottom: 1px solid var(--mewiki-ui-border); padding: 0 8px 0 0; background: var(--mewiki-ui-surface, #fff); color: #26354b; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); }
 .mewiki-ai-floating-panel[data-placement=right] .research-outline-tabs { flex: 1 1 auto; }
 :root .mewiki-ai-floating-panel[data-placement=right] .mewiki-ai-dock-toggle[data-ui="icon-action"][aria-label] { --action-size: 28px; --action-hover: #e9edf2; position: static; flex: 0 0 28px; }
 @container research-notebook (max-width: 999px) {
-  .mewiki-ai-floating-panel[data-placement=right] { position: absolute; grid-column: 1 / -1; top: 44px; right: 0; bottom: 42px; width: min(var(--research-outline-width, 300px), calc(100% - 44px)); border-block: 1px solid #d3ddea; box-shadow: -6px 0 18px #1735561a; }
+  .mewiki-ai-floating-panel[data-placement=right] { position: absolute; grid-column: 1 / -1; top: 44px; right: 0; bottom: 42px; width: min(var(--research-outline-width, 300px), calc(100% - 44px)); border-block: 1px solid var(--mewiki-ui-border); box-shadow: -6px 0 18px #1735561a; }
 }

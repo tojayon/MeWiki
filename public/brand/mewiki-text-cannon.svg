@@ -7,10 +7,10 @@
       <stop stop-color="#f6faff"/><stop offset=".5" stop-color="#e4edf4"/><stop offset="1" stop-color="#afc5d5"/>
     </linearGradient>
     <linearGradient id="brand-blue" x1="0" y1="0" x2="1" y2=".15">
-      <stop stop-color="#236789"/><stop offset=".35" stop-color="#51b2db"/><stop offset=".65" stop-color="#2f94c7"/><stop offset="1" stop-color="#205775"/>
+      <stop stop-color="#236789"/><stop offset=".35" stop-color="#51b2db"/><stop offset=".65" stop-color="#00a9f3"/><stop offset="1" stop-color="#205775"/>
     </linearGradient>
     <linearGradient id="body-dark" x1="0" y1=".1" x2="1" y2=".65">
-      <stop stop-color="#284354"/><stop offset=".4" stop-color="#142936"/><stop offset=".8" stop-color="#080a0d"/><stop offset="1" stop-color="#142b39"/>
+      <stop stop-color="#284354"/><stop offset=".4" stop-color="#142936"/><stop offset=".8" stop-color="#01357c"/><stop offset="1" stop-color="#142b39"/>
     </linearGradient>
     <linearGradient id="saddle-dark" x1="0" y1="0" x2="1" y2="1">
       <stop stop-color="#35546a"/><stop offset=".6" stop-color="#1d394c"/><stop offset="1" stop-color="#102330"/>
@@ -30,12 +30,12 @@
     <g id="aim" data-pivot-x="512" data-pivot-y="551.7231">
       <g id="saddle">
         <g id="saddle-left">
-          <circle cx="360" cy="583" r="52" fill="#080a0d"/>
+          <circle cx="360" cy="583" r="52" fill="#01357c"/>
           <circle cx="360" cy="583" r="46" fill="url(#saddle-dark)"/>
           <path id="saddle-left-highlight" d="M326 583A34 34 0 0 1 384.0416 558.9584" fill="none" stroke="#b9e3f2" stroke-width="7" stroke-linecap="round" opacity=".72"/>
         </g>
         <g id="saddle-right">
-          <circle cx="664" cy="583" r="52" fill="#080a0d"/>
+          <circle cx="664" cy="583" r="52" fill="#01357c"/>
           <circle cx="664" cy="583" r="46" fill="url(#saddle-dark)"/>
           <path id="saddle-right-highlight" d="M630 583A34 34 0 0 1 688.0416 558.9584" fill="none" stroke="#b9e3f2" stroke-width="7" stroke-linecap="round" opacity=".72"/>
         </g>
@@ -44,16 +44,16 @@
         <g id="barrel">
           <g id="gun-form">
             <g id="breech">
-              <use href="#shell-outline" fill="url(#body-dark)" stroke="#080a0d" stroke-width="12" stroke-linejoin="round"/>
+              <use href="#shell-outline" fill="url(#body-dark)" stroke="#01357c" stroke-width="12" stroke-linejoin="round"/>
               <path id="body-highlight" d="M440 492C414 510 398 536 398 561" fill="none" stroke="#b9e3f2" stroke-width="14" stroke-linecap="round" opacity=".82"/>
             </g>
-            <path id="muzzle-rear-wall" d="M428 346C448 321 478 309 512 309C546 309 576 321 596 346C588 355 575 357 560 357C539 346 485 346 464 357C449 357 436 355 428 346Z" fill="#1b465c" stroke="#080a0d" stroke-width="6" stroke-linejoin="round"/>
+            <path id="muzzle-rear-wall" d="M428 346C448 321 478 309 512 309C546 309 576 321 596 346C588 355 575 357 560 357C539 346 485 346 464 357C449 357 436 355 428 346Z" fill="#1b465c" stroke="#01357c" stroke-width="6" stroke-linejoin="round"/>
             <g id="tube" clip-path="url(#shell-clip)">
               <path d="M450 318H574V426C547 436 477 436 450 426Z" fill="url(#brand-blue)"/>
               <path id="tube-highlight" d="M476 351C478 371 480 393 480 411" fill="none" stroke="#d7f1fc" stroke-width="14" stroke-linecap="round" opacity=".85"/>
             </g>
             <g id="muzzle" data-bore-visible="false" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <use id="muzzle-outer-wall" href="#muzzle-rim-curve" stroke="#080a0d" stroke-width="28"/>
+              <use id="muzzle-outer-wall" href="#muzzle-rim-curve" stroke="#01357c" stroke-width="28"/>
               <use href="#muzzle-rim-curve" stroke="url(#brand-blue)" stroke-width="16"/>
               <use id="muzzle-highlight" href="#muzzle-rim-curve" transform="translate(0 -3)" stroke="#d7f1fc" stroke-width="6" opacity=".9"/>
               <g id="muzzle-origin" transform="translate(512 295)"/>
@@ -84,7 +84,7 @@
         C 128.8 84.8 125.3 77.2 109.4 82.7
         C 93.7 88.2 72 116 59 161
         C 58.2 163.8 58.1 164.3 58.5 165 Z"/>
-      <path id="product-monogram-blue-ribbon" fill="#2f94c7" d="M 59 161
+      <path id="product-monogram-blue-ribbon" fill="#00a9f3" d="M 59 161
         C 72 116 93.7 88.2 109.4 82.7
         C 125.3 77.2 128.8 84.8 128.1 97.1
         C 127.8 103.5 125.9 113.9 131.8 112.4

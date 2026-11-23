@@ -23,19 +23,21 @@
 .mewiki-ai-service-actions button { display: inline-flex; min-width: 0; min-height: 34px; align-items: center; justify-content: center; gap: 7px; border: 1px solid #c9d3df; border-radius: 4px; padding: 7px 11px; background: #fff; color: #263c59; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); cursor: pointer; }
 .mewiki-ai-service-actions button:hover:not(:disabled) { background: #edf2f9; }
 .mewiki-ai-service-actions button:disabled { opacity: 0.5; cursor: default; }
-.mewiki-ai-service-actions button.mewiki-ai-save { background: #184bb7; color: #fff; border-color: #184bb7; }
-.mewiki-ai-service-actions button.mewiki-ai-save:hover:not(:disabled) { background: #143f9c; }
+.mewiki-ai-service-actions button.mewiki-ai-save { background: var(--mewiki-ui-accent); color: var(--mewiki-ui-on-accent); border-color: var(--mewiki-ui-accent); }
+.mewiki-ai-service-actions button.mewiki-ai-save:hover:not(:disabled) { background: var(--mewiki-ui-accent-hover); }
 .mewiki-ai-service-actions svg { flex: 0 0 auto; }
 .mewiki-ai-probe-description { margin: 10px 0 0; color: var(--settings-muted, #626e7c); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.7; overflow-wrap: anywhere; }
 .mewiki-ai-service-empty { margin: 0; padding: 20px 0; color: var(--settings-muted, #52627a); line-height: 1.8; }
 .mewiki-ai-service-feedback { display: grid; min-width: 0; gap: 10px; margin-top: 16px; color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.8; }
 .mewiki-ai-service-feedback p { margin: 0; overflow-wrap: anywhere; }
-.mewiki-ai-service-feedback .mewiki-ai-service-error { color: #a12035; }
+.mewiki-ai-service-feedback .mewiki-ai-service-error { color: var(--mewiki-ui-danger); }
 .mewiki-ai-test-result { min-width: 0; }
 .mewiki-ai-test-result dl { display: flex; flex-wrap: wrap; gap: 10px 24px; margin: 10px 0 0; }
 .mewiki-ai-test-result dl > div { display: flex; align-items: center; gap: 8px; }
 .mewiki-ai-test-result dt { color: #52627a; }
-.mewiki-ai-test-result dd { display: inline-flex; align-items: center; gap: 4px; margin: 0; color: #172033; }
+.mewiki-ai-test-result dd { display: inline-flex; align-items: center; gap: 4px; margin: 0; border-radius: 4px; padding: 0 4px; }
+.mewiki-ai-test-result dd[data-result="passed"] { background: var(--mewiki-ui-success-soft); color: var(--mewiki-ui-success); }
+.mewiki-ai-test-result dd[data-result="failed"] { background: var(--mewiki-ui-warning-soft); color: var(--mewiki-ui-warning); }
 .mewiki-ai-service-notes { margin-top: 22px; border-top: 1px solid var(--settings-line, #dce3ec); padding-top: 12px; color: var(--settings-muted, #52627a); font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.8; }
 .mewiki-ai-service-notes > summary { width: fit-content; cursor: pointer; }
 .mewiki-ai-service-notes[open] > p { margin-top: 10px; }

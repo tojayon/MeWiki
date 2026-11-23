@@ -422,7 +422,7 @@ export default function AiTextCannon({ scrollRef, followScrollRef, proposal, loc
     const load = async () => {
       let markup = cachedArtwork;
       if (!markup) {
-        const response = await fetch('/brand/mewiki-text-cannon.svg?v=20261113-roundears1', { signal: abort.signal });
+        const response = await fetch('/brand/mewiki-text-cannon.svg?v=20261120-me-palette', { signal: abort.signal });
         if (!response.ok) { unavailable(); return; }
         markup = await response.text(); cachedArtwork = markup;
       }

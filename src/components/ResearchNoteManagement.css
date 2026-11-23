@@ -1,10 +1,10 @@
 .research-note-list-tools { flex: 0 0 auto; min-width: 0; padding: 7px; border-bottom: 1px solid #dbe3ed; }
 .research-note-search-row { display: flex; min-width: 0; align-items: center; gap: 4px; }
-.research-note-search { display: flex; min-width: 0; flex: 1; height: 30px; align-items: center; gap: 5px; border: 1px solid #bdcadd; border-radius: 4px; padding: 0 6px; background: #fff; color: #405570; }
+.research-note-search { display: flex; min-width: 0; flex: 1; height: 30px; align-items: center; gap: 5px; border: 1px solid var(--mewiki-ui-field-border); border-radius: 4px; padding: 0 6px; background: #fff; color: #405570; }
 .research-note-search svg { flex: 0 0 auto; }
-.research-note-search input { width: 100%; min-width: 0; border: 0; padding: 0; background: transparent; color: #172033; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); outline: none; }
-.research-note-filter-button { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border: 1px solid #bdcadd; border-radius: 4px; padding: 0; background: #fff; color: #203652; cursor: pointer; }
-.research-note-filter-button[data-active="true"], .research-note-filter-button[aria-expanded="true"] { background: #eaf0ff; color: #123c9b; }
+.research-note-search input { width: 100%; min-width: 0; border: 0; padding: 0; background: transparent; color: var(--mewiki-ui-ink); font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); outline: none; }
+.research-note-filter-button { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border: 1px solid var(--mewiki-ui-field-border); border-radius: 4px; padding: 0; background: #fff; color: #203652; cursor: pointer; }
+.research-note-filter-button[data-active="true"], .research-note-filter-button[aria-expanded="true"] { background: var(--mewiki-ui-selected); color: var(--mewiki-ui-accent); }
 .research-note-active-filter { display: flex; width: 100%; min-width: 0; align-items: center; gap: 4px; border: 0; padding: 6px 0 0; background: transparent; color: #1547c0; text-align: left; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); cursor: pointer; }
 .research-note-active-filter > span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .research-note-active-filter svg { flex: 0 0 auto; }
@@ -30,7 +30,7 @@
 .research-note-folder-label { display: block; min-width: 0; max-width: 100%; max-height: 100%; overflow: hidden; font-size: calc(var(--mewiki-interface-unit, 1px) * max(12, 16 - var(--research-tag-depth))); line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
 .research-note-tree-branch[data-tag-orientation="vertical"] > .research-note-folder .research-note-folder-label { writing-mode: vertical-rl; text-orientation: upright; }
 .research-note-tree-branch[data-tag-orientation="horizontal"] .research-note-folder-label { writing-mode: horizontal-tb; text-orientation: mixed; }
-.research-note-tree .research-note-folder:hover { background: #d2e2f8; color: #123c9b; }
+.research-note-tree .research-note-folder:hover { background: #d2e2f8; color: var(--mewiki-ui-accent); }
 .research-note-tree-note { display: flex; min-width: 0; }
 .research-note-tree-note[hidden] { display: none; }
 .research-note-tree .research-note-item { min-width: 0; min-height: 28px; align-items: flex-start; gap: 4px; border-radius: 0; padding: 5px 4px; line-height: 1.5; }
@@ -42,24 +42,24 @@
 .research-note-organization { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; gap: 7px; }
 .research-note-status-select { display: inline-flex; height: 28px; flex: 0 0 auto; align-items: center; border: 0; padding: 0; background: transparent; color: #8b4407; }
 .research-note-status-select select { max-width: 100%; height: 28px; appearance: none; border: 0; border-radius: 0; padding: 0; background: transparent; color: inherit; box-shadow: none; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 700; cursor: pointer; }
-.research-note-status-select[data-status="reviewing"] { color: #123c9b; }
+.research-note-status-select[data-status="reviewing"] { color: var(--mewiki-ui-accent); }
 .research-note-status-select[data-status="reviewed"] { color: #12623c; }
 .research-note-tag-list { display: flex; min-width: 0; flex: 0 1 auto; align-items: center; gap: 5px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; white-space: nowrap; }
 .research-note-assigned-tags { display: flex; min-width: 0; align-items: center; flex-wrap: wrap; gap: 5px; }
 .research-note-manage-tags { flex: 0 0 auto; }
-.research-note-tag { display: inline-flex; max-width: 100%; min-height: 24px; align-items: center; gap: 5px; border: 1px solid #173b65; border-radius: 4px; padding: 3px 7px; background: #173b65; color: #fff; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); text-align: left; overflow-wrap: anywhere; }
+.research-note-tag { display: inline-flex; max-width: 100%; min-height: 24px; align-items: center; gap: 5px; border: 1px solid var(--mewiki-ui-accent); border-radius: 4px; padding: 3px 7px; background: var(--mewiki-ui-accent); color: #fff; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); text-align: left; overflow-wrap: anywhere; }
 .research-note-tag-list .research-note-tag { max-width: none; flex: 0 0 auto; white-space: nowrap; }
 button.research-note-tag { cursor: pointer; }
 .research-note-tag-list .research-note-tag:hover { background: #1547c0; color: #fff; }
 .research-note-tag > span { min-width: 0; }
 .research-note-tag button { display: grid; width: 18px; height: 18px; flex: 0 0 18px; place-items: center; border: 0; padding: 0; background: transparent; color: #fff; cursor: pointer; }
 .research-note-tag button:hover { color: #ffbfad; }
-.research-note-management-popover { position: fixed; inset: auto; box-sizing: border-box; display: flex; width: min(330px, calc(100vw - 24px)); max-height: min(560px, calc(100dvh - 24px)); flex-direction: column; gap: 11px; overflow: auto; margin: 0; border: 1px solid #aebfd5; border-radius: 4px; padding: 12px; background: #fff; color: #172033; box-shadow: 0 8px 28px #1735562b; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+.research-note-management-popover { position: fixed; inset: auto; box-sizing: border-box; display: flex; width: min(330px, calc(100vw - 24px)); max-height: min(560px, calc(100dvh - 24px)); flex-direction: column; gap: 11px; overflow: auto; margin: 0; border: 1px solid var(--mewiki-ui-border); border-radius: 4px; padding: 12px; background: #fff; color: var(--mewiki-ui-ink); box-shadow: 0 8px 28px #1735562b; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-note-management-popover > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .research-note-management-popover > header > strong { color: #153b6d; font-size: calc(var(--mewiki-interface-unit, 1px) * 13); }
 .research-note-management-popover > header > button { display: grid; width: 22px; height: 22px; place-items: center; border: 0; padding: 0; background: transparent; color: #203652; cursor: pointer; }
 .research-note-management-popover > label { display: flex; min-width: 0; flex-direction: column; gap: 5px; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); font-weight: 650; }
-.research-note-management-popover select, .research-note-management-popover input { width: 100%; min-width: 0; height: 32px; border: 1px solid #bdcadd; border-radius: 4px; padding: 5px 7px; background: #fff; color: #172033; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
+.research-note-management-popover select, .research-note-management-popover input { width: 100%; min-width: 0; height: 32px; border: 1px solid var(--mewiki-ui-field-border); border-radius: 4px; padding: 5px 7px; background: #fff; color: var(--mewiki-ui-ink); font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-note-management-popover p { margin: 0; color: #405570; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); line-height: 1.6; }
 .research-note-management-popover > .research-small-button { align-self: flex-end; }
 .research-note-tag-form { display: flex; min-width: 0; align-items: center; gap: 5px; }
@@ -68,7 +68,7 @@ button.research-note-tag { cursor: pointer; }
 .research-note-tag-suggestions-heading { margin-top: 2px; border-top: 1px dashed #ccd7e5; padding-top: 10px; color: #405570; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 .research-note-tag-suggestions { display: flex; min-height: 0; flex-direction: column; gap: 2px; }
 .research-note-tag-suggestions > button { display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 0; border-radius: 4px; padding: 5px; background: transparent; color: #203652; text-align: left; font: inherit; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); cursor: pointer; }
-.research-note-tag-suggestions > button:hover { background: #eaf0ff; color: #123c9b; }
+.research-note-tag-suggestions > button:hover { background: var(--mewiki-ui-selected); color: var(--mewiki-ui-accent); }
 .research-note-tag-suggestions > button > span { min-width: 0; overflow-wrap: anywhere; }
 .research-note-tag-suggestions small { color: #52627a; font-size: calc(var(--mewiki-interface-unit, 1px) * 12); }
 @media (max-width: 720px) {

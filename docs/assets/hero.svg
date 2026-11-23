@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="440" viewBox="0 0 1600 440" role="img" aria-labelledby="title description">
 <title id="title">MeWiki — Knowledge, connected.</title><desc id="description">The blue and white MeWiki monogram connects notes, mathematical symbols, and their sources in a local knowledge workspace.</desc>
-<defs><linearGradient id="bg" x1="0" x2="1" y2="1"><stop stop-color="#f8faff"/><stop offset="1" stop-color="#edf3fc"/></linearGradient><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#b8cce9" opacity=".35"/></pattern><filter id="shadow" x="-30%" y="-40%" width="170%" height="200%"><feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#123268" flood-opacity=".09"/></filter></defs>
+<defs><linearGradient id="bg" x1="0" x2="1" y2="1"><stop stop-color="#fbfcfe"/><stop offset="1" stop-color="#f0f3f7"/></linearGradient><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#b3c2d8" opacity=".35"/></pattern><filter id="shadow" x="-30%" y="-40%" width="170%" height="200%"><feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#01357c" flood-opacity=".09"/></filter></defs>
 <rect width="1600" height="440" rx="12" fill="url(#bg)"/><rect x="850" width="750" height="440" fill="url(#grid)"/>
-<path d="M 920 0 V 440" stroke="#dae5f4" stroke-width="1"/>
+<path d="M 920 0 V 440" stroke="#d9e1eb" stroke-width="1"/>
 <g transform="translate(92 72)"><svg width="80" height="80" viewBox="17.5 17.5 157 157"><defs><mask id="emblem-mask" maskUnits="userSpaceOnUse" x="66.5" y="26" width="157" height="157"><circle cx="145" cy="104.5" r="78.5" fill="#fff"/></mask></defs>
   <g transform="translate(-49 -8.5)">
   <g id="emblem" mask="url(#emblem-mask)">
-    <rect x="66.5" y="26" width="157" height="157" fill="#060606"/>
+    <rect x="66.5" y="26" width="157" height="157" fill="#01357c"/>
     <g>
       <path id="white-ribbon" fill="#fff" d="M 66.7 121.8
         C 72.4 99.9 90.8 70.2 116.8 58.4
@@ -25,7 +25,7 @@
         C 128.8 84.8 125.3 77.2 109.4 82.7
         C 93.7 88.2 77.3 113.5 71.1 132.2
         L 64 132.2 L 64 121.8 Z"/>
-      <path id="blue-ribbon" fill="#2f94c7" d="M 71.1 132.2
+      <path id="blue-ribbon" fill="#00a9f3" d="M 71.1 132.2
         C 77.3 113.5 93.7 88.2 109.4 82.7
         C 125.3 77.2 128.8 84.8 128.1 97.1
         C 127.8 103.5 125.9 113.9 131.8 112.4
@@ -46,14 +46,14 @@
   </g>
   </g>
 </svg>
-<text x="104" y="61" font-family="Segoe UI, Arial, sans-serif" font-size="70" font-weight="700" letter-spacing="-2.8" fill="#112746">MeWiki</text></g>
-<text x="94" y="220" font-family="Segoe UI, Arial, sans-serif" font-size="46" font-weight="600" letter-spacing="-1.4" fill="#152e50">Knowledge, connected.</text>
-<text x="96" y="269" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#526987">Notes. Symbols. Sources. One local workspace.</text>
-<g transform="translate(96 318)" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="1.5"><circle cx="5" cy="-4" r="4" fill="#2563eb"/><text x="20" fill="#365272">LOCAL FIRST</text><circle cx="179" cy="-4" r="3" fill="#f59e0b"/><text x="194" fill="#365272">OPEN SOURCE</text><circle cx="368" cy="-4" r="3" fill="#dc5b55"/><text x="383" fill="#365272">BUILT FOR IDEAS</text></g>
-<path d="M1112 144 H 1190 V 106 H 1270 M1112 190 H1205 V293 H1270" fill="none" stroke="#9db5da" stroke-width="2"/>
+<text x="104" y="61" font-family="Segoe UI, Arial, sans-serif" font-size="70" font-weight="700" letter-spacing="-2.8" fill="#01357c">MeWiki</text></g>
+<text x="94" y="220" font-family="Segoe UI, Arial, sans-serif" font-size="46" font-weight="600" letter-spacing="-1.4" fill="#24282e">Knowledge, connected.</text>
+<text x="96" y="269" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#616d7e">Notes. Symbols. Sources. One local workspace.</text>
+<g transform="translate(96 318)" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="1.5"><circle cx="5" cy="-4" r="4" fill="#01357c"/><text x="20" fill="#495569">LOCAL FIRST</text><circle cx="179" cy="-4" r="3" fill="#00a9f3"/><text x="194" fill="#495569">OPEN SOURCE</text><circle cx="368" cy="-4" r="3" fill="#86d21f"/><text x="383" fill="#495569">BUILT FOR IDEAS</text></g>
+<path d="M1112 144 H 1190 V 106 H 1270 M1112 190 H1205 V293 H1270" fill="none" stroke="#809abe" stroke-width="2"/>
 <g font-family="Segoe UI, Arial, sans-serif" filter="url(#shadow)">
-<g transform="translate(998 128)"><rect width="216" height="182" rx="8" fill="#fff" stroke="#cbd9ec"/><rect x="0" y="0" width="216" height="5" rx="2" fill="#2563eb"/><rect x="20" y="22" width="28" height="28" rx="5" fill="#eaf1ff"/><path d="M29 29 H39 M29 34 H39 M29 39 H36" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/><text x="61" y="42" font-size="16" font-weight="600" fill="#173758">Connected notes</text><rect x="20" y="72" width="160" height="6" rx="3" fill="#dfe8f5"/><rect x="20" y="88" width="173" height="6" rx="3" fill="#e8eef7"/><rect x="20" y="104" width="132" height="6" rx="3" fill="#e8eef7"/><rect x="20" y="131" width="176" height="30" rx="4" fill="#eff5ff"/><circle cx="34" cy="146" r="4" fill="#2563eb"/><text x="47" y="151" font-size="12" fill="#3f5f86">Always linked to the source</text></g>
-<g transform="translate(1270 64)"><rect width="224" height="121" rx="8" fill="#fff" stroke="#cbd9ec"/><rect x="0" y="0" width="224" height="5" rx="2" fill="#e79b36"/><text x="20" y="36" font-size="12" font-weight="600" letter-spacing="1.3" fill="#8c621f">MEANINGFUL MATH</text><text x="22" y="91" font-family="Georgia, serif" font-style="italic" font-size="36" fill="#223a58">y = ax + b</text></g>
-<g transform="translate(1270 242)"><rect width="224" height="117" rx="8" fill="#fff" stroke="#cbd9ec"/><rect x="0" y="0" width="224" height="5" rx="2" fill="#dc6c61"/><text x="20" y="36" font-size="12" font-weight="600" letter-spacing="1.3" fill="#a0524a">LIVING REFERENCES</text><path d="M29 71 H68 M35 80 H68 M29 89 H58" stroke="#d9e3f1" stroke-width="5" stroke-linecap="round"/><path d="M96 78 H127" stroke="#b5c7e0" stroke-width="2"/><path d="M122 74 L128 78 L122 82" fill="none" stroke="#b5c7e0" stroke-width="2"/><rect x="146" y="62" width="52" height="34" rx="4" fill="#fcefea"/><text x="156" y="84" font-size="12" fill="#a0524a">Sync</text></g></g>
-<circle cx="1270" cy="106" r="4" fill="#e79b36"/><circle cx="1270" cy="293" r="4" fill="#dc6c61"/>
+<g transform="translate(998 128)"><rect width="216" height="182" rx="8" fill="#fff" stroke="#d9e1eb"/><rect x="0" y="0" width="216" height="5" rx="2" fill="#01357c"/><rect x="20" y="22" width="28" height="28" rx="5" fill="#f0f3f7"/><path d="M29 29 H39 M29 34 H39 M29 39 H36" stroke="#01357c" stroke-width="2" stroke-linecap="round"/><text x="61" y="42" font-size="16" font-weight="600" fill="#24282e">Connected notes</text><rect x="20" y="72" width="160" height="6" rx="3" fill="#d9e1eb"/><rect x="20" y="88" width="173" height="6" rx="3" fill="#e9edf3"/><rect x="20" y="104" width="132" height="6" rx="3" fill="#e9edf3"/><rect x="20" y="131" width="176" height="30" rx="4" fill="#f0f3f7"/><circle cx="34" cy="146" r="4" fill="#01357c"/><text x="47" y="151" font-size="12" fill="#495569">Always linked to the source</text></g>
+<g transform="translate(1270 64)"><rect width="224" height="121" rx="8" fill="#fff" stroke="#d9e1eb"/><rect x="0" y="0" width="224" height="5" rx="2" fill="#00a9f3"/><text x="20" y="36" font-size="12" font-weight="600" letter-spacing="1.3" fill="#005d86">MEANINGFUL MATH</text><text x="22" y="91" font-family="Georgia, serif" font-style="italic" font-size="36" fill="#24282e">y = ax + b</text></g>
+<g transform="translate(1270 242)"><rect width="224" height="117" rx="8" fill="#fff" stroke="#d9e1eb"/><rect x="0" y="0" width="224" height="5" rx="2" fill="#86d21f"/><text x="20" y="36" font-size="12" font-weight="600" letter-spacing="1.3" fill="#36540c">LIVING REFERENCES</text><path d="M29 71 H68 M35 80 H68 M29 89 H58" stroke="#d9e1eb" stroke-width="5" stroke-linecap="round"/><path d="M96 78 H127" stroke="#b3c2d8" stroke-width="2"/><path d="M122 74 L128 78 L122 82" fill="none" stroke="#b3c2d8" stroke-width="2"/><rect x="146" y="62" width="52" height="34" rx="4" fill="#edf8dd"/><text x="156" y="84" font-size="12" fill="#36540c">Sync</text></g></g>
+<circle cx="1270" cy="106" r="4" fill="#00a9f3"/><circle cx="1270" cy="293" r="4" fill="#86d21f"/>
 </svg>

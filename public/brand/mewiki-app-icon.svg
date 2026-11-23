@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
 <title id="title">MeWiki App 图标</title>
-<desc id="description">为方形画幅重新延展的蓝白 M，左下笔画和右侧飘带自然延伸至画幅边缘；黑色满版底图，适合由系统统一裁切。</desc>
-<rect id="background" width="1024" height="1024" fill="#080a0d"/>
+<desc id="description">为方形画幅重新延展的蓝白 M，左下笔画和右侧飘带自然延伸至画幅边缘；深蓝满版底图，适合由系统统一裁切。</desc>
+<rect id="background" width="1024" height="1024" fill="#01357c"/>
 <g id="monogram" transform="matrix(4.7 0 0 4.7 -168 -54)"><path id="white-ribbon" fill="#fff" d="M 20 203
   C 47 128 82 74 116.8 58.4
   C 128.2 53.2 137.1 54.1 140.1 62.2
@@ -19,7 +19,7 @@
   C 125.9 113.9 127.8 103.5 128.1 97.1
   C 128.8 84.8 125.3 77.2 109.4 82.7
   C 79 91 48 149 28 213
-  L 20 203 Z"/><path id="blue-ribbon" fill="#2f94c7" d="M 28 213
+  L 20 203 Z"/><path id="blue-ribbon" fill="#00a9f3" d="M 28 213
   C 48 149 79 91 109.4 82.7
   C 125.3 77.2 128.8 84.8 128.1 97.1
   C 127.8 103.5 125.9 113.9 131.8 112.4

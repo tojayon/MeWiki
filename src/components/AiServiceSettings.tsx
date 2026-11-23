@@ -174,7 +174,7 @@ export default function AiServiceSettings({ client = localAiClient, description,
         <p role="status">{localizeError(testResult.message)}</p>
         <dl>{([
           ['response', t('模型响应')], ['stream', t('流式输出')], ['tools', t('工具调用')],
-        ] as const).map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{testResult[key] ? <Check size={14} aria-hidden="true" /> : <X size={14} aria-hidden="true" />}{testResult[key] ? t('通过') : t('未通过')}</dd></div>)}</dl>
+        ] as const).map(([key, label]) => <div key={key}><dt>{label}</dt><dd data-result={testResult[key] ? 'passed' : 'failed'}>{testResult[key] ? <Check size={14} aria-hidden="true" /> : <X size={14} aria-hidden="true" />}{testResult[key] ? t('通过') : t('未通过')}</dd></div>)}</dl>
       </div>}
     </div>
     <details className="mewiki-ai-service-notes"><summary>{t('服务与数据说明')}</summary>

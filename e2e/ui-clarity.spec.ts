@@ -18,6 +18,28 @@ test.beforeEach(async ({ page }) => {
   page.on('pageerror', error => { throw error; });
 });
 
+test('uses the shared brand palette in the workspace and browser icon', async ({ page }, info) => {
+  await page.goto('/');
+  const notebook = page.getByTestId('research-notebook');
+  const toolbar = notebook.locator('.research-notebook-toolbar');
+  const selected = notebook.locator('.research-notebook-mode-tabs [aria-selected="true"]');
+  await expect(toolbar).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(selected).toHaveCSS('color', 'rgb(1, 53, 124)');
+  await expect(selected).toHaveCSS('background-color', 'rgb(240, 243, 247)');
+  await expect(notebook.locator('.research-notebook-sidebar')).toHaveCSS('background-color', 'rgb(251, 252, 254)');
+
+  const mark = page.locator('link[rel="icon"][type="image/svg+xml"]');
+  const source = await (await page.request.get(await mark.getAttribute('href') ?? '')).text();
+  expect(source).toContain('fill="#01357c"');
+  expect(source).toContain('fill="#00a9f3"');
+  await page.screenshot({ path: info.outputPath('workspace-palette-desktop.png') });
+
+  await page.setViewportSize({ width: 390, height: 780 });
+  await expect(toolbar).toBeVisible();
+  await expect(selected).toHaveCSS('color', 'rgb(1, 53, 124)');
+  await page.screenshot({ path: info.outputPath('workspace-palette-mobile.png') });
+});
+
 test('keeps term guidance optional while preserving a draft across language and width changes', async ({ page }, info) => {
   await page.goto('/');
   const notebook = page.getByTestId('research-notebook');

@@ -114,7 +114,7 @@ export default function SettingsPage({ section, library, readOnly, sidebarCollap
       </div>
     </header>
     <aside className="mewiki-settings-sidebar">
-      <div className="mewiki-settings-brand"><img src="/brand/mewiki-app-icon.svg" alt="" width={28} height={28} draggable={false} /><strong>{t("觅维")}</strong></div>
+      <div className="mewiki-settings-brand"><img src="/brand/mewiki-app-icon.svg?v=20261120-me-palette" alt="" width={28} height={28} draggable={false} /><strong>{t("觅维")}</strong></div>
       <nav aria-label={t("设置分类")}>
         {[...new Set(sections.map(item => item.group))].map(group => <div className="mewiki-settings-nav-group" key={group}>
           <p>{group}</p>
@@ -157,7 +157,7 @@ export default function SettingsPage({ section, library, readOnly, sidebarCollap
           <div hidden={active !== "plugins"} id="setting-plugins" tabIndex={-1}><PluginManager /></div>
           {active === 'ai' && section && <div id="setting-ai" tabIndex={-1}><AiServiceSettings /></div>}
           <div hidden={active !== "about"} id="setting-about" tabIndex={-1}>
-            <div className="mewiki-settings-about"><img className="mewiki-settings-app-icon" src="/brand/mewiki-app-icon.svg" alt="" width={60} height={60} draggable={false} /><div><h3>{t("觅维")}</h3><span>{t`版本 ${import.meta.env.MEWIKI_APP_VERSION}`}</span></div><p>{t("寻觅知识，以多维链接万物。")}</p></div>
+            <div className="mewiki-settings-about"><img className="mewiki-settings-app-icon" src="/brand/mewiki-app-icon.svg?v=20261120-me-palette" alt="" width={60} height={60} draggable={false} /><div><h3>{t("觅维")}</h3><span>{t`版本 ${import.meta.env.MEWIKI_APP_VERSION}`}</span></div><p>{t("寻觅知识，以多维链接万物。")}</p></div>
             <SettingsGroup title={t("帮助与开源")}>
               <button className="mewiki-setting-link" type="button" onClick={() => { closeSettings(); onOpenHelp?.(); }}><BookOpen size={18} /><span><strong>{t("使用手册")}</strong></span><ChevronRight size={17} /></button>
               <a className="mewiki-setting-link" href="https://github.com/tojayon/MeWiki" target="_blank" rel="noopener noreferrer"><Info size={18} /><span><strong>{t("项目主页")}</strong></span><ArrowUpRight size={17} /></a>

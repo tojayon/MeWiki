@@ -38,11 +38,11 @@
   color: var(--mewiki-ui-accent);
 }
 :root button[data-ui="menu-action"][data-tone="danger"] {
-  color: #a32236;
+  color: var(--mewiki-ui-danger);
 }
 :root button[data-ui="menu-action"][data-tone="danger"]:is(:hover, :focus-visible):not(:disabled) {
-  background: #fff0f2;
-  color: #a32236;
+  background: var(--mewiki-ui-danger-soft);
+  color: var(--mewiki-ui-danger);
 }
 
 /* Explicit opt-in: tabs, packet cards, scene labels and mode choices keep their semantics. */
@@ -105,9 +105,9 @@
   cursor: not-allowed;
 }
 :root button[data-ui="icon-action"][aria-label][data-tone="danger"] {
-  --action-ink: #a32236;
-  --action-accent: #a32236;
-  --action-hover: #ffe8ed;
+  --action-ink: var(--mewiki-ui-danger);
+  --action-accent: var(--mewiki-ui-danger);
+  --action-hover: var(--mewiki-ui-danger-soft);
 }
 :root .research-note-block button[data-ui="icon-action"][aria-label],
 :root .research-formula-result-select button[data-ui="icon-action"][aria-label],

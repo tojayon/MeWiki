@@ -134,7 +134,7 @@ AI 原位置逐项审阅：`AiInlineSuggestion` 在块／标签／属性附近�
 
 品牌 SVG 原件统一保存在 `public/brand/`，文件选择与预览见 [Logo 与应用图标](BRANDING.md)。导航、设置和关于页使用黑底方形 M；笔画按方形重新延展，左下和右侧延伸至画幅外，不能复用圆形版的截断弧线收尾。`mewiki-app-icon.svg` 是方形笔画的单一来源，圆角、白底、透明前景和 App PNG 均由它生成；圆角版对背景与笔画整体裁切。浏览器标签页与中英文 README 使用圆形 Logo，由 `mewiki-mark.svg` 去除外围留白，派生 `public/mewiki.svg`、透明 `mewiki-favicon-{16,32,48}.png` 与 ICO。`index.html` 的 SVG、PNG、ICO 版本参数一同更新以刷新缓存。180px 主屏幕图标和 `manifest.webmanifest` 的 192/512px 图标继续使用满版方形，源图不预裁切系统圆角。
 
-修改 SVG 后运行 `npm run brand:generate`，通过 `scripts/generate-brand-assets.mjs` 和已有 Sharp 依赖统一生成本地 PNG、ICO、SVG 别名和产品介绍横幅。圆形标志先合成黑底与蓝白笔画，再用圆形蒙版统一处理外边缘，避免白色出口叠出灰线；独立标志和两种完整 Logo 保持相同图案与蒙版。横幅布局在 `scripts/branding/hero-template.svg` 维护，圆形图标由原件注入；不要直接修改派生曲线或引用项目外资源。`npm run brand:check` 检查派生文件与原件一致，已纳入 `npm run check`。资源变更同步快速开始手册，完成桌面与窄屏 Edge 检查。README 的产品理念、能力和文档入口保持中英文一致，公开截图通过 `npm run docs:screenshots` 在隔离配置与虚构资料上更新。
+修改 SVG 后运行 `npm run brand:generate`，通过 `scripts/generate-brand-assets.mjs` 和已有 Sharp 依赖统一生成本地 PNG、ICO、SVG 别名和产品介绍横幅。圆形标志先合成深蓝底与亮青、白色笔画，再用圆形蒙版统一处理外边缘，避免白色出口叠出灰线；独立标志和两种完整 Logo 保持相同图案与蒙版。横幅布局在 `scripts/branding/hero-template.svg` 维护，圆形图标由原件注入；不要直接修改派生曲线或引用项目外资源。`npm run brand:check` 检查派生文件与原件一致，已纳入 `npm run check`。资源变更同步快速开始手册，完成桌面与窄屏 Edge 检查。README 的产品理念、能力和文档入口保持中英文一致，公开截图通过 `npm run docs:screenshots` 在隔离配置与虚构资料上更新。
 
 ## 手册内容展示与离线素材
 

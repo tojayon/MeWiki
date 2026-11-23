@@ -15,8 +15,11 @@ const favicon = Buffer.from(mark.replace('viewBox="0 0 192 192"', 'viewBox="17.5
 const generated = new Map();
 generated.set('public/brand/mewiki-ai-mascot-1024.png', await sharp(mascot).resize(1024, 1024).png().toBuffer());
 generated.set('public/brand/mewiki-text-cannon-1024.png', await sharp(cannon).resize(1024, 1024).png().toBuffer());
-const monogram = /<g id="monogram"[\s\S]*<\/g>/.exec(icon.toString('utf8'))?.[0];
+const iconSource = icon.toString('utf8');
+const monogram = /<g id="monogram"[\s\S]*<\/g>/.exec(iconSource)?.[0];
+const background = /<rect id="background"[^>]*fill="(#[\da-f]{6})"\/>/i.exec(iconSource);
 if (!monogram) throw new Error('方形图标原件缺少 monogram 笔画。');
+if (!background) throw new Error('方形图标原件缺少满版底色。');
 const appSvg = (title, description, body) => Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
 <title id="title">${title}</title>
@@ -24,10 +27,9 @@ const appSvg = (title, description, body) => Buffer.from(`<?xml version="1.0" en
 ${body}
 </svg>
 `);
-const background = '<rect id="background" width="1024" height="1024" fill="#080a0d"/>';
-const rounded = appSvg('MeWiki App 圆角图标', '笔画沿方形延展的蓝白 M，统一裁切为圆角方形，圆角之外透明。', `<defs><clipPath id="app-shape"><rect width="1024" height="1024" rx="224"/></clipPath></defs>
-<g clip-path="url(#app-shape)">${background}${monogram}</g>`);
-const light = appSvg('MeWiki App 白底图标', '与黑底版使用相同延展轮廓的蓝黑 M，白色满版方形背景。', `<rect id="background" width="1024" height="1024" fill="#fff"/>${monogram.replace('fill="#fff"', 'fill="#080a0d"')}`);
+const rounded = appSvg('MeWiki App 圆角图标', '深蓝底与亮青、白色 M 统一裁切为圆角方形，圆角之外透明。', `<defs><clipPath id="app-shape"><rect width="1024" height="1024" rx="224"/></clipPath></defs>
+<g clip-path="url(#app-shape)">${background[0]}${monogram}</g>`);
+const light = appSvg('MeWiki App 白底图标', '白色满版方形背景，M 笔画使用深蓝与亮青。', `${background[0].replace(background[1], '#fff')}${monogram.replace('fill="#fff"', `fill="${background[1]}"`)}`);
 const foreground = appSvg('MeWiki App 前景标志', '为方形画幅延展的蓝白 M，背景透明。', monogram);
 for (const [name, svg] of [['rounded', rounded], ['light', light], ['foreground', foreground]]) {
   generated.set(`public/brand/mewiki-app-icon-${name}.svg`, svg);

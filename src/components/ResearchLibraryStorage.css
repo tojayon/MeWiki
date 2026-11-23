@@ -69,19 +69,19 @@
   cursor: pointer;
 }
 .research-library-dialog button:not([data-ui="icon-action"]):hover {
-  background: #edf3fb;
+  background: var(--mewiki-ui-selected);
 }
 .research-library-dialog button:disabled {
   cursor: default;
   opacity: 0.5;
 }
 .research-library-dialog button.research-storage-primary {
-  border-color: #1744b0;
-  color: #fff;
-  background: #1744b0;
+  border-color: var(--mewiki-ui-accent);
+  color: var(--mewiki-ui-on-accent);
+  background: var(--mewiki-ui-accent);
 }
 .research-library-dialog button.research-storage-primary:hover {
-  background: #12388f;
+  background: var(--mewiki-ui-accent-hover);
 }
 .research-storage-location,
 .research-storage-path-preview {
@@ -159,16 +159,16 @@
   overflow-wrap: anywhere;
 }
 .research-storage-error {
-  background: #fff0f1;
-  color: #a12035;
+  background: var(--mewiki-ui-danger-soft);
+  color: var(--mewiki-ui-danger);
 }
 .research-storage-notice {
-  background: #eef4ff;
-  color: #17408d;
+  background: var(--mewiki-ui-info-soft);
+  color: var(--mewiki-ui-info);
 }
 .research-storage-current-status.is-error,
 .research-storage-current-status.is-conflict {
-  color: #a12035;
+  color: var(--mewiki-ui-danger);
 }
 .research-library-loading {
   display: grid;
